@@ -3,8 +3,8 @@ import { OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Tab } from './models/tab.model';
 
-import '../bootstrap.min.css';
-import '../bootstrap.override.css';
+import '../assets/bootstrap.min.css';
+import '../assets/bootstrap.override.css';
 
 @Component({
   // moduleId: module.id,
