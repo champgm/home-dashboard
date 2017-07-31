@@ -14,7 +14,7 @@ export abstract class ItemsComponent implements OnInit {
   @ViewChild('editModal') public editModal: ModalDirective;
   @ViewChild('editResultModal') public editResultModal: ModalDirective;
 
-  topPad: number = 50;
+  topPad = 50;
   itemType: string;
   items: any;
   itemIds: string[];
@@ -39,7 +39,7 @@ export abstract class ItemsComponent implements OnInit {
   }
 
   async getItems(itemParameters?: string) {
-    const parameters = itemParameters ? itemParameters : "";
+    const parameters = itemParameters ? itemParameters : '';
     await this.httpGet(`/${this.itemType}${parameters}`)
       .then(response => {
         const json = response.json();
@@ -85,7 +85,7 @@ export abstract class ItemsComponent implements OnInit {
       return;
     }
     const response = await this.http.put(`${this.itemType}/${this.itemIdToEdit}`, editedItem).toPromise();
-    this.editResult = JSON.parse(response["_body"]);
+    this.editResult = JSON.parse(response['_body']);
     this.editResultModal.show();
     await this.getItems();
     this.onEdit(this.itemIdToEdit);

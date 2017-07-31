@@ -7,12 +7,12 @@ import 'rxjs/add/operator/toPromise';
 
 @Component({
   // moduleId: module.id,
-  selector: 'scenes',
+  selector: 'app-scenes',
   templateUrl: '../common/items.component.html',
 })
 export class ScenesComponent extends ItemsComponent implements OnInit {
-  itemType: string = 'scenes';
-  parameters: string = `?v2=true&`;
+  itemType = 'scenes';
+  parameters = `?v2=true&`;
 
   constructor(http: Http) {
     super(http);

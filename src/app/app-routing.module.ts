@@ -12,43 +12,43 @@ import { AppComponent } from './app.component';
 const angular = 'angular/';
 const routes: Routes = [
   {
-    path: 'groups',
+    path: 'app-groups',
     component: GroupsComponent
   },
   {
-    path: 'lights',
+    path: 'app-lights',
     component: LightsComponent
   },
   {
-    path: 'plugs',
+    path: 'app-plugs',
     component: PlugsComponent
   },
   {
-    path: 'scenes',
+    path: 'app-scenes',
     component: ScenesComponent
   },
   {
-    path: 'schedules',
+    path: 'app-schedules',
     component: SchedulesComponent
   },
   {
-    path: 'sensors',
+    path: 'app-sensors',
     component: SensorsComponent
   },
   {
-    path: 'rules',
+    path: 'app-rules',
     component: RulesComponent
   },
   {
-    path: 'app',
+    path: 'app-app',
     component: AppComponent
   },
   // {
-  //   path: 'edit/:itemId',
+  //   path: 'app-edit/:itemId',
   //   component: HeroDetailComponent
   // },
   {
-    path: '',
+    path: 'app-',
     redirectTo: '/scenes',
     pathMatch: 'full'
   }

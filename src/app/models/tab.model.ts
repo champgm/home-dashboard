@@ -1,5 +1,5 @@
 export class Tab {
-  private active: boolean = false;
+  private active = false;
 
   constructor(
     private _id: number = -1,
