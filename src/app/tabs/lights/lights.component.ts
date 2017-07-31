@@ -7,24 +7,24 @@ import 'rxjs/add/operator/toPromise';
 
 @Component({
   // moduleId: module.id,
-  selector: 'lights',
+  selector: 'app-lights',
   templateUrl: '../common/items.component.html',
 })
 export class LightsComponent extends ItemsComponent implements OnInit {
-  itemType: string = 'lights';
+  itemType = 'lights';
 
   constructor(http: Http) {
     super(http);
   }
 
   onSelect(itemId: string) {
-    const response = super.onSelect(itemId);
-    response
+    const result = super.onSelect(itemId);
+    result
       .then(response => {
         const json = response.json();
         this.items[itemId] = json;
       });
-    return response;
+    return result;
   }
 
   isOn(itemId: string): boolean {

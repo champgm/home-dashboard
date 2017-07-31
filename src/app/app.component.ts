@@ -3,8 +3,8 @@ import { OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Tab } from './models/tab.model';
 
-import '../bootstrap.min.css';
-import '../bootstrap.override.css';
+import '../assets/bootstrap.min.css';
+import '../assets/bootstrap.override.css';
 
 @Component({
   // moduleId: module.id,
@@ -13,15 +13,15 @@ import '../bootstrap.override.css';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
-  private static lights: Tab = new Tab(1, 'Lights', 'lights');
-  private static scenes: Tab = new Tab(2, 'Scenes', 'scenes').setActive(true);
-  private static groups: Tab = new Tab(3, 'Groups', 'groups');
-  private static schedules: Tab = new Tab(4, 'Schedules', 'schedules');
-  private static sensors: Tab = new Tab(5, 'Sensors', 'sensors');
-  private static rules: Tab = new Tab(6, 'Rules', 'rules');
-  private static plugs: Tab = new Tab(7, 'Plugs', 'plugs');
+  private static lights: Tab = new Tab(1, 'Lights', 'app-lights');
+  private static scenes: Tab = new Tab(2, 'Scenes', 'app-scenes').setActive(true);
+  private static groups: Tab = new Tab(3, 'Groups', 'app-groups');
+  private static schedules: Tab = new Tab(4, 'Schedules', 'app-schedules');
+  private static sensors: Tab = new Tab(5, 'Sensors', 'app-sensors');
+  private static rules: Tab = new Tab(6, 'Rules', 'app-rules');
+  private static plugs: Tab = new Tab(7, 'Plugs', 'app-plugs');
   public selectedTabTitle: string;
-  private tabs: Tab[];
+  tabs: Tab[];
   title = 'home-dashboard';
 
   constructor(private router: Router) { }
@@ -33,7 +33,7 @@ export class AppComponent implements OnInit {
   ngOnInit(): void {
     this.getTabs();
     this.selectedTabTitle = 'Scenes';
-    this.router.navigate(['scenes']);
+    this.router.navigate(['app-scenes']);
   }
 
   getTabs(): void {
