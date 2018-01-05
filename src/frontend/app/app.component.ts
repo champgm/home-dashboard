@@ -1,7 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
+import { TabsetComponent } from 'ngx-bootstrap';
 import { OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Tab } from './models/tab.model';
+import { createLogger } from 'browser-bunyan';
 
 import '../assets/bootstrap.min.css';
 import '../assets/bootstrap.override.css';
@@ -13,28 +15,42 @@ import '../assets/bootstrap.override.css';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
-  private static lights: Tab = new Tab(1, 'Lights', 'app-lights');
-  private static scenes: Tab = new Tab(2, 'Scenes', 'app-scenes').setActive(true);
-  private static groups: Tab = new Tab(3, 'Groups', 'app-groups');
-  private static schedules: Tab = new Tab(4, 'Schedules', 'app-schedules');
-  private static sensors: Tab = new Tab(5, 'Sensors', 'app-sensors');
-  private static rules: Tab = new Tab(6, 'Rules', 'app-rules');
-  private static plugs: Tab = new Tab(7, 'Plugs', 'app-plugs');
-  public selectedTabTitle: string;
+  private static lights: Tab = new Tab(0, 'Lights', 'app-lights');
+  private static scenes: Tab = new Tab(1, 'Scenes', 'app-scenes').setActive(true);
+  private static groups: Tab = new Tab(2, 'Groups', 'app-groups');
+  private static schedules: Tab = new Tab(3, 'Schedules', 'app-schedules');
+  private static sensors: Tab = new Tab(4, 'Sensors', 'app-sensors');
+  private static rules: Tab = new Tab(5, 'Rules', 'app-rules');
+  private static plugs: Tab = new Tab(6, 'Plugs', 'app-plugs');
   tabs: Tab[];
   title: string = 'home-dashboard';
+  bunyanLogger: any;
 
-  constructor(private router: Router) { }
+  @ViewChild('tabSet') tabSet: TabsetComponent;
+
+  constructor(private router: Router) {
+    this.bunyanLogger = createLogger({ name: 'App component' });
+  }
 
   onSelect(tab: Tab): void {
+    this.bunyanLogger.info({ tab }, 'tab selected');
+    // this.tabSet.tabs[tab.id].active = true;
     this.router.navigate([tab.routing]);
+  }
+
+  onDeselect(tab: Tab): void {
+    // this.bunyanLogger.info({ tabs: this.tabSet.tabs }, 'deselct tabSet');
+    // this.tabSet.tabs[tab.id].active = false;
+    // this.router.navigate([tab.routing]);
   }
 
   ngOnInit(): void {
     this.getTabs();
-    this.selectedTabTitle = 'Scenes';
+    this.bunyanLogger.info({ tabs: this.tabSet.tabs }, 'init tabSet');
+    // this.tabSet.tabs[AppComponent.scenes.id].active = true;
     this.router.navigate(['app-scenes']);
   }
+
 
   getTabs(): void {
     this.tabs = [

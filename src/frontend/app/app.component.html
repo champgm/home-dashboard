@@ -1,10 +1,22 @@
+<!-- <div (click)="$event.preventDefault()"> -->
 <div>
-  <nav>
+  <!-- <nav>
     <div class="btn-group-lg text-center">
       <label *ngFor="let tab of tabs" class="btn btn-secondary" [(ngModel)]="selectedTabTitle" btnRadio="{{tab.title}}" (click)="onSelect(tab)">
         {{tab.title}}
       </label>
     </div>
+  </nav> -->
+  <nav>
+    <tabset [justified]="true"
+            #tabSet>
+      <tab *ngFor="let tab of tabs"
+           [heading]="tab.title"
+           [active]="tab.active"
+           (select)="onSelect(tab)"
+           (deselect)="tab.active = false">
+      </tab>
+    </tabset>
   </nav>
 </div>
 <router-outlet></router-outlet>

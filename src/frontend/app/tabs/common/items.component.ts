@@ -1,7 +1,7 @@
 import { Component, ViewChild } from '@angular/core';
 import { OnInit } from '@angular/core';
 import { Http, Response } from '@angular/http';
-import { ModalDirective } from 'ng2-bootstrap';
+import { ModalDirective } from 'ngx-bootstrap';
 import 'rxjs/add/operator/toPromise';
 import IItem from '../../../../common/interfaces/IItem';
 import IMap from 'common/interfaces/IMap';
@@ -43,7 +43,6 @@ export abstract class ItemsComponent<T extends IItem> implements OnInit {
     await this.httpGet(`/${this.itemType}${parameters}`)
       .then(response => {
         const json: IMap<T> = response.json();
-        console.log('Got some items: ' + `${JSON.stringify(json, null, 2)}`);
         this.itemIds = Object.keys(json);
         this.items = json;
       });
