@@ -26,7 +26,7 @@
       "environments": {
         "dev": "environments/environment.ts",
         "prod": "environments/environment.prod.ts",
-        "config": "../../.env"
+        "config": "../.env"
       }
     }
   ],
@@ -37,11 +37,16 @@
   },
   "lint": [
     {
-      "project": "src/tsconfig.json",
-      "exclude": [
-        "**/node_modules/**",
-        "**/documentation/**"
-      ]
+      "project": "src/frontend/tsconfig.app.json",
+      "exclude": "**/node_modules/**"
+    },
+    {
+      "project": "src/frontend/tsconfig.spec.json",
+      "exclude": "**/node_modules/**"
+    },
+    {
+      "project": "e2e/tsconfig.e2e.json",
+      "exclude": "**/node_modules/**"
     }
   ],
   "test": {
