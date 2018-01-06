@@ -1,0 +1,20 @@
+<!-- <div class="btn-group full-width">
+    <label class="btn btn-primary">Item Name</label>
+    <label class="btn btn-primary edit-button">Edit</label>
+</div> -->
+
+<div class="btn-group btn-list-item"
+     fxLayout="row"
+     fxLayoutAlign="center center">
+  <button type="button"
+          class="btn-select btn btn-default"
+          fxFill>
+    {{item.name}}
+  </button>
+  <button type="button"
+          class="btn btn-primary"
+          fxFlex="none"
+          (click)="onEdit()">
+    Edit
+  </button>
+</div>

@@ -5,8 +5,16 @@ import { ModalDirective } from 'ngx-bootstrap';
 import 'rxjs/add/operator/toPromise';
 import IItem from '../../../../common/interfaces/IItem';
 import IMap from 'common/interfaces/IMap';
+import { createLogger } from 'browser-bunyan';
+import { ItemService } from 'frontend/app/service/item.service';
 
+@Component({
+  selector: 'app-items',
+  templateUrl: './items.component.html',
+  styleUrls: ['./items.component.scss']
+})
 export abstract class ItemsComponent<T extends IItem> implements OnInit {
+  bunyanLogger: any;
   http: Http;
   JSON: JSON;
 
@@ -25,13 +33,23 @@ export abstract class ItemsComponent<T extends IItem> implements OnInit {
   itemJsonToEdit: string;
   editResult: string;
 
-  constructor(http: Http) {
+  constructor(http: Http, private itemService: ItemService) {
     this.http = http;
     this.JSON = JSON;
+    this.bunyanLogger = createLogger({ name: 'App component' });
+    this.itemService = itemService;
   }
 
   ngOnInit(): void {
     this.getItems();
+
+  }
+
+  objectKeys(items: IMap<T>): string[] {
+    if (items) {
+      return Object.keys(items);
+    }
+    return [];
   }
 
   httpGet(uri: string): Promise<Response> {
@@ -40,13 +58,24 @@ export abstract class ItemsComponent<T extends IItem> implements OnInit {
 
   async getItems(itemParameters?: string): Promise<void> {
     const parameters: string = itemParameters ? itemParameters : '';
-    await this.httpGet(`/${this.itemType}${parameters}`)
-      .then(response => {
-        const json: IMap<T> = response.json();
-        this.itemIds = Object.keys(json);
-        this.items = json;
-      });
+    // await this.httpGet(`/${this.itemType}${parameters}`)
+    //   .then(response => {
+    //     const json: IMap<T> = response.json();
+    //     this.itemIds = Object.keys(json);
+    //     this.items = json;
+    //   });
+    const json: IMap<T> = await this.itemService.getItem(this.itemType, parameters);
+    if (json) {
+      this.itemIds = Object.keys(json);
+      this.items = json;
+    }
   }
+
+  onEditClicked(itemId: string): void {
+
+  }
+  //////////// Old stuff ////////////
+
 
   onSelect(itemId: string): Promise<Response> {
     console.log(`${this.constructor.name}: onSelect called with itemId: ${itemId}`);

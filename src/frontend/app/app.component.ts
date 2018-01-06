@@ -10,18 +10,18 @@ import '../assets/bootstrap.override.css';
 
 @Component({
   // moduleId: module.id,
-  selector: 'app-root',
+  selector: 'root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
-  private static lights: Tab = new Tab(0, 'Lights', 'app-lights');
-  private static scenes: Tab = new Tab(1, 'Scenes', 'app-scenes').setActive(true);
-  private static groups: Tab = new Tab(2, 'Groups', 'app-groups');
-  private static schedules: Tab = new Tab(3, 'Schedules', 'app-schedules');
-  private static sensors: Tab = new Tab(4, 'Sensors', 'app-sensors');
-  private static rules: Tab = new Tab(5, 'Rules', 'app-rules');
-  private static plugs: Tab = new Tab(6, 'Plugs', 'app-plugs');
+  private static lights: Tab = new Tab(0, 'Lights', 'lights');
+  private static scenes: Tab = new Tab(1, 'Scenes', 'scenes').setActive(true);
+  private static groups: Tab = new Tab(2, 'Groups', 'groups');
+  private static schedules: Tab = new Tab(3, 'Schedules', 'schedules');
+  private static sensors: Tab = new Tab(4, 'Sensors', 'sensors');
+  private static rules: Tab = new Tab(5, 'Rules', 'rules');
+  private static plugs: Tab = new Tab(6, 'Plugs', 'plugs');
   tabs: Tab[];
   title: string = 'home-dashboard';
   bunyanLogger: any;
@@ -48,7 +48,7 @@ export class AppComponent implements OnInit {
     this.getTabs();
     this.bunyanLogger.info({ tabs: this.tabSet.tabs }, 'init tabSet');
     // this.tabSet.tabs[AppComponent.scenes.id].active = true;
-    this.router.navigate(['app-scenes']);
+    this.router.navigate(['scenes']);
   }
 
 

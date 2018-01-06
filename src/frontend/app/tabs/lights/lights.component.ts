@@ -5,17 +5,18 @@ import { ItemsComponent } from '../common/items.component';
 
 import 'rxjs/add/operator/toPromise';
 import ILight from '../../../../common/interfaces/ILight';
+import { ItemService } from 'frontend/app/service/item.service';
 
 @Component({
   // moduleId: module.id,
-  selector: 'app-lights',
+  selector: 'lights',
   templateUrl: '../common/items.component.html',
 })
 export class LightsComponent extends ItemsComponent<ILight> implements OnInit {
   itemType: string = 'lights';
 
-  constructor(http: Http) {
-    super(http);
+  constructor(http: Http, itemService: ItemService) {
+    super(http, itemService);
   }
 
   onSelect(itemId: string): Promise<Response> {

@@ -1,0 +1,15 @@
+<div fxLayout="column">
+  <div *ngFor="let key of objectKeys(item)">
+    <div *ngIf="isStringOrNumber(item[key])"
+         fxLayout="row">
+      <label fxFlexOffset="3">{{key}}: </label>
+      <input value="{{item[key]}}">
+    </div>
+    <div *ngIf="!isStringOrNumber(item[key])"
+         fxLayout="row">
+      <label fxFlexOffset="3">{{key}}: </label>
+      <app-item-display [(item)]="item[key]">
+      </app-item-display>
+    </div>
+  </div>
+</div>

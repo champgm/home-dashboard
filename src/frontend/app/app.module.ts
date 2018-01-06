@@ -7,6 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { TabsModule } from 'ngx-bootstrap/tabs';
 import { ButtonsModule } from 'ngx-bootstrap';
 import { ModalModule } from 'ngx-bootstrap';
+import { FlexLayoutModule } from '@angular/flex-layout';
 
 import { AppRoutingModule } from './app-routing.module';
 import { GroupsComponent } from './tabs/groups/groups.component';
@@ -18,6 +19,10 @@ import { SchedulesComponent } from './tabs/schedules/schedules.component';
 import { SensorsComponent } from './tabs/sensors/sensors.component';
 
 import { AppComponent } from './app.component';
+import { EditableItemComponent } from './editable-item/editable-item.component';
+import { ItemEditorComponent } from './item-editor/item-editor.component';
+import { ItemService } from 'frontend/app/service/item.service';
+import { ItemDisplayComponent } from './item-display/item-display.component';
 
 @NgModule({
   imports: [
@@ -27,6 +32,7 @@ import { AppComponent } from './app.component';
     FormsModule,
     TabsModule.forRoot(),
     ButtonsModule.forRoot(),
+    FlexLayoutModule,
     ModalModule.forRoot()
   ],
   declarations: [
@@ -37,9 +43,12 @@ import { AppComponent } from './app.component';
     RulesComponent,
     ScenesComponent,
     SchedulesComponent,
-    SensorsComponent
+    SensorsComponent,
+    EditableItemComponent,
+    ItemEditorComponent,
+    ItemDisplayComponent
   ],
-  providers: [{ provide: LocationStrategy, useClass: HashLocationStrategy }],
+  providers: [ItemService, { provide: LocationStrategy, useClass: HashLocationStrategy }],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

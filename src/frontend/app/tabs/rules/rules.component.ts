@@ -5,16 +5,17 @@ import { ItemsComponent } from '../common/items.component';
 
 import 'rxjs/add/operator/toPromise';
 import IRule from '../../../../common/interfaces/IRule';
+import { ItemService } from 'frontend/app/service/item.service';
 
 @Component({
   // moduleId: module.id,
-  selector: 'app-rules',
+  selector: 'rules',
   templateUrl: '../common/items.component.html',
 })
 export class RulesComponent extends ItemsComponent<IRule> implements OnInit {
   itemType: string = 'rules';
 
-  constructor(http: Http) {
-    super(http);
+  constructor(http: Http, itemService: ItemService) {
+    super(http, itemService);
   }
 }

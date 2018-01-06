@@ -5,16 +5,17 @@ import { ItemsComponent } from '../common/items.component';
 
 import 'rxjs/add/operator/toPromise';
 import IPlug from '../../../../common/interfaces/IPlug';
+import { ItemService } from 'frontend/app/service/item.service';
 
 @Component({
   // moduleId: module.id,
-  selector: 'app-plugs',
+  selector: 'plugs',
   templateUrl: '../common/items.component.html',
 })
 export class PlugsComponent extends ItemsComponent<IPlug> implements OnInit {
   itemType: string = 'plugs';
 
-  constructor(http: Http) {
-    super(http);
+  constructor(http: Http, itemService: ItemService) {
+    super(http, itemService);
   }
 }

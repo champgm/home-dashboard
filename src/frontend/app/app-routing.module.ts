@@ -8,47 +8,52 @@ import { SensorsComponent } from './tabs/sensors/sensors.component';
 import { ScenesComponent } from './tabs/scenes/scenes.component';
 import { LightsComponent } from './tabs/lights/lights.component';
 import { AppComponent } from './app.component';
+import { ItemEditorComponent } from 'frontend/app/item-editor/item-editor.component';
 
 const angular: string = 'angular/';
 const routes: Routes = [
   {
-    path: 'app-groups',
+    path: 'groups',
     component: GroupsComponent
   },
   {
-    path: 'app-lights',
+    path: 'lights',
     component: LightsComponent
   },
   {
-    path: 'app-plugs',
+    path: 'plugs',
     component: PlugsComponent
   },
   {
-    path: 'app-scenes',
+    path: 'scenes',
     component: ScenesComponent
+  }, {
+    path: 'scenes/:id',
+    component: ItemEditorComponent
   },
   {
-    path: 'app-schedules',
+    path: 'schedules',
     component: SchedulesComponent
   },
   {
-    path: 'app-sensors',
+    path: 'sensors',
     component: SensorsComponent
   },
   {
-    path: 'app-rules',
+    path: 'rules',
     component: RulesComponent
   },
   {
-    path: 'app-app',
+    path: 'app',
     component: AppComponent
   },
   // {
-  //   path: 'app-edit/:itemId',
+  //   path: 'edit/:itemId',
   //   component: HeroDetailComponent
   // },
   {
-    path: 'app-',
+    // path: '',
+    path: '',
     redirectTo: '/scenes',
     pathMatch: 'full'
   }

@@ -4,16 +4,17 @@ import { Http } from '@angular/http';
 import { ItemsComponent } from '../common/items.component';
 import 'rxjs/add/operator/toPromise';
 import IGroup from '../../../../common/interfaces/IGroup';
+import { ItemService } from 'frontend/app/service/item.service';
 
 @Component({
   // moduleId: module.id,
-  selector: 'app-groups',
+  selector: 'groups',
   templateUrl: '../common/items.component.html',
 })
 export class GroupsComponent extends ItemsComponent<IGroup> implements OnInit {
   itemType: string = 'groups';
 
-  constructor(http: Http) {
-    super(http);
+  constructor(http: Http, itemService: ItemService) {
+    super(http, itemService);
   }
 }

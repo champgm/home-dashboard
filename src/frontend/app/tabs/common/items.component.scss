@@ -1,0 +1,20 @@
+$tablet: 768px;
+$gt-tablet: 769px;
+
+.real-wide {
+    display: flex;
+
+    @media only screen and (max-width: $tablet) {
+        width: 80%;
+        max-width: 80%;
+    }
+
+    @media only screen and (min-width: $gt-tablet) {
+        width: 50%;
+        max-width: 50%;
+    }
+}
+
+.setwidth {
+    width: 60%;
+}
