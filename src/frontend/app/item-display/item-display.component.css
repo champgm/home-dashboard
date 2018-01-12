@@ -1,0 +1,6 @@
+input {
+    min-width: 300px !important;
+    max-width: 99.99% !important;
+    transition: width 0.25s;
+    text-align: center;
+}

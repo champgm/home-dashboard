@@ -42,8 +42,6 @@ export default class WebApplication {
   }
 
   start(): void {
-    this.routeStaticEndpoints();
-
     // Set possible URL parameters
     this.application.param('itemId', (request: any, response: any, next: any, itemId: string) => {
       request.itemId = itemId;
@@ -57,6 +55,7 @@ export default class WebApplication {
     this.application = routeScenes(this.controllers.sceneController, this.application);
     this.application = routeSensors(this.controllers.sensorController, this.application);
     this.application = routeSchedules(this.controllers.scheduleController, this.application);
+    this.routeStaticEndpoints();
 
     // Start the local server
     bunyanLogger.info('Starting Hue application...');
@@ -65,32 +64,37 @@ export default class WebApplication {
         bunyanLogger.info({ port: this.port }, 'Hue Application listening.');
       });
     } catch (caughtError) {
-      logger.error({ keys: Object.getOwnPropertyNames(caughtError) }, 'error keys');
+      bunyanLogger.error({ keys: Object.getOwnPropertyNames(caughtError) }, 'error keys');
       const error: any = {
         message: caughtError.message,
         type: caughtError.type,
         stack: caughtError.stack
       };
-      logger.error({ error }, 'An unhandled error was caught.');
+      bunyanLogger.error({ error }, 'An unhandled error was caught.');
     }
   }
 
   routeStaticEndpoints(): void {
-    // Add the webapp folder as static content. This contains the app UI.
-    const webAppFolder: string = path.join(__dirname, '../../../../dist');
-    bunyanLogger.info({ webAppFolder }, 'Static content will be read.');
-    this.application.use('/', express.static(webAppFolder));
 
     // Add the documentation folder as static content. This contains the doc UI.
     const docFolder: string = path.join(__dirname, '../../documentation');
     bunyanLogger.info({ docFolder }, 'Documenation content will be read.');
     this.application.use('/documentation', express.static(docFolder));
 
+    // Add the webapp folder as static content. This contains the app UI.
+    const webAppFolder: string = path.join(__dirname, '../../../../dist');
+    bunyanLogger.info({ webAppFolder }, 'Static content will be read.');
+    this.application.use('/', express.static(webAppFolder));
+
+    const indexFile: string = path.join(__dirname, '../../../../dist/index.html');
+    bunyanLogger.info({ indexFile }, 'Fallback content will be read.');
+    this.application.use('/*', express.static(webAppFolder));
+
     // It needs to access the node_modules.
     // I really haven't found a better way to do this.
-    const nodeModulesFolder: string = path.join(__dirname, '../../../../node_modules');
-    bunyanLogger.info({ nodeModulesFolder }, 'Node Modules content will be read.');
-    this.application.use('/node_modules', express.static(nodeModulesFolder));
+    // const nodeModulesFolder: string = path.join(__dirname, '../../../../node_modules');
+    // bunyanLogger.info({ nodeModulesFolder }, 'Node Modules content will be read.');
+    // this.application.use('/node_modules', express.static(nodeModulesFolder));
   }
 
 

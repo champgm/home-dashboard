@@ -2,7 +2,7 @@ import * as bunyan from 'bunyan';
 import * as path from 'path';
 import * as core from 'express-serve-static-core';
 import { LoggerParent } from '../../../logger/logger';
-import CommonController from 'routing/controllers/CommonController';
+import CommonController from '../../controllers/CommonController';
 import IItem from '../../../../common/interfaces/IItem';
 import IMap from '../../../../common/interfaces/IMap';
 const bunyanLogger: bunyan = LoggerParent.child({ fileName: `${path.basename(__filename)}` });
@@ -18,13 +18,13 @@ export default function routeCommon<T extends CommonController<IItem>>(itemType:
       response.json(items);
       bunyanLogger.info('Request handled.');
     } catch (caughtError) {
-      logger.error({ keys: Object.getOwnPropertyNames(caughtError) }, 'error keys');
+      bunyanLogger.error({ keys: Object.getOwnPropertyNames(caughtError) }, 'error keys');
       const error: any = {
         message: caughtError.message,
         type: caughtError.type,
         stack: caughtError.stack
       };
-      logger.error({ error }, 'An unhandled error was caught.');
+      bunyanLogger.error({ error }, 'An unhandled error was caught.');
     }
   });
 

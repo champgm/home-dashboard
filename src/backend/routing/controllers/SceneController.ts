@@ -44,7 +44,6 @@ export default class SceneController extends CommonController<IScene> {
     // Now, we need to record each light's ID INSIDE of the light.
     // While we do this, we might as well do the V2 filtering as well.
     // For each top-level attribute (which, if it's what we're looking for, will be a scene ID)
-    bunyanLogger.info({ sceneKeys: Object.keys(scenes) }, 'Scene keys found');
     Object.keys(scenes).forEach((sceneId) => {
       // Check to make sure it's a real attribute and not some weird superclass attribute
       const scene: IScene = scenes[sceneId];
@@ -54,7 +53,7 @@ export default class SceneController extends CommonController<IScene> {
         if (scene.version === 2) {
           resultScenes[sceneId] = scenes[sceneId];
         } else {
-          bunyanLogger.info({ sceneVersion: scene.version || 'undefined' }, 'Scene version was not 2');
+          // bunyanLogger.info({ sceneVersion: scene.version || 'undefined' }, 'Scene version was not 2');
         }
       } else {
         resultScenes[sceneId] = scenes[sceneId];

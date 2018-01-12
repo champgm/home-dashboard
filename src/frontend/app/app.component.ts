@@ -1,7 +1,7 @@
 import { Component, ViewChild } from '@angular/core';
-import { TabsetComponent } from 'ngx-bootstrap';
+import { TabsetComponent, TabsetConfig } from 'ngx-bootstrap';
 import { OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, NavigationEnd } from '@angular/router';
 import { Tab } from './models/tab.model';
 import { createLogger } from 'browser-bunyan';
 
@@ -15,13 +15,7 @@ import '../assets/bootstrap.override.css';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
-  private static lights: Tab = new Tab(0, 'Lights', 'lights');
-  private static scenes: Tab = new Tab(1, 'Scenes', 'scenes').setActive(true);
-  private static groups: Tab = new Tab(2, 'Groups', 'groups');
-  private static schedules: Tab = new Tab(3, 'Schedules', 'schedules');
-  private static sensors: Tab = new Tab(4, 'Sensors', 'sensors');
-  private static rules: Tab = new Tab(5, 'Rules', 'rules');
-  private static plugs: Tab = new Tab(6, 'Plugs', 'plugs');
+
   tabs: Tab[];
   title: string = 'home-dashboard';
   bunyanLogger: any;
@@ -33,34 +27,38 @@ export class AppComponent implements OnInit {
   }
 
   onSelect(tab: Tab): void {
+    // console.log(`this.router.url: ${this.router.url}`);
     this.bunyanLogger.info({ tab }, 'tab selected');
-    // this.tabSet.tabs[tab.id].active = true;
     this.router.navigate([tab.routing]);
   }
 
-  onDeselect(tab: Tab): void {
-    // this.bunyanLogger.info({ tabs: this.tabSet.tabs }, 'deselct tabSet');
-    // this.tabSet.tabs[tab.id].active = false;
-    // this.router.navigate([tab.routing]);
-  }
-
   ngOnInit(): void {
-    this.getTabs();
-    this.bunyanLogger.info({ tabs: this.tabSet.tabs }, 'init tabSet');
-    // this.tabSet.tabs[AppComponent.scenes.id].active = true;
-    this.router.navigate(['scenes']);
-  }
+    const scenes: Tab = new Tab(0, 'Scenes', 'scenes', true);
+    const lights: Tab = new Tab(1, 'Lights', 'lights', false);
+    const groups: Tab = new Tab(2, 'Groups', 'groups', false);
+    const schedules: Tab = new Tab(3, 'Schedules', 'schedules', false);
+    const sensors: Tab = new Tab(4, 'Sensors', 'sensors', false);
+    const rules: Tab = new Tab(5, 'Rules', 'rules', false);
+    const plugs: Tab = new Tab(6, 'Plugs', 'plugs', false);
 
+    const checkTabs: Tab[] = [
+      scenes,
+      lights,
+      groups,
+      schedules,
+      sensors,
+      rules,
+      plugs
+    ];
 
-  getTabs(): void {
     this.tabs = [
-      AppComponent.lights,
-      AppComponent.scenes,
-      AppComponent.groups,
-      AppComponent.schedules,
-      AppComponent.sensors,
-      AppComponent.rules,
-      AppComponent.plugs
+      scenes,
+      lights,
+      groups,
+      schedules,
+      sensors,
+      rules,
+      plugs
     ];
   }
 }

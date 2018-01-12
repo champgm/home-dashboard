@@ -23,6 +23,7 @@ import { EditableItemComponent } from './editable-item/editable-item.component';
 import { ItemEditorComponent } from './item-editor/item-editor.component';
 import { ItemService } from 'frontend/app/service/item.service';
 import { ItemDisplayComponent } from './item-display/item-display.component';
+import { AutoExpandDirective } from './directive/auto-expand.directive';
 
 @NgModule({
   imports: [
@@ -46,9 +47,13 @@ import { ItemDisplayComponent } from './item-display/item-display.component';
     SensorsComponent,
     EditableItemComponent,
     ItemEditorComponent,
-    ItemDisplayComponent
+    ItemDisplayComponent,
+    AutoExpandDirective
   ],
-  providers: [ItemService, { provide: LocationStrategy, useClass: HashLocationStrategy }],
+  providers: [
+    ItemService,
+    { provide: LocationStrategy, useClass: HashLocationStrategy }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

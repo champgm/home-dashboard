@@ -1,15 +1,26 @@
-<div fxLayout="column">
-  <div *ngFor="let key of objectKeys(item)">
-    <div *ngIf="isStringOrNumber(item[key])"
-         fxLayout="row">
-      <label fxFlexOffset="3">{{key}}: </label>
-      <input value="{{item[key]}}">
-    </div>
-    <div *ngIf="!isStringOrNumber(item[key])"
-         fxLayout="row">
-      <label fxFlexOffset="3">{{key}}: </label>
-      <app-item-display [(item)]="item[key]">
-      </app-item-display>
+<div fxLayout="column"
+     fxLayoutAlign="center center">
+  <div fxLayout="column">
+    <div *ngFor="let key of objectKeys(item)">
+      <div *ngIf="shouldDisplay(key)">
+        <div *ngIf="isStringOrNumber(item[key])"
+             fxLayout="row">
+          <label fxFlexOffset="2">{{key}}:</label>
+          <input *ngIf="canEdit(key)"
+                 fxFlexOffset="2"
+                 [(value)]="item[key]"
+                 (keydown)="updateSize($event)">
+          <label *ngIf="!canEdit(key)"
+                 fxFlexOffset="2">{{item[key]}}</label>
+        </div>
+        <div *ngIf="!isStringOrNumber(item[key])"
+             fxLayout="row">
+          <label fxFlexOffset="2">{{key}}: </label>
+          <app-item-display fxFlexOffset="2"
+                            [(item)]="item[key]">
+          </app-item-display>
+        </div>
+      </div>
     </div>
   </div>
 </div>

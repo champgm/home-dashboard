@@ -12,7 +12,7 @@
             #tabSet>
       <tab *ngFor="let tab of tabs"
            [heading]="tab.title"
-           [active]="tab.active"
+           [active]="tab.shouldBeSelected"
            (select)="onSelect(tab)"
            (deselect)="tab.active = false">
       </tab>

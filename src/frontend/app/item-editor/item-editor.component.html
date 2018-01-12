@@ -1,1 +1,19 @@
-<app-item-display [(item)]="item"></app-item-display>
+<div fxLayout="column"
+     fxLayoutAlign="center center"
+     fxLayoutGap="1%">
+  <app-item-display [(item)]="item"></app-item-display>
+
+  <div class="btn-group"
+       fxLayout="row"
+       fxLayoutAlign="center center">
+    <button type="button"
+            class="btn btn-warning">
+      Cancel
+    </button>
+    <button type="button"
+            class="btn btn-primary"
+            (click)="onEdit()">
+      Submit
+    </button>
+  </div>
+</div>

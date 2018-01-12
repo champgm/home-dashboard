@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as core from 'express-serve-static-core';
 import * as bunyan from 'bunyan';
 import { LoggerParent } from '../../../logger/logger';
-import PlugController from 'routing/controllers/PlugController';
+import PlugController from '../../controllers/PlugController';
 import routeCommon from './RouteCommon';
 import routeSelect from './RouteSelect';
 import IState from '../../../../common/interfaces/IState';

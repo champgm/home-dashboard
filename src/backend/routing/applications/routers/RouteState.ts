@@ -2,7 +2,7 @@ import { LoggerParent } from '../../../logger/logger';
 import * as bunyan from 'bunyan';
 import * as core from 'express-serve-static-core';
 import * as path from 'path';
-import CommonController from 'routing/controllers/CommonController';
+import CommonController from '../../controllers/CommonController';
 import IItem from '../../../../common/interfaces/IItem';
 import IState from '../../../../common/interfaces/IState';
 const bunyanLogger: bunyan = LoggerParent.child({ fileName: `${path.basename(__filename)}` });

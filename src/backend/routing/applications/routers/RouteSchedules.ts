@@ -3,7 +3,7 @@ import * as bunyan from 'bunyan';
 import * as core from 'express-serve-static-core';
 import * as path from 'path';
 import routeCommon from './RouteCommon';
-import ScheduleController from 'routing/controllers/ScheduleController';
+import ScheduleController from '../../controllers/ScheduleController';
 
 const bunyanLogger: bunyan = LoggerParent.child({ fileName: `${path.basename(__filename)}` });
 const itemType: string = 'schedules';

@@ -1,8 +1,11 @@
+import { ActivatedRoute, Router } from '@angular/router';
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { Location } from '@angular/common';
-import IItem from 'common/interfaces/IItem';
-import { ActivatedRoute, Router } from '@angular/router';
 import * as bunyan from 'browser-bunyan';
+import * as traverse from 'traverse';
+import IItem from 'common/interfaces/IItem';
+import ItemUtil from 'common/util/ItemUtil';
+import ObjectUtil from 'common/util/ObjectUtil';
 
 @Component({
   selector: 'app-editable-item',
@@ -16,23 +19,23 @@ export class EditableItemComponent implements OnInit {
   @Output() onEditClicked: EventEmitter<string> = new EventEmitter<string>();
 
   constructor(private router: Router) {
-    this.bunyanLogger = bunyan.createLogger({ name: 'Item Display' });
+    this.bunyanLogger = bunyan.createLogger({ name: 'Editable Item' });
   }
 
   ngOnInit(): void {
-    this.bunyanLogger.info({ item: this.item }, 'item');
+    this.item = this.redact(this.item);
   }
 
   onEdit(): void {
     this.router.navigateByUrl(`/${this.itemType}/${this.item.id}`);
   }
 
-  redact(context: any): any {
-    const traversable: any = traverse(context);
-    return traversable.map(function(value: any): any {
-      if (ObjectUtils.notEmpty(this.key) &&
-        CandidateLogger.ForbiddenFields.indexOf(this.key.toLowerCase()) > -1) {
-        this.update('[ REDACTED ]');
+  redact(item: any): any {
+    const traversable: any = traverse(item);
+    return traversable.map(function (value: any): any {
+      if (ObjectUtil.notEmpty(this.key) &&
+        ItemUtil.getFieldsToRedact().indexOf(this.key.toLowerCase()) > -1) {
+        this.update(undefined);
       }
     });
   }

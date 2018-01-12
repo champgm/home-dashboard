@@ -36,6 +36,7 @@ export class ItemEditorComponent implements OnInit {
     if (this.item) {
       return Object.keys(this.item);
     }
+    return [];
   }
 
   isStringOrNumber(variable: any): boolean {

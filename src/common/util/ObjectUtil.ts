@@ -1,19 +1,19 @@
 import * as _ from 'lodash';
 
-export default class ObjectUtils {
+export default class ObjectUtil {
   public static isArrayEmpty(arrayObj: any[]): boolean {
-    if (ObjectUtils.isNull(arrayObj) || (arrayObj.constructor === Array && arrayObj.length === 0)) {
+    if (ObjectUtil.isNull(arrayObj) || (arrayObj.constructor === Array && arrayObj.length === 0)) {
       return true;
     }
     if (arrayObj instanceof Array) {
-      const value: any = arrayObj.find((element: any) => !ObjectUtils.isNull(element));
-      return ObjectUtils.isNull(value);
+      const value: any = arrayObj.find((element: any) => !ObjectUtil.isNull(element));
+      return ObjectUtil.isNull(value);
     }
     return false;
   }
 
   public static isEmptyObject(obj: any): boolean {
-    if (ObjectUtils.isNull(obj)) {
+    if (ObjectUtil.isNull(obj)) {
       return true;
     }
     return Object.keys(obj).length === 0 && obj.constructor === Object;
@@ -35,7 +35,7 @@ export default class ObjectUtils {
   }
 
   public static isEmptyString(strVal: string): boolean {
-    if (ObjectUtils.isNull(strVal)) {
+    if (ObjectUtil.isNull(strVal)) {
       return true;
     }
     if (!_.isString(strVal)) {
@@ -46,12 +46,12 @@ export default class ObjectUtils {
   }
 
   public static notEmpty(object: any): boolean {
-    return !ObjectUtils.isEmpty(object);
+    return !ObjectUtil.isEmpty(object);
   }
 
   public static isEmpty(object: any): boolean {
-    return ObjectUtils.isEmptyString(object) ||
-      ObjectUtils.isEmptyObject(object) ||
-      ObjectUtils.isArrayEmpty(object);
+    return ObjectUtil.isEmptyString(object) ||
+      ObjectUtil.isEmptyObject(object) ||
+      ObjectUtil.isArrayEmpty(object);
   }
 }

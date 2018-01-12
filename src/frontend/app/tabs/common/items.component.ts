@@ -7,6 +7,8 @@ import IItem from '../../../../common/interfaces/IItem';
 import IMap from 'common/interfaces/IMap';
 import { createLogger } from 'browser-bunyan';
 import { ItemService } from 'frontend/app/service/item.service';
+import ObjectUtil from 'common/util/ObjectUtil';
+import ItemUtil from 'common/util/ItemUtil';
 
 @Component({
   selector: 'app-items',
@@ -46,10 +48,7 @@ export abstract class ItemsComponent<T extends IItem> implements OnInit {
   }
 
   objectKeys(items: IMap<T>): string[] {
-    if (items) {
-      return Object.keys(items);
-    }
-    return [];
+    return ItemUtil.getKeysSortedByName(items);
   }
 
   httpGet(uri: string): Promise<Response> {
@@ -68,6 +67,10 @@ export abstract class ItemsComponent<T extends IItem> implements OnInit {
     if (json) {
       this.itemIds = Object.keys(json);
       this.items = json;
+      const maximum: number = this.itemIds.length;
+      for (let index: number = 0; index < maximum; index++) {
+        const current: string = this.itemIds[index];
+      }
     }
   }
 

@@ -11,52 +11,26 @@ import { AppComponent } from './app.component';
 import { ItemEditorComponent } from 'frontend/app/item-editor/item-editor.component';
 
 const angular: string = 'angular/';
+
+// http://localhost:1981/#/scenes/ERgF0PTi-61fWYb
+
 const routes: Routes = [
-  {
-    path: 'groups',
-    component: GroupsComponent
-  },
-  {
-    path: 'lights',
-    component: LightsComponent
-  },
-  {
-    path: 'plugs',
-    component: PlugsComponent
-  },
-  {
-    path: 'scenes',
-    component: ScenesComponent
-  }, {
-    path: 'scenes/:id',
-    component: ItemEditorComponent
-  },
-  {
-    path: 'schedules',
-    component: SchedulesComponent
-  },
-  {
-    path: 'sensors',
-    component: SensorsComponent
-  },
-  {
-    path: 'rules',
-    component: RulesComponent
-  },
-  {
-    path: 'app',
-    component: AppComponent
-  },
-  // {
-  //   path: 'edit/:itemId',
-  //   component: HeroDetailComponent
-  // },
-  {
-    // path: '',
-    path: '',
-    redirectTo: '/scenes',
-    pathMatch: 'full'
-  }
+  { path: 'groups/:id', component: ItemEditorComponent },
+  { path: 'lights/:id', component: ItemEditorComponent },
+  { path: 'plugs/:id', component: ItemEditorComponent },
+  { path: 'rules/:id', component: ItemEditorComponent },
+  { path: 'scenes/:id', component: ItemEditorComponent },
+  { path: 'schedules/:id', component: ItemEditorComponent },
+  { path: 'sensors/:id', component: ItemEditorComponent },
+  { path: 'groups', component: GroupsComponent },
+  { path: 'lights', component: LightsComponent },
+  { path: 'plugs', component: PlugsComponent },
+  { path: 'rules', component: RulesComponent },
+  { path: 'scenes', component: ScenesComponent },
+  { path: 'schedules', component: SchedulesComponent },
+  { path: 'sensors', component: SensorsComponent },
+  { path: 'app', component: AppComponent },
+  { path: '', redirectTo: 'scenes', pathMatch: 'full' }
 ];
 
 @NgModule({
