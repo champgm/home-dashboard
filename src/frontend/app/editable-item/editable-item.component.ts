@@ -34,7 +34,7 @@ export class EditableItemComponent implements OnInit {
     const traversable: any = traverse(item);
     return traversable.map(function (value: any): any {
       if (ObjectUtil.notEmpty(this.key) &&
-        ItemUtil.getFieldsToRedact().indexOf(this.key.toLowerCase()) > -1) {
+        ItemUtil.fieldsToRedact.indexOf(this.key.toLowerCase()) > -1) {
         this.update(undefined);
       }
     });

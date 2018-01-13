@@ -6,21 +6,82 @@
         <div *ngIf="isStringOrNumber(item[key])"
              fxLayout="row">
           <label fxFlexOffset="2">{{key}}:</label>
-          <input *ngIf="canEdit(key)"
+          <input *ngIf="canEdit(key) && isStringOrNumber(item[key]) && !isBoolean(item[key])"
                  fxFlexOffset="2"
                  [(value)]="item[key]"
                  (keydown)="updateSize($event)">
+          <label class="btn-xs btn-primary"
+                 *ngIf="canEdit(key) && isBoolean(item[key])"
+                 fxFlexOffset="4"
+                 (click)=toggle(key)>{{item[key]}}</label>
           <label *ngIf="!canEdit(key)"
                  fxFlexOffset="2">{{item[key]}}</label>
+          <label *ngIf="isEditableArray(item)"
+                 class="btn-xs btn-primary"
+                 fxFlexOffset="2"
+                 (click)=removeItem(key)>-</label>
         </div>
         <div *ngIf="!isStringOrNumber(item[key])"
              fxLayout="row">
           <label fxFlexOffset="2">{{key}}: </label>
           <app-item-display fxFlexOffset="2"
+                            [key]="key"
+                            [itemType]="itemType"
+                            [allUneditable]="allUneditable"
+                            [(originalItemId)]="originalItemId"
                             [(item)]="item[key]">
           </app-item-display>
         </div>
       </div>
     </div>
+    <div *ngIf="isState(key)"
+         class="btn-group"
+         fxLayout="row"
+         fxLayoutAlign="center center">
+      <button type="button"
+              class="btn-sm btn-primary"
+              (click)="onResetState()">
+        Reset State
+      </button>
+      <button type="button"
+              class="btn-sm btn-success"
+              (click)="onSubmitState(submitStateModal)">
+        Submit State
+      </button>
+    </div>
+    <div *ngIf="isEditableArray(item)"
+         fxFlexOffset="2"
+         fxLayout="row"
+         fxLayoutAlign="none center">
+      <label class="btn-xs btn-primary"
+             fxFlexOffset="8"
+             fxFlex="none"
+             (click)=addItem()>+</label>
+    </div>
   </div>
 </div>
+
+<ng-template #submitStateModal>
+  <div class="modal-header">
+    <h4 class="modal-title pull-left">Submission Results</h4>
+    <button type="button"
+            class="close pull-right"
+            aria-label="Close"
+            (click)="modalRef.hide()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div fxLayout="column"
+         fxLayoutAlign="center center">
+      <div *ngFor="let error of submitStateResults.errors">
+        There was a problem setting a value to address '{{error.address}}': {{error.description}}
+      </div>
+      <div *ngFor="let success of submitStateResults.successes">
+        <div *ngFor="let key of objectKeys(success)">
+          '{{key}}' was successfully set to '{{success[key]}}'
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-template>

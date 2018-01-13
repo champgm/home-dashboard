@@ -1,4 +1,5 @@
 import * as bunyan from 'bunyan';
+import * as makeRequest from 'request-promise';
 import UtilityScenes from './utilities/UtilityScenes';
 import LightController from './LightController';
 import CommonController from './CommonController';
@@ -18,6 +19,12 @@ export default class SceneController extends CommonController<IScene> {
   constructor(bridgeUri: string) {
     super(type, bridgeUri, bunyanLogger);
     this.lightController = new LightController(bridgeUri);
+  }
+
+  async get(id: string): Promise<IScene> {
+    const scene: IScene = await super.get(id);
+    scene.storelightstate = false;
+    return scene;
   }
 
   async getAll(v2ScenesRequested?: boolean): Promise<IMap<IScene>> {
@@ -96,6 +103,16 @@ export default class SceneController extends CommonController<IScene> {
       // Return the current state of the scene
       return { on: true };
     }
+  }
+
+  async update(itemId: string, json: any): Promise<IScene> {
+    const uri: string = `${this.type}/${itemId}`;
+    if (!json.storelightstate) {
+      delete json.storelightstate;
+    }
+    const putOptions: any = this.requestOptionsUtil.putWithBody(uri, json);
+    const response: any = await makeRequest(putOptions);
+    return response;
   }
 
   setState(itemId: string, state: any): Promise<any> {

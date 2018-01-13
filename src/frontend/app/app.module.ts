@@ -8,6 +8,7 @@ import { TabsModule } from 'ngx-bootstrap/tabs';
 import { ButtonsModule } from 'ngx-bootstrap';
 import { ModalModule } from 'ngx-bootstrap';
 import { FlexLayoutModule } from '@angular/flex-layout';
+import {MatTabsModule} from '@angular/material/tabs';
 
 import { AppRoutingModule } from './app-routing.module';
 import { GroupsComponent } from './tabs/groups/groups.component';
@@ -27,6 +28,7 @@ import { AutoExpandDirective } from './directive/auto-expand.directive';
 
 @NgModule({
   imports: [
+    MatTabsModule,
     BrowserModule,
     AppRoutingModule,
     HttpModule,

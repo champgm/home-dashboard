@@ -8,5 +8,6 @@ export default interface IScene extends IItem {
   version: number;
   lightStates?: IMap<State>;
   name: string;
+  storelightstate?: boolean;
 }
 

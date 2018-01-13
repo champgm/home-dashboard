@@ -57,12 +57,6 @@ export abstract class ItemsComponent<T extends IItem> implements OnInit {
 
   async getItems(itemParameters?: string): Promise<void> {
     const parameters: string = itemParameters ? itemParameters : '';
-    // await this.httpGet(`/${this.itemType}${parameters}`)
-    //   .then(response => {
-    //     const json: IMap<T> = response.json();
-    //     this.itemIds = Object.keys(json);
-    //     this.items = json;
-    //   });
     const json: IMap<T> = await this.itemService.getItem(this.itemType, parameters);
     if (json) {
       this.itemIds = Object.keys(json);

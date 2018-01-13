@@ -27,13 +27,6 @@ export default abstract class CommonController<ItemType extends IItem> {
       item.id = key;
       itemMap[key] = item;
     });
-    // for (let index: number = 0; index < maximum; index++) {
-    //   const id: string = keysSortedByName[index];
-    //   const item: any = items[id];
-    //   item.id = id;
-    //   itemMap[id] = item;
-    // }
-
     return itemMap;
   }
 
@@ -41,6 +34,7 @@ export default abstract class CommonController<ItemType extends IItem> {
     const options: any = this.requestOptionsUtil.simpleGet(`${this.type}/${id}`);
     this.bunyanLogger.info({ options }, 'Will GET with options.');
     const item: any = await makeRequest(options);
+    item.id = id;
     return item;
   }
 

@@ -7,6 +7,8 @@ import { createLogger } from 'browser-bunyan';
 
 import '../assets/bootstrap.min.css';
 import '../assets/bootstrap.override.css';
+import { RouterLink } from '@angular/router/src/directives/router_link';
+import { ActivatedRoute } from '@angular/router/src/router_state';
 
 @Component({
   // moduleId: module.id,
@@ -15,6 +17,16 @@ import '../assets/bootstrap.override.css';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
+  activeLinkIndex: number ;
+  routeLinks: { label: string; link: string; }[] = [
+    { label: 'Scenes', link: 'scenes' },
+    { label: 'Lights', link: 'lights' },
+    { label: 'Groups', link: 'groups' },
+    { label: 'Schedules', link: 'schedules' },
+    { label: 'Sensors', link: 'sensors' },
+    { label: 'Rules', link: 'rules' },
+    { label: 'Plugs', link: 'plugs' }
+  ];
 
   tabs: Tab[];
   title: string = 'home-dashboard';
@@ -27,7 +39,6 @@ export class AppComponent implements OnInit {
   }
 
   onSelect(tab: Tab): void {
-    // console.log(`this.router.url: ${this.router.url}`);
     this.bunyanLogger.info({ tab }, 'tab selected');
     this.router.navigate([tab.routing]);
   }
