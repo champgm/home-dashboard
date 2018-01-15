@@ -26,6 +26,7 @@ export class ItemService {
         const json: IMap<IItem> = response.json();
         return json;
       });
+    this.bunyanLogger.info({ items }, 'Get item result');
     return items;
   }
 
@@ -45,7 +46,10 @@ export class ItemService {
   }
 
   async selectItem(itemType: string, itemId: string): Promise<Response> {
-    return this.httpGet(`/${itemType}/${itemId}/select`);
+    const response: Response = await this.httpGet(`/${itemType}/${itemId}/select`);
+    const unsortedResult: any[] = JSON.parse(response['_body']);
+    this.bunyanLogger.info({ unsortedResult }, 'Unsorted select result');
+    return response;
   }
 
   parseResponse(response: Response): { errors: any[], successes: any[], singleResult: any } {

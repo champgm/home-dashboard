@@ -1,5 +1,5 @@
 import { ActivatedRoute, Router } from '@angular/router';
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, ChangeDetectorRef, ApplicationRef } from '@angular/core';
 import { Location } from '@angular/common';
 import * as bunyan from 'browser-bunyan';
 import * as traverse from 'traverse';
@@ -18,10 +18,14 @@ export class EditableItemComponent implements OnInit {
   bunyanLogger: any;
   @Input() item: IItem;
   @Input() itemType: string;
-  // @Output() onEditClicked: EventEmitter<string> = new EventEmitter<string>();
-  // @Output() onSelectClicked: EventEmitter<string> = new EventEmitter<string>();
+  @Input() isSelected: boolean;
+  @Output() onSelectItem: EventEmitter<string> = new EventEmitter<string>();
 
-  constructor(private router: Router, private itemService: ItemService) {
+  constructor(
+    private router: Router,
+    private itemService: ItemService,
+    private applicationRef: ApplicationRef,
+    private changeDetectorRef: ChangeDetectorRef) {
     this.bunyanLogger = bunyan.createLogger({ name: 'Editable Item' });
   }
 
@@ -34,7 +38,17 @@ export class EditableItemComponent implements OnInit {
   }
 
   async onSelect(): Promise<Response> {
-    return this.itemService.selectItem(this.itemType, this.item.id);
+    const selectResponse: Response = await this.itemService.selectItem(this.itemType, this.item.id);
+    const newState: IItem = await this.itemService.getItem(this.itemType, this.item.id);
+    // this.item = newState;
+    this.item.state.on = newState.state.on;
+    this.bunyanLogger.info({ newState }, 'newState');
+    this.onSelectItem.emit(this.item.id);
+    this.changeDetectorRef.detectChanges();
+    this.applicationRef.tick();
+    this.bunyanLogger.info({ isSelected: this.isSelected }, 'isSelected');
+
+    return selectResponse;
   }
 
   redact(item: any): any {
