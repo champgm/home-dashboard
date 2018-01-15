@@ -8,6 +8,7 @@ import ItemUtil from 'common/util/ItemUtil';
 import ObjectUtil from 'common/util/ObjectUtil';
 
 
+
 const bunyanLogger: any = bunyan.createLogger({ name: 'Editable Item' });
 
 @Component({
@@ -49,7 +50,25 @@ export class ItemDisplayComponent implements OnInit {
   }
 
   isBoolean(variable: any): boolean {
-    return (variable === 'true' || variable === 'false');
+    return variable === 'true' ||
+      variable === 'false';
+  }
+
+  isBooleanToggle(key: any): boolean {
+    return this.canEdit(key) &&
+      this.isBoolean(this.item[key]);
+  }
+
+  isAlert(key: any): boolean {
+    return key === 'alert';
+  }
+
+  isEffect(key: any): boolean {
+    return key === 'effect';
+  }
+
+  isColorMode(key: any): boolean {
+    return key === 'colormode';
   }
 
   toggle(key: string): void {
@@ -89,6 +108,15 @@ export class ItemDisplayComponent implements OnInit {
 
   canEdit(key: string): boolean {
     return !(ItemUtil.uneditableFields.indexOf(key.toLowerCase()) > -1) && !this.allUneditable;
+  }
+
+  isEditableField(key: string): boolean {
+    return this.canEdit(key) &&
+      this.isStringOrNumber(this.item[key]) &&
+      !this.isBoolean(this.item[key]) &&
+      !this.isAlert(key) &&
+      !this.isEffect(key) &&
+      !this.isColorMode(key);
   }
 
   async onSubmitState(template: TemplateRef<any>): Promise<void> {
