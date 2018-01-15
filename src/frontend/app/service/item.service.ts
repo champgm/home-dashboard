@@ -29,12 +29,12 @@ export class ItemService {
     return items;
   }
 
-  async putState(itemType: string, state: any, originalItemId: string): Promise<{ errors: any[], successes: any[] }> {
+  async putState(itemType: string, state: any, originalItemId: string): Promise<{ errors: any[], successes: any[], singleResult: any }> {
     const editableFieldsOnly: any = this.removeUneditableFields(state);
     return await this.doPut(`${itemType}/${originalItemId}/state`, editableFieldsOnly);
   }
 
-  async putItem(itemType: string, item: IItem): Promise<{ errors: any[], successes: any[] }> {
+  async putItem(itemType: string, item: IItem): Promise<{ errors: any[], successes: any[], singleResult: any }> {
     const editableFieldsOnly: IItem = this.removeUneditableFields(item);
     return await this.doPut(`${itemType}/${item.id}`, editableFieldsOnly);
   }
@@ -44,18 +44,27 @@ export class ItemService {
     return this.parseResponse(response);
   }
 
-  parseResponse(response: Response): void {
-    const editResult: any[] = JSON.parse(response['_body']);
-    const sortedResults: any = { errors: [], successes: [] };
-    for (const result of editResult) {
-      if (result.error) {
-        sortedResults.errors = sortedResults.errors.concat(result.error);
+  async selectItem(itemType: string, itemId: string): Promise<Response> {
+    return this.httpGet(`/${itemType}/${itemId}/select`);
+  }
+
+  parseResponse(response: Response): { errors: any[], successes: any[], singleResult: any } {
+    const unsortedResult: any[] = JSON.parse(response['_body']);
+    this.bunyanLogger.info({ unsortedResult }, 'Unsorted edit result');
+    const sortedResults: any = { errors: [], successes: [], singleResult: {} };
+    if (Array.isArray(unsortedResult)) {
+      for (const result of unsortedResult) {
+        if (result.error) {
+          sortedResults.errors = sortedResults.errors.concat(result.error);
+        }
+        if (result.success) {
+          sortedResults.successes = sortedResults.successes.concat(result.success);
+        }
       }
-      if (result.success) {
-        sortedResults.successes = sortedResults.successes.concat(result.success);
-      }
+    } else {
+      sortedResults.singleResult = unsortedResult;
     }
-    this.bunyanLogger.info({ sortedResults }, 'sortedResults');
+    this.bunyanLogger.info({ sortedResults }, 'Sorted edit result');
     return sortedResults;
   }
 

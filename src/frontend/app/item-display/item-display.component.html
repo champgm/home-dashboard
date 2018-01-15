@@ -122,13 +122,12 @@
   <div class="modal-body">
     <div fxLayout="column"
          fxLayoutAlign="center center">
-      <div *ngFor="let error of submitStateResults.errors">
-        There was a problem setting a value to address '{{error.address}}': {{error.description}}
+      <div>
+        State values are now as follows:
       </div>
-      <div *ngFor="let success of submitStateResults.successes">
-        <div *ngFor="let key of objectKeys(success)">
-          '{{key}}' was successfully set to '{{success[key]}}'
-        </div>
+      <div *ngFor="let resultKey of objectKeys(submitStateResults.singleResult)">
+        <label fxFlexOffset="2">{{key}}:</label>
+        <label fxFlexOffset="2">{{item[key]}}</label>
       </div>
     </div>
   </div>

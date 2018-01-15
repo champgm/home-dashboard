@@ -6,6 +6,8 @@ import * as traverse from 'traverse';
 import IItem from 'common/interfaces/IItem';
 import ItemUtil from 'common/util/ItemUtil';
 import ObjectUtil from 'common/util/ObjectUtil';
+import { ItemService } from 'frontend/app/service/item.service';
+import { Response } from '@angular/http';
 
 @Component({
   selector: 'app-editable-item',
@@ -16,9 +18,10 @@ export class EditableItemComponent implements OnInit {
   bunyanLogger: any;
   @Input() item: IItem;
   @Input() itemType: string;
-  @Output() onEditClicked: EventEmitter<string> = new EventEmitter<string>();
+  // @Output() onEditClicked: EventEmitter<string> = new EventEmitter<string>();
+  // @Output() onSelectClicked: EventEmitter<string> = new EventEmitter<string>();
 
-  constructor(private router: Router) {
+  constructor(private router: Router, private itemService: ItemService) {
     this.bunyanLogger = bunyan.createLogger({ name: 'Editable Item' });
   }
 
@@ -28,6 +31,10 @@ export class EditableItemComponent implements OnInit {
 
   onEdit(): void {
     this.router.navigateByUrl(`/${this.itemType}/${this.item.id}`);
+  }
+
+  async onSelect(): Promise<Response> {
+    return this.itemService.selectItem(this.itemType, this.item.id);
   }
 
   redact(item: any): any {
