@@ -8,6 +8,8 @@ import ItemUtil from 'common/util/ItemUtil';
 import ObjectUtil from 'common/util/ObjectUtil';
 import { ItemService } from 'frontend/app/service/item.service';
 import { Response } from '@angular/http';
+import ILight from 'common/interfaces/ILight';
+import IMap from 'common/interfaces/IMap';
 
 @Component({
   selector: 'app-editable-item',
@@ -17,20 +19,19 @@ import { Response } from '@angular/http';
 export class EditableItemComponent implements OnInit {
   bunyanLogger: any;
   @Input() item: IItem;
+  // @Input() itemKey: string;
   @Input() itemType: string;
   @Input() isSelected: boolean;
-  @Output() onSelectItem: EventEmitter<string> = new EventEmitter<string>();
 
   constructor(
     private router: Router,
-    private itemService: ItemService,
-    private applicationRef: ApplicationRef,
-    private changeDetectorRef: ChangeDetectorRef) {
+    private itemService: ItemService) {
     this.bunyanLogger = bunyan.createLogger({ name: 'Editable Item' });
   }
 
   ngOnInit(): void {
     this.item = this.redact(this.item);
+    this.isSelected = ItemUtil.isSelected(this.item, this.itemType);
   }
 
   onEdit(): void {
@@ -39,17 +40,11 @@ export class EditableItemComponent implements OnInit {
 
   async onSelect(): Promise<Response> {
     const selectResponse: Response = await this.itemService.selectItem(this.itemType, this.item.id);
-    const newState: IItem = await this.itemService.getItem(this.itemType, this.item.id);
-    // this.item = newState;
-    this.item.state.on = newState.state.on;
-    this.bunyanLogger.info({ newState }, 'newState');
-    this.onSelectItem.emit(this.item.id);
-    this.changeDetectorRef.detectChanges();
-    this.applicationRef.tick();
-    this.bunyanLogger.info({ isSelected: this.isSelected }, 'isSelected');
-
+    this.item = await this.itemService.getItem(this.itemType, this.item.id);
+    this.isSelected = ItemUtil.isSelected(this.item, this.itemType);
     return selectResponse;
   }
+
 
   redact(item: any): any {
     const traversable: any = traverse(item);

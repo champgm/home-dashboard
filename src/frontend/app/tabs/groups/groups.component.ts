@@ -15,6 +15,6 @@ export class GroupsComponent extends ItemsComponent<IGroup> implements OnInit {
   itemType: string = 'groups';
 
   constructor(http: Http, itemService: ItemService) {
-    super(http, itemService);
+    super( itemService);
   }
 }

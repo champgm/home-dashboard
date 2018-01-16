@@ -16,6 +16,6 @@ export class PlugsComponent extends ItemsComponent<IPlug> implements OnInit {
   itemType: string = 'plugs';
 
   constructor(http: Http, itemService: ItemService) {
-    super(http, itemService);
+    super( itemService);
   }
 }

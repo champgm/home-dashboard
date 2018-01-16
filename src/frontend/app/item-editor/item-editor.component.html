@@ -2,7 +2,9 @@
      fxLayoutAlign="center center"
      fxLayoutGap="2%">
   <app-item-display [(item)]="item"
+                    [(lights)]="lights"
                     [itemType]="itemType"
+                    parentKey="originalItem"
                     [(originalItemId)]="itemId"></app-item-display>
 
   <div class="btn-group"

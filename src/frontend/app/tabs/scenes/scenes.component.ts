@@ -17,7 +17,7 @@ export class ScenesComponent extends ItemsComponent<IScene> implements OnInit {
   parameters: string = `?v2=true&`;
 
   constructor(http: Http, itemService: ItemService) {
-    super(http, itemService);
+    super( itemService);
   }
 
   async getItems(): Promise<void> {

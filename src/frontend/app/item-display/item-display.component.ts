@@ -1,15 +1,13 @@
 import { BsModalService, BsModalRef } from 'ngx-bootstrap';
 import { Component, OnInit, Input, TemplateRef } from '@angular/core';
+import { createLogger } from 'browser-bunyan';
 import { ItemService } from 'frontend/app/service/item.service';
-import * as bunyan from 'browser-bunyan';
 import * as CircularJSON from 'circular-json';
 import IItem from 'common/interfaces/IItem';
+import ILight from 'common/interfaces/ILight';
+import IMap from 'common/interfaces/IMap';
 import ItemUtil from 'common/util/ItemUtil';
 import ObjectUtil from 'common/util/ObjectUtil';
-
-
-
-const bunyanLogger: any = bunyan.createLogger({ name: 'Editable Item' });
 
 @Component({
   selector: 'app-item-display',
@@ -17,21 +15,26 @@ const bunyanLogger: any = bunyan.createLogger({ name: 'Editable Item' });
   styleUrls: ['./item-display.component.css']
 })
 export class ItemDisplayComponent implements OnInit {
+  bunyanLogger: any;
   modalRef: BsModalRef;
   submitStateResults: { errors: any[]; successes: any[]; };
-  @Input() key: string;
+  @Input() currentKey: string;
+  @Input() parentKey: string;
   @Input() item: any;
+  @Input() lights: IMap<ILight>;
   @Input() originalItemId: string;
   @Input() itemType: any;
   @Input() allUneditable: any;
 
   constructor(
     private itemService: ItemService,
-    private modalService: BsModalService) { }
+    private modalService: BsModalService) {
+    this.bunyanLogger = createLogger({ name: 'Item Display' });
+  }
 
   ngOnInit(): void {
-    if (ObjectUtil.notEmpty(this.key)) {
-      if (ItemUtil.uneditableFields.indexOf(this.key) > -1) {
+    if (ObjectUtil.notEmpty(this.currentKey)) {
+      if (ItemUtil.uneditableFields.indexOf(this.currentKey) > -1) {
         this.allUneditable = true;
       }
     }
@@ -44,23 +47,23 @@ export class ItemDisplayComponent implements OnInit {
     return [];
   }
 
-  isStringOrNumber(variable: any): boolean {
-    return (typeof variable === 'string') ||
-      (typeof variable === 'number');
+  isStringOrNumber(key: string): boolean {
+    return (typeof this.item[key] === 'string') ||
+      (typeof this.item[key] === 'number');
   }
 
-  isBoolean(variable: any): boolean {
-    return variable === 'true' ||
-      variable === 'false';
+  isBoolean(key: any): boolean {
+    return this.item[key] === 'true' ||
+      this.item[key] === 'false';
   }
 
   isBooleanToggle(key: any): boolean {
     return this.canEdit(key) &&
-      this.isBoolean(this.item[key]);
+      this.isBoolean(key);
   }
 
   isAlert(key: any): boolean {
-    return key === 'alert';
+    return (key === 'alert');
   }
 
   isEffect(key: any): boolean {
@@ -77,17 +80,26 @@ export class ItemDisplayComponent implements OnInit {
     } else if (this.item[key] === 'false') {
       this.item[key] = 'true';
     }
-    console.log(`OKAY: ${this.item[key]}`);
   }
 
-  isEditableArray(item: any): boolean {
-    if (this.key === 'lights') {
-      return Array.isArray(item);
+  isLightArray(key: string): boolean {
+    // this.bunyanLogger.info({ parentKey: this.parentKey, key: this.currentKey, item: this.item }, 'Light Array?');
+    if (key === 'lights') {
+      return Array.isArray(this.item[key]);
     }
+    return false;
+  }
+
+  isInLightArray(parentKey: string): boolean {
+    // this.bunyanLogger.info({ parentKey: parentKey, key: this.currentKey, item: this.item }, 'Light Array Item?');
+    if (parentKey === 'lights') {
+      return true;
+    }
+    return false;
   }
 
   isState(key: string): boolean {
-    if (this.key === 'state') {
+    if (this.currentKey === 'state') {
       return true;
     }
   }
@@ -111,12 +123,18 @@ export class ItemDisplayComponent implements OnInit {
   }
 
   isEditableField(key: string): boolean {
-    return this.canEdit(key) &&
-      this.isStringOrNumber(this.item[key]) &&
-      !this.isBoolean(this.item[key]) &&
+    const isEditable: boolean = this.canEdit(key) &&
+      this.isStringOrNumber(key) &&
+      !this.isBoolean(key) &&
       !this.isAlert(key) &&
       !this.isEffect(key) &&
-      !this.isColorMode(key);
+      !this.isColorMode(key) &&
+      !this.isLightArray(key) &&
+      !this.isInLightArray(this.parentKey);
+    if (isEditable) {
+      this.bunyanLogger.info({ key, parentKey: this.parentKey, currentKey: this.currentKey, item: this.item[key] }, 'EDITABLE');
+    }
+    return isEditable;
   }
 
   async onSubmitState(template: TemplateRef<any>): Promise<void> {

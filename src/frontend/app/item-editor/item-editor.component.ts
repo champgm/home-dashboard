@@ -7,8 +7,10 @@ import { Location } from '@angular/common';
 import * as CircularJSON from 'circular-json';
 import * as traverse from 'traverse';
 import IItem from 'common/interfaces/IItem';
-import ObjectUtil from 'common/util/ObjectUtil';
+import ILight from 'common/interfaces/ILight';
+import IMap from 'common/interfaces/IMap';
 import ItemUtil from 'common/util/ItemUtil';
+import ObjectUtil from 'common/util/ObjectUtil';
 
 @Component({
   selector: 'app-item-editor',
@@ -16,12 +18,13 @@ import ItemUtil from 'common/util/ItemUtil';
   styleUrls: ['./item-editor.component.css']
 })
 export class ItemEditorComponent implements OnInit {
-  itemId: string;
-  submitResults: any;
-  bunyanLogger: any;
-  itemType: string;
   @Input() item: IItem;
+  @Input() lights: IMap<ILight>;
+  bunyanLogger: any;
+  itemId: string;
+  itemType: string;
   modalRef: BsModalRef;
+  submitResults: any;
 
   constructor(
     private route: ActivatedRoute,
@@ -37,6 +40,9 @@ export class ItemEditorComponent implements OnInit {
     if (!this.item) {
       const itemId: string = this.route.snapshot.params['id'];
       this.item = await this.itemService.getItem(this.itemType, itemId);
+    }
+    if (!this.lights) {
+      this.lights = await this.itemService.getItem('lights', '');
     }
     console.log(`${CircularJSON.stringify(this.item)}`);
     this.item = CircularJSON.parse(CircularJSON.stringify(this.item));

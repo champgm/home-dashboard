@@ -71,4 +71,16 @@ export default class ItemUtil {
       }
     });
   }
+
+  public static isSelected(item: IItem, itemType: string): boolean {
+    switch (itemType) {
+      case 'lights':
+        if (!item || !item.state) {
+          return false;
+        }
+        return item.state.on;
+      default:
+        return true;
+    }
+  }
 }

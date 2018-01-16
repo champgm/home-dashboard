@@ -16,6 +16,6 @@ export class RulesComponent extends ItemsComponent<IRule> implements OnInit {
   itemType: string = 'rules';
 
   constructor(http: Http, itemService: ItemService) {
-    super(http, itemService);
+    super( itemService);
   }
 }

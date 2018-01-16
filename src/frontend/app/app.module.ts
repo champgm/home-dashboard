@@ -32,10 +32,6 @@ import { AutoExpandDirective } from './directive/auto-expand.directive';
 
 @NgModule({
   imports: [
-    BrowserAnimationsModule,
-    MatSelectModule,
-    MatFormFieldModule,
-    MatTabsModule,
     BrowserModule,
     AppRoutingModule,
     HttpModule,
@@ -43,7 +39,11 @@ import { AutoExpandDirective } from './directive/auto-expand.directive';
     TabsModule.forRoot(),
     ButtonsModule.forRoot(),
     FlexLayoutModule,
-    ModalModule.forRoot()
+    ModalModule.forRoot(),
+    BrowserAnimationsModule,
+    MatSelectModule,
+    MatFormFieldModule,
+    MatTabsModule,
   ],
   declarations: [
     AppComponent,

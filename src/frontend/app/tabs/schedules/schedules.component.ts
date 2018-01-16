@@ -16,6 +16,6 @@ export class SchedulesComponent extends ItemsComponent<ISchedule> implements OnI
   itemType: string = 'schedules';
 
   constructor(http: Http, itemService: ItemService) {
-    super(http, itemService);
+    super( itemService);
   }
 }

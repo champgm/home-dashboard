@@ -16,18 +16,8 @@ export class LightsComponent extends ItemsComponent<ILight> implements OnInit {
   itemType: string = 'lights';
 
   constructor(http: Http, itemService: ItemService) {
-    super(http, itemService);
+    super( itemService);
   }
-
-  // onSelect(itemId: string): Promise<Response> {
-  //   const result: Promise<Response> = super.onSelect(itemId);
-  //   result
-  //     .then(response => {
-  //       const json: ILight = response.json();
-  //       this.items[itemId] = json;
-  //     });
-  //   return result;
-  // }
 
   isSelected(itemId: string): boolean {
     const item: ILight = this.items[itemId];

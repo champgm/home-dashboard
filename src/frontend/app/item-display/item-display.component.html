@@ -3,7 +3,7 @@
   <div fxLayout="column">
     <div *ngFor="let key of objectKeys(item)">
       <div *ngIf="shouldDisplay(key)">
-        <div *ngIf="isStringOrNumber(item[key])"
+        <div *ngIf="isStringOrNumber(key)"
              fxLayout="row">
           <label fxFlexOffset="2">{{key}}:</label>
 
@@ -13,7 +13,8 @@
           <ng-container *ngIf="isAlert(key); then alertChoice"></ng-container>
           <ng-container *ngIf="isColorMode(key); then colorMode"></ng-container>
           <ng-container *ngIf="isEffect(key); then alertChoice"></ng-container>
-          <ng-container *ngIf="isEditableArray(item); then arrayAddButton"></ng-container>
+          <ng-container *ngIf="isInLightArray(parentKey); then lightPicker"></ng-container>
+          <ng-container *ngIf="isInLightArray(parentKey); then arrayDeleteButton"></ng-container>
 
           <ng-template #uneditableField>
             <label fxFlexOffset="2">{{item[key]}}</label>
@@ -21,8 +22,7 @@
 
           <ng-template #editableField>
             <input fxFlexOffset="2"
-                   [(value)]="item[key]"
-                   (keydown)="updateSize($event)">
+                   [(value)]="item[key]">
           </ng-template>
 
           <ng-template #booleanToggle>
@@ -50,6 +50,15 @@
             </mat-form-field>
           </ng-template>
 
+          <ng-template #lightPicker>
+            <mat-form-field>
+              <mat-select [(ngModel)]="item[key]">
+                <mat-option *ngFor="let lightKey of objectKeys(lights)"
+                            value="lights[lightKey].id">{{lights[lightKey].name}}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </ng-template>
+
           <ng-template #colorMode>
             <mat-form-field>
               <mat-select [(ngModel)]="item[key]">
@@ -60,24 +69,24 @@
             </mat-form-field>
           </ng-template>
 
-          <ng-template #arrayAddButton>
-            <label *ngIf="isEditableArray(item)"
-                   class="btn-xs btn-primary"
+          <ng-template #arrayDeleteButton>
+            <label class="btn-xs btn-primary"
                    fxFlexOffset="2"
                    (click)=removeItem(key)>-</label>
           </ng-template>
         </div>
 
         <!-- Recurse into the next item -->
-        <div *ngIf="!isStringOrNumber(item[key])"
+        <div *ngIf="!isStringOrNumber(key)"
              fxLayout="row">
           <label fxFlexOffset="2">{{key}}: </label>
           <app-item-display fxFlexOffset="2"
-                            [key]="key"
+                            [parentKey]="key"
                             [itemType]="itemType"
                             [allUneditable]="allUneditable"
                             [(originalItemId)]="originalItemId"
-                            [(item)]="item[key]">
+                            [(item)]="item[key]"
+                            [(lights)]="lights">
           </app-item-display>
         </div>
       </div>
@@ -97,7 +106,7 @@
         Submit State
       </button>
     </div>
-    <div *ngIf="isEditableArray(item)"
+    <div *ngIf="isLightArray(item)"
          fxFlexOffset="2"
          fxLayout="row"
          fxLayoutAlign="none center">

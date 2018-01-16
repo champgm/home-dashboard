@@ -16,6 +16,6 @@ export class SensorsComponent extends ItemsComponent<ISensor> implements OnInit 
   itemType: string = 'sensors';
 
   constructor(http: Http, itemService: ItemService) {
-    super(http, itemService);
+    super( itemService);
   }
 }
