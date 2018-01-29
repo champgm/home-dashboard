@@ -4,9 +4,8 @@
     <div *ngFor="let key of objectKeys(item)">
       <div *ngIf="shouldDisplay(key)">
         <div *ngIf="isStringOrNumber(key)"
-             fxLayout="row">
-          <label fxFlexOffset="2">{{key}}:</label>
-
+             fxLayout="row"
+             fxLayoutAlign="center">
           <ng-container *ngIf="!canEdit(key); then uneditableField"></ng-container>
           <ng-container *ngIf="isEditableField(key); then editableField"></ng-container>
           <ng-container *ngIf="isBooleanToggle(key); then booleanToggle"></ng-container>
@@ -17,32 +16,39 @@
           <ng-container *ngIf="isInLightArray(parentKey); then arrayDeleteButton"></ng-container>
 
           <ng-template #uneditableField>
+            <label fxFlexOffset="2">{{key}}:</label>
             <label fxFlexOffset="2">{{item[key]}}</label>
           </ng-template>
 
           <ng-template #editableField>
+            <label fxFlexOffset="2">{{key}}:</label>
             <input fxFlexOffset="2"
                    [(value)]="item[key]">
           </ng-template>
 
           <ng-template #booleanToggle>
+            <label fxFlexOffset="2">{{key}}:</label>
             <label class="btn-xs btn-primary"
                    fxFlexOffset="4"
                    (click)=toggle(key)>{{item[key]}}</label>
           </ng-template>
 
+          <!-- color, flashing, etc picker -->
           <ng-template #effectChoice>
             <mat-form-field>
-              <mat-select [(ngModel)]="item[key]">
+              <mat-select [(ngModel)]="item[key]"
+                          placeholder="Color Effect">
                 <mat-option value="none">none</mat-option>
                 <mat-option value="colorloop">colorloop</mat-option>
               </mat-select>
             </mat-form-field>
           </ng-template>
 
+          <!-- Alert mode picker -->
           <ng-template #alertChoice>
             <mat-form-field>
-              <mat-select [(ngModel)]="item[key]">
+              <mat-select [(ngModel)]="item[key]"
+                          placeholder="Light alert">
                 <mat-option value="none">none</mat-option>
                 <mat-option value="select">select</mat-option>
                 <mat-option value="lselect">lselect</mat-option>
@@ -50,18 +56,22 @@
             </mat-form-field>
           </ng-template>
 
+          <!-- Dropdown for choosing lights -->
           <ng-template #lightPicker>
             <mat-form-field>
-              <mat-select [(ngModel)]="item[key]">
+              <mat-select [(ngModel)]="item[key]"
+                          placeholder="Light Name">
                 <mat-option *ngFor="let lightKey of objectKeys(lights)"
-                            value="lights[lightKey].id">{{lights[lightKey].name}}</mat-option>
+                            [value]="lightKey">{{lights[lightKey].name}}</mat-option>
               </mat-select>
             </mat-form-field>
           </ng-template>
 
+          <!-- color mode selector -->
           <ng-template #colorMode>
             <mat-form-field>
-              <mat-select [(ngModel)]="item[key]">
+              <mat-select [(ngModel)]="item[key]"
+                          placeholder="Color Mode">
                 <mat-option value="hs">hs</mat-option>
                 <mat-option value="xy">xy</mat-option>
                 <mat-option value="ct">ct</mat-option>
@@ -69,6 +79,7 @@
             </mat-form-field>
           </ng-template>
 
+          <!-- add a minus button next to the array item if it can be removed -->
           <ng-template #arrayDeleteButton>
             <label class="btn-xs btn-primary"
                    fxFlexOffset="2"
@@ -81,7 +92,7 @@
              fxLayout="row">
           <label fxFlexOffset="2">{{key}}: </label>
           <app-item-display fxFlexOffset="2"
-                            [parentKey]="key"
+                            [itemKey]="key"
                             [itemType]="itemType"
                             [allUneditable]="allUneditable"
                             [(originalItemId)]="originalItemId"
@@ -91,6 +102,7 @@
         </div>
       </div>
     </div>
+
     <div *ngIf="isState(key)"
          class="btn-group"
          fxLayout="row"
@@ -106,15 +118,16 @@
         Submit State
       </button>
     </div>
-    <div *ngIf="isLightArray(item)"
-         fxFlexOffset="2"
+
+    <div *ngIf="isLightArray(key)"
          fxLayout="row"
          fxLayoutAlign="none center">
       <label class="btn-xs btn-primary"
-             fxFlexOffset="8"
+             fxFlexOffset="0"
              fxFlex="none"
              (click)=addItem()>+</label>
     </div>
+
   </div>
 </div>
 

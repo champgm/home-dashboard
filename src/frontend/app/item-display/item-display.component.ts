@@ -8,6 +8,7 @@ import ILight from 'common/interfaces/ILight';
 import IMap from 'common/interfaces/IMap';
 import ItemUtil from 'common/util/ItemUtil';
 import ObjectUtil from 'common/util/ObjectUtil';
+import * as _ from 'lodash';
 
 @Component({
   selector: 'app-item-display',
@@ -18,8 +19,7 @@ export class ItemDisplayComponent implements OnInit {
   bunyanLogger: any;
   modalRef: BsModalRef;
   submitStateResults: { errors: any[]; successes: any[]; };
-  @Input() currentKey: string;
-  @Input() parentKey: string;
+  @Input() itemKey: string;
   @Input() item: any;
   @Input() lights: IMap<ILight>;
   @Input() originalItemId: string;
@@ -33,8 +33,8 @@ export class ItemDisplayComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    if (ObjectUtil.notEmpty(this.currentKey)) {
-      if (ItemUtil.uneditableFields.indexOf(this.currentKey) > -1) {
+    if (ObjectUtil.notEmpty(this.itemKey)) {
+      if (ItemUtil.uneditableFields.indexOf(this.itemKey) > -1) {
         this.allUneditable = true;
       }
     }
@@ -83,23 +83,23 @@ export class ItemDisplayComponent implements OnInit {
   }
 
   isLightArray(key: string): boolean {
-    // this.bunyanLogger.info({ parentKey: this.parentKey, key: this.currentKey, item: this.item }, 'Light Array?');
-    if (key === 'lights') {
-      return Array.isArray(this.item[key]);
+    if (this.itemKey === 'lights') {
+      return Array.isArray(this.item);
     }
     return false;
   }
 
-  isInLightArray(parentKey: string): boolean {
-    // this.bunyanLogger.info({ parentKey: parentKey, key: this.currentKey, item: this.item }, 'Light Array Item?');
-    if (parentKey === 'lights') {
+  isInLightArray(): boolean {
+    if (ObjectUtil.notEmpty(this.lights) &&
+      ObjectUtil.notEmpty(this.item) &&
+      this.itemKey === 'lights') {
       return true;
     }
     return false;
   }
 
   isState(key: string): boolean {
-    if (this.currentKey === 'state') {
+    if (this.itemKey === 'state') {
       return true;
     }
   }
@@ -130,10 +130,7 @@ export class ItemDisplayComponent implements OnInit {
       !this.isEffect(key) &&
       !this.isColorMode(key) &&
       !this.isLightArray(key) &&
-      !this.isInLightArray(this.parentKey);
-    if (isEditable) {
-      this.bunyanLogger.info({ key, parentKey: this.parentKey, currentKey: this.currentKey, item: this.item[key] }, 'EDITABLE');
-    }
+      !this.isInLightArray();
     return isEditable;
   }
 
