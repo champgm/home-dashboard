@@ -109,29 +109,30 @@
         Delete
       </button>
     </div>
+  </div>
 </ng-template>
 
 <ng-template #deleteResultModal>
-    <div class="modal-header">
-      <h4 class="modal-title pull-left">Deletion Results</h4>
-      <button type="button"
-              class="close pull-right"
-              aria-label="Close"
-              (click)="modalRef.hide()">
-        <span aria-hidden="true">&times;</span>
-      </button>
-    </div>
-    <div class="modal-body">
-      <div fxLayout="column"
-           fxLayoutAlign="center center">
-        <div *ngFor="let error of submitResults.errors">
-          There was a problem deleting '{{error.address}}': {{error.description}}
-        </div>
-        <div *ngFor="let success of submitResults.successes">
-          <div *ngFor="let key of objectKeys(success)">
-            '{{key}}' was successfully set to '{{success[key]}}'
-          </div>
+  <div class="modal-header">
+    <h4 class="modal-title pull-left">Deletion Results</h4>
+    <button type="button"
+            class="close pull-right"
+            aria-label="Close"
+            (click)="modalRef.hide()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div fxLayout="column"
+         fxLayoutAlign="center center">
+      <div *ngFor="let error of submitResults.errors">
+        There was a problem deleting '{{error.address}}': {{error.description}}
+      </div>
+      <div *ngFor="let success of submitResults.successes">
+        <div *ngFor="let key of objectKeys(success)">
+          '{{key}}' was successfully set to '{{success[key]}}'
         </div>
       </div>
     </div>
-  </ng-template>
+  </div>
+</ng-template>

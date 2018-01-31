@@ -10,7 +10,9 @@
     "serve": "ng serve --host 0.0.0.0",
     "build": "ng build",
     "build-watch": "ng build --watch",
+    "build-docker": "docker build -t home-dashboard .",
     "start-watch": "nodemon -e ts --watch src/backend -x \"npm run start\"",
+    "start-docker": "docker run -it --rm -p 1981:1981 -e HUE_BRIDGE_IP=$HUE_BRIDGE_IP -e HUE_BRIDGE_PORT=$HUE_BRIDGE_PORT -e HUE_BRIDGE_TOKEN=$HUE_BRIDGE_TOKEN -e HUE_WEB_PORT=$HUE_WEB_PORT -e TP_LINK_PLUGS=$TP_LINK_PLUGS home-dashboard ",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e"

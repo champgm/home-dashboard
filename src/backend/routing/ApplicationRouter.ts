@@ -36,7 +36,6 @@ export default class ApplicationRouter {
       `http://${bridgeDetails.bridgeIp}:` +
       `${bridgeDetails.bridgePort}/` +
       `api/${bridgeDetails.bridgeToken}`;
-    this.externalExpressPort = expressConfiguration.externalPort;
     this.internalExpressPort = expressConfiguration.internalPort;
     this.broadcastAddress = broadcastAddress;
   }
