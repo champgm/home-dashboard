@@ -25,7 +25,7 @@ export default class LightController extends CommonController<ILight> {
 
   async getState(itemId: string): Promise<IState> {
     const options: IRequestOptions = this.requestOptionsUtil.simpleGet(`${this.type}/${itemId}/state`);
-    this.logger.info({ options }, 'Will GET with options.');
+    this.bunyanLogger.info({ options }, 'Will GET with options.');
     const item: IState = await makeRequest(options);
     return item;
   }

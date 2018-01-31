@@ -8,50 +8,29 @@ import { SensorsComponent } from './tabs/sensors/sensors.component';
 import { ScenesComponent } from './tabs/scenes/scenes.component';
 import { LightsComponent } from './tabs/lights/lights.component';
 import { AppComponent } from './app.component';
+import { ItemEditorComponent } from 'frontend/app/item-editor/item-editor.component';
 
 const angular: string = 'angular/';
+
+// http://localhost:1981/#/scenes/ERgF0PTi-61fWYb
+
 const routes: Routes = [
-  {
-    path: 'app-groups',
-    component: GroupsComponent
-  },
-  {
-    path: 'app-lights',
-    component: LightsComponent
-  },
-  {
-    path: 'app-plugs',
-    component: PlugsComponent
-  },
-  {
-    path: 'app-scenes',
-    component: ScenesComponent
-  },
-  {
-    path: 'app-schedules',
-    component: SchedulesComponent
-  },
-  {
-    path: 'app-sensors',
-    component: SensorsComponent
-  },
-  {
-    path: 'app-rules',
-    component: RulesComponent
-  },
-  {
-    path: 'app-app',
-    component: AppComponent
-  },
-  // {
-  //   path: 'app-edit/:itemId',
-  //   component: HeroDetailComponent
-  // },
-  {
-    path: 'app-',
-    redirectTo: '/scenes',
-    pathMatch: 'full'
-  }
+  { path: 'groups/:id', component: ItemEditorComponent },
+  { path: 'lights/:id', component: ItemEditorComponent },
+  { path: 'plugs/:id', component: ItemEditorComponent },
+  { path: 'rules/:id', component: ItemEditorComponent },
+  { path: 'scenes/:id', component: ItemEditorComponent },
+  { path: 'schedules/:id', component: ItemEditorComponent },
+  { path: 'sensors/:id', component: ItemEditorComponent },
+  { path: 'groups', component: GroupsComponent },
+  { path: 'lights', component: LightsComponent },
+  { path: 'plugs', component: PlugsComponent },
+  { path: 'rules', component: RulesComponent },
+  { path: 'scenes', component: ScenesComponent },
+  { path: 'schedules', component: SchedulesComponent },
+  { path: 'sensors', component: SensorsComponent },
+  { path: 'app', component: AppComponent },
+  { path: '', redirectTo: 'scenes', pathMatch: 'full' }
 ];
 
 @NgModule({

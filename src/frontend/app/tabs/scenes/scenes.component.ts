@@ -5,18 +5,19 @@ import { ItemsComponent } from '../common/items.component';
 
 import 'rxjs/add/operator/toPromise';
 import IScene from '../../../../common/interfaces/IScene';
+import { ItemService } from 'frontend/app/service/item.service';
 
 @Component({
   // moduleId: module.id,
-  selector: 'app-scenes',
+  selector: 'scenes',
   templateUrl: '../common/items.component.html',
 })
 export class ScenesComponent extends ItemsComponent<IScene> implements OnInit {
   itemType: string = 'scenes';
   parameters: string = `?v2=true&`;
 
-  constructor(http: Http) {
-    super(http);
+  constructor(http: Http, itemService: ItemService) {
+    super( itemService);
   }
 
   async getItems(): Promise<void> {

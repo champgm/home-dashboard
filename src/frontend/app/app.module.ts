@@ -4,10 +4,17 @@ import { BrowserModule } from '@angular/platform-browser';
 import { HttpModule } from '@angular/http';
 import { HashLocationStrategy, LocationStrategy } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-import { TabsModule } from 'ng2-bootstrap';
-import { ButtonsModule } from 'ng2-bootstrap';
-import { ModalModule } from 'ng2-bootstrap';
+import { TabsModule } from 'ngx-bootstrap/tabs';
+import { ButtonsModule } from 'ngx-bootstrap';
+import { ModalModule } from 'ngx-bootstrap';
+import { FlexLayoutModule } from '@angular/flex-layout';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { MatInputModule } from '@angular/material';
+import {MatSlideToggleModule} from '@angular/material/slide-toggle';
+import {MatCardModule} from '@angular/material/card';
 
 import { AppRoutingModule } from './app-routing.module';
 import { GroupsComponent } from './tabs/groups/groups.component';
@@ -19,6 +26,11 @@ import { SchedulesComponent } from './tabs/schedules/schedules.component';
 import { SensorsComponent } from './tabs/sensors/sensors.component';
 
 import { AppComponent } from './app.component';
+import { EditableItemComponent } from './editable-item/editable-item.component';
+import { ItemEditorComponent } from './item-editor/item-editor.component';
+import { ItemService } from 'frontend/app/service/item.service';
+import { ItemDisplayComponent } from './item-display/item-display.component';
+import { AutoExpandDirective } from './directive/auto-expand.directive';
 
 @NgModule({
   imports: [
@@ -28,7 +40,15 @@ import { AppComponent } from './app.component';
     FormsModule,
     TabsModule.forRoot(),
     ButtonsModule.forRoot(),
-    ModalModule.forRoot()
+    FlexLayoutModule,
+    ModalModule.forRoot(),
+    BrowserAnimationsModule,
+    MatSelectModule,
+    MatFormFieldModule,
+    MatTabsModule,
+    MatInputModule,
+    MatSlideToggleModule,
+    MatCardModule
   ],
   declarations: [
     AppComponent,
@@ -38,9 +58,16 @@ import { AppComponent } from './app.component';
     RulesComponent,
     ScenesComponent,
     SchedulesComponent,
-    SensorsComponent
+    SensorsComponent,
+    EditableItemComponent,
+    ItemEditorComponent,
+    ItemDisplayComponent,
+    AutoExpandDirective
   ],
-  providers: [{ provide: LocationStrategy, useClass: HashLocationStrategy }],
+  providers: [
+    ItemService,
+    { provide: LocationStrategy, useClass: HashLocationStrategy }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

@@ -1,0 +1,188 @@
+<div id='holder-column'
+     fxLayout="column"
+     fxLayoutAlign="start start">
+  <div id='holder-column-2'
+       class="full-width"
+       fxLayout="column"
+       fxLayoutAlign="start start">
+    <div id='key-item'
+         class="full-width"
+         *ngFor="let key of objectKeys(item, itemType, itemKey)">
+      <div id='shouldDisplay'
+           *ngIf="shouldDisplay(key)">
+        <div id='isStringOrNumber'
+             *ngIf="isStringOrNumber(key)">
+          <ng-container *ngIf="!canEdit(key); then uneditableField"></ng-container>
+          <ng-container *ngIf="isEditableField(key); then editableField"></ng-container>
+          <ng-container *ngIf="isBooleanToggle(key); then booleanToggle"></ng-container>
+          <ng-container *ngIf="isAlert(key); then alertChoice"></ng-container>
+          <ng-container *ngIf="isColorMode(key); then colorMode"></ng-container>
+          <ng-container *ngIf="isEffect(key); then effectChoice"></ng-container>
+          <ng-container *ngIf="isInLightArray(parentKey); then lightPicker"></ng-container>
+          <ng-container *ngIf="isInLightArray(parentKey); then arrayDeleteButton"></ng-container>
+
+          <ng-template #editableField>
+            <div fxLayout="row"
+                 fxLayoutAlign="space-between start">
+              <mat-form-field class="full-width">
+                <input matInput
+                       class="left-align-text"
+                       placeholder="{{key}}"
+                       [(ngModel)]="item[key]"
+                       [disabled]="!canEdit(key)">
+              </mat-form-field>
+            </div>
+          </ng-template>
+
+          <ng-template #booleanToggle>
+            <mat-slide-toggle labelPosition="before"
+                              [(ngModel)]="item[key]"
+                              [disabled]="!canEdit(key)"
+                              class="needs-margin-bottom">
+              {{key}}
+            </mat-slide-toggle>
+          </ng-template>
+
+          <!-- color, flashing, etc picker -->
+          <ng-template #effectChoice>
+            <mat-form-field>
+              <mat-select [(ngModel)]="item[key]"
+                          placeholder="Color Effect"
+                          [disabled]="!canEdit(key)">
+                <mat-option value="none">none</mat-option>
+                <mat-option value="colorloop">colorloop</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </ng-template>
+
+          <!-- Alert mode picker -->
+          <ng-template #alertChoice>
+            <mat-form-field>
+              <mat-select [(ngModel)]="item[key]"
+                          placeholder="Alert Effect"
+                          [disabled]="!canEdit(key)">
+                <mat-option value="none">none</mat-option>
+                <mat-option value="select">select</mat-option>
+                <mat-option value="lselect">lselect</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </ng-template>
+
+
+          <div fxLayout="row"
+               fxLayoutAlign="space-between start">
+            <!-- Dropdown for choosing lights -->
+            <ng-template #lightPicker>
+              <mat-form-field>
+                <mat-select [(ngModel)]="item[key]"
+                            placeholder="Light Name"
+                            [disabled]="!canEdit(key)">
+                  <mat-option *ngFor="let lightKey of objectKeys(lights)"
+                              [value]="lightKey">{{lights[lightKey].name}}</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </ng-template>
+            <!-- add a minus button next to the array item if it can be removed -->
+            <ng-template #arrayDeleteButton>
+              <label class="btn-xs btn-primary"
+                     fxFlexOffset="2"
+                     (click)=removeItem(key)>-</label>
+            </ng-template>
+          </div>
+
+          <!-- color mode selector -->
+          <ng-template #colorMode>
+            <mat-form-field>
+              <mat-select [(ngModel)]="item[key]"
+                          placeholder="Color Mode"
+                          [disabled]="!canEdit(key)">
+                <mat-option value="hs">hs</mat-option>
+                <mat-option value="xy">xy</mat-option>
+                <mat-option value="ct">ct</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </ng-template>
+
+        </div>
+
+        <!-- Recurse into the next item -->
+        <div *ngIf="!isStringOrNumber(key)">
+          <mat-card class="needs-margin-bottom">
+            <mat-card-header class="sub-card-header full-width">
+              <mat-card-title *ngIf="lightsReady() && lights[key]">
+                <h3 class="mat-h3">{{lights[key].name}}</h3>
+              </mat-card-title>
+              <mat-card-title *ngIf="lightsReady() && !lights[key]">
+                <h3 class="mat-h3">{{key}}</h3>
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content class="needs-margin-top">
+              <app-item-display class="full-width"
+                                fxFlexOffset="2"
+                                [itemKey]="key"
+                                [itemType]="itemType"
+                                [allUneditable]="allUneditable"
+                                [originalItemId]="originalItemId"
+                                [(item)]="item[key]"
+                                [lights]="lights"
+                                (resetState)="onResetState()">
+              </app-item-display>
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+
+      </div>
+    </div>
+
+    <div *ngIf="isState(key)"
+         class="btn-group needs-margin-bottom"
+         fxLayout="row"
+         fxLayoutAlign="center center">
+      <button type="button"
+              class="btn-sm btn-primary"
+              (click)="onResetState()">
+        Reset State
+      </button>
+      <button type="button"
+              class="btn-sm btn-success"
+              (click)="onSubmitState(submitStateModal)">
+        Submit State
+      </button>
+    </div>
+
+    <div *ngIf="isLightArray(key)"
+         fxLayout="row"
+         fxLayoutAlign="none center">
+      <label class="btn-xs btn-primary"
+             fxFlexOffset="0"
+             fxFlex="none"
+             (click)=addItem()>+</label>
+    </div>
+
+  </div>
+</div>
+
+<ng-template #submitStateModal>
+  <div class="modal-header">
+    <h4 class="modal-title pull-left">Submission Results</h4>
+    <button type="button"
+            class="close pull-right"
+            aria-label="Close"
+            (click)="modalRef.hide()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div fxLayout="column"
+         fxLayoutAlign="center center">
+      <div>
+        State values are now as follows:
+      </div>
+      <div *ngFor="let resultKey of objectKeys(submitStateResults.singleResult)">
+        <label fxFlexOffset="2">{{key}}:</label>
+        <label fxFlexOffset="2">{{item[key]}}</label>
+      </div>
+    </div>
+  </div>
+</ng-template>

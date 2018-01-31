@@ -1,10 +1,37 @@
-<div>
-  <nav>
-    <div class="btn-group-lg text-center">
-      <label *ngFor="let tab of tabs" class="btn btn-secondary" [(ngModel)]="selectedTabTitle" btnRadio="{{tab.title}}" (click)="onSelect(tab)">
-        {{tab.title}}
-      </label>
-    </div>
-  </nav>
+<!-- <div (click)="$event.preventDefault()"> -->
+<div class="tabs">
+  <!-- <nav>
+    <tabset [justified]="true"
+            #tabSet>
+      <tab *ngFor="let tab of tabs"
+           [heading]="tab.title"
+           [active]="tab.shouldBeSelected"
+           (select)="onSelect(tab)"
+           (deselect)="tab.active = false">
+      </tab>
+    </tabset>
+  </nav> -->
+  <!-- <nav mat-tab-nav-bar>
+    <a mat-tab-link
+       *ngFor="let link of navLinks"
+       [routerLink]="link.path"
+       routerLinkActive #rla="routerLinkActive"
+       [active]="rla.isActive">
+      {{link.label}}
+    </a>
+  </nav> -->
+  <div fxLayout="column"
+       fxLayoutAlign="center center">
+    <nav mat-tab-nav-bar
+         aria-label="weather navigation links">
+      <a mat-tab-link
+         *ngFor="let routeLink of routeLinks; let i = index"
+         [routerLink]="routeLink.link"
+         [active]="activeLinkIndex === i"
+         (click)="activeLinkIndex = i">
+        {{routeLink.label}}
+      </a>
+    </nav>
+  </div>
 </div>
 <router-outlet></router-outlet>

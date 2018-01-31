@@ -5,16 +5,17 @@ import { ItemsComponent } from '../common/items.component';
 
 import 'rxjs/add/operator/toPromise';
 import ISensor from '../../../../common/interfaces/ISensor';
+import { ItemService } from 'frontend/app/service/item.service';
 
 @Component({
   // moduleId: module.id,
-  selector: 'app-sensors',
+  selector: 'sensors',
   templateUrl: '../common/items.component.html',
 })
 export class SensorsComponent extends ItemsComponent<ISensor> implements OnInit {
   itemType: string = 'sensors';
 
-  constructor(http: Http) {
-    super(http);
+  constructor(http: Http, itemService: ItemService) {
+    super( itemService);
   }
 }

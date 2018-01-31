@@ -1,4 +1,4 @@
-import * as bunyan from 'bunyan';
+import * as bunyan from 'bunayn';
 import * as makeRequest from 'request-promise';
 import RequestOptionsUtil from './utilities/RequestOptionsUtil';
 import IState from '../../../common/interfaces/IState';
@@ -7,36 +7,34 @@ import IItem from '../../../common/interfaces/IItem';
 
 export default abstract class CommonController<ItemType extends IItem> {
   type: string;
-  logger: bunyan;
+  bunyanLogger: bunyan;
   requestOptionsUtil: RequestOptionsUtil;
 
   constructor(type: string, bridgeUri: string, logger: bunyan) {
     this.type = type;
-    this.logger = logger;
+    this.bunyanLogger = logger;
     this.requestOptionsUtil = new RequestOptionsUtil(bridgeUri);
   }
 
   async getAll(): Promise<IMap<ItemType>> {
     const options: any = this.requestOptionsUtil.simpleGet(this.type);
-    this.logger.info({ options }, 'Will GET with options.');
-    const items: any[] = await makeRequest(options);
+    this.bunyanLogger.info({ options }, 'Will GET with options.');
+    const items: any = await makeRequest(options);
 
     const itemMap: IMap<ItemType> = {};
-    for (const id in items) {
-      if (Object.prototype.hasOwnProperty.call(items, id)) {
-        const item: any = items[id];
-        item.id = id;
-        itemMap[id] = item;
-      }
-    }
-
+    Object.keys(items).forEach((key) => {
+      const item: any = items[key];
+      item.id = key;
+      itemMap[key] = item;
+    });
     return itemMap;
   }
 
   async get(id: string): Promise<ItemType> {
     const options: any = this.requestOptionsUtil.simpleGet(`${this.type}/${id}`);
-    this.logger.info({ options }, 'Will GET with options.');
+    this.bunyanLogger.info({ options }, 'Will GET with options.');
     const item: any = await makeRequest(options);
+    item.id = id;
     return item;
   }
 

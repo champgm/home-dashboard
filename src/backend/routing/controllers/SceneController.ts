@@ -1,4 +1,5 @@
 import * as bunyan from 'bunyan';
+import * as makeRequest from 'request-promise';
 import UtilityScenes from './utilities/UtilityScenes';
 import LightController from './LightController';
 import CommonController from './CommonController';
@@ -20,6 +21,15 @@ export default class SceneController extends CommonController<IScene> {
     this.lightController = new LightController(bridgeUri);
   }
 
+  async get(id: string): Promise<IScene> {
+    if (Object.keys(UtilityScenes.AllUtilityScenes).indexOf(id) > -1) {
+      return UtilityScenes.AllUtilityScenes[id];
+    }
+    const scene: IScene = await super.get(id);
+    scene.storelightstate = false;
+    return scene;
+  }
+
   async getAll(v2ScenesRequested?: boolean): Promise<IMap<IScene>> {
     if (v2ScenesRequested) {
       bunyanLogger.info('V2 Scenes requested, will return only V2 scenes.');
@@ -34,7 +44,7 @@ export default class SceneController extends CommonController<IScene> {
     const resultScenes: IMap<IScene> = {};
 
     // Add any Utility scenes first.
-    const utilityScenes: IMap<IScene> = UtilityScenes.getAllUtilityScenes();
+    const utilityScenes: IMap<IScene> = UtilityScenes.AllUtilityScenes;
     for (const sceneId in utilityScenes) {
       if (Object.prototype.hasOwnProperty.call(utilityScenes, sceneId)) {
         resultScenes[sceneId] = utilityScenes[sceneId];
@@ -44,7 +54,6 @@ export default class SceneController extends CommonController<IScene> {
     // Now, we need to record each light's ID INSIDE of the light.
     // While we do this, we might as well do the V2 filtering as well.
     // For each top-level attribute (which, if it's what we're looking for, will be a scene ID)
-    bunyanLogger.info({ sceneKeys: Object.keys(scenes) }, 'Scene keys found');
     Object.keys(scenes).forEach((sceneId) => {
       // Check to make sure it's a real attribute and not some weird superclass attribute
       const scene: IScene = scenes[sceneId];
@@ -54,7 +63,7 @@ export default class SceneController extends CommonController<IScene> {
         if (scene.version === 2) {
           resultScenes[sceneId] = scenes[sceneId];
         } else {
-          bunyanLogger.info({ sceneVersion: scene.version || 'undefined' }, 'Scene version was not 2');
+          // bunyanLogger.info({ sceneVersion: scene.version || 'undefined' }, 'Scene version was not 2');
         }
       } else {
         resultScenes[sceneId] = scenes[sceneId];
@@ -97,6 +106,16 @@ export default class SceneController extends CommonController<IScene> {
       // Return the current state of the scene
       return { on: true };
     }
+  }
+
+  async update(itemId: string, json: any): Promise<IScene> {
+    const uri: string = `${this.type}/${itemId}`;
+    if (!json.storelightstate) {
+      delete json.storelightstate;
+    }
+    const putOptions: any = this.requestOptionsUtil.putWithBody(uri, json);
+    const response: any = await makeRequest(putOptions);
+    return response;
   }
 
   setState(itemId: string, state: any): Promise<any> {

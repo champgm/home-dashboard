@@ -25,7 +25,7 @@ export default class GroupController extends CommonController<IGroup> {
 
   async getState(itemId: string): Promise<IState> {
     const options: IRequestOptions = this.requestOptionsUtil.simpleGet(`${this.type}/${itemId}/action`);
-    this.logger.info({ options }, 'Will GET with options.');
+    this.bunyanLogger.info({ options }, 'Will GET with options.');
     const item: IState = await makeRequest(options);
     return item;
   }
