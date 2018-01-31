@@ -35,6 +35,11 @@ export class ItemService {
     return await this.doPut(`${itemType}/${originalItemId}/state`, editableFieldsOnly);
   }
 
+  async putAction(itemType: string, action: any, originalItemId: string): Promise<{ errors: any[], successes: any[], singleResult: any }> {
+    const editableFieldsOnly: any = this.removeUneditableFields(action);
+    return await this.doPut(`${itemType}/${originalItemId}/action`, editableFieldsOnly);
+  }
+
   async putItem(itemType: string, item: IItem): Promise<{ errors: any[], successes: any[], singleResult: any }> {
     const editableFieldsOnly: IItem = this.removeUneditableFields(item);
     return await this.doPut(`${itemType}/${item.id}`, editableFieldsOnly);
