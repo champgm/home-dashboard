@@ -20,19 +20,7 @@ export function getPorts(): Ports {
   }
   bunyanLogger.info({ internalPort }, 'Internal Express port configured.');
 
-  // This is the port on which the echo endpoints will start
-  let externalPort: number;
-  if (process.env.EXTERNAL_WEB_PORT) {
-    bunyanLogger.info('External Express port set.');
-    externalPort = process.env.EXTERNAL_WEB_PORT;
-  } else {
-    bunyanLogger.info('External Express port not set.');
-    externalPort = 8889;
-  }
-  bunyanLogger.info({ externalPort }, 'External Express port configured.');
-
   return {
-    externalPort,
     internalPort,
   };
 }
