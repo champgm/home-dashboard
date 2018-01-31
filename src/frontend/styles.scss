@@ -1,8 +1,8 @@
 /* You can add global styles to this file, and also import other style files */
 
 @import '../../node_modules/@angular/material/prebuilt-themes/indigo-pink.css';
-@import 'assets/bootstrap.min.css';
-@import 'assets/bootstrap.override.css';
+@import './assets/bootstrap.min.css';
+@import './assets/bootstrap.override.css';
 
 html, body {
   box-sizing: border-box;

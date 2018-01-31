@@ -64,12 +64,12 @@ export class ItemEditorComponent implements OnInit {
   }
 
   async onDeleteConfirm(template: TemplateRef<any>): Promise<void> {
-    this.modalRef = this.modalService.show(template);
-    const results: { errors: any[], successes: any[] } =
-      await this.itemService.putItem(this.itemType, unstringed);
-    this.submitResults = results;
-    this.openModal(template);
-    this.ngOnInit(true);
+    // this.modalRef = this.modalService.show(template);
+    // const results: { errors: any[], successes: any[] } =
+    //   await this.itemService.deleteItem(this.itemType, unstringed);
+    // this.submitResults = results;
+    // this.openModal(template);
+    // this.ngOnInit(true);
   }
 
   async onReset(): Promise<void> {
