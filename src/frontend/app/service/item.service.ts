@@ -79,6 +79,9 @@ export class ItemService {
         if (ItemUtil.uneditableFields.indexOf(this.key) > -1) {
           this.remove();
         }
+        if (this.key === 'state') {
+          this.remove();
+        }
       }
     });
   }

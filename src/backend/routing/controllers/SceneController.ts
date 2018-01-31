@@ -22,6 +22,9 @@ export default class SceneController extends CommonController<IScene> {
   }
 
   async get(id: string): Promise<IScene> {
+    if (Object.keys(UtilityScenes.AllUtilityScenes).indexOf(id) > -1) {
+      return UtilityScenes.AllUtilityScenes[id];
+    }
     const scene: IScene = await super.get(id);
     scene.storelightstate = false;
     return scene;
@@ -41,7 +44,7 @@ export default class SceneController extends CommonController<IScene> {
     const resultScenes: IMap<IScene> = {};
 
     // Add any Utility scenes first.
-    const utilityScenes: IMap<IScene> = UtilityScenes.getAllUtilityScenes();
+    const utilityScenes: IMap<IScene> = UtilityScenes.AllUtilityScenes;
     for (const sceneId in utilityScenes) {
       if (Object.prototype.hasOwnProperty.call(utilityScenes, sceneId)) {
         resultScenes[sceneId] = utilityScenes[sceneId];

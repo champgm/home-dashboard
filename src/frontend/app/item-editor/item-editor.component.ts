@@ -15,7 +15,7 @@ import ObjectUtil from 'common/util/ObjectUtil';
 @Component({
   selector: 'app-item-editor',
   templateUrl: './item-editor.component.html',
-  styleUrls: ['./item-editor.component.css']
+  styleUrls: ['./item-editor.component.scss']
 })
 export class ItemEditorComponent implements OnInit {
   @Input() item: IItem;
@@ -35,13 +35,13 @@ export class ItemEditorComponent implements OnInit {
     this.bunyanLogger = createLogger({ name: 'Item Editor' });
   }
 
-  async ngOnInit(): Promise<void> {
+  async ngOnInit(force?: boolean): Promise<void> {
     this.itemType = this.route.snapshot.url[0].path;
-    if (!this.item) {
+    if (!this.item || force) {
       const itemId: string = this.route.snapshot.params['id'];
       this.item = await this.itemService.getItem(this.itemType, itemId);
     }
-    if (!this.lights) {
+    if (!this.lights || force) {
       this.lights = await this.itemService.getItem('lights', '');
     }
     console.log(`${CircularJSON.stringify(this.item)}`);
@@ -56,6 +56,38 @@ export class ItemEditorComponent implements OnInit {
       await this.itemService.putItem(this.itemType, unstringed);
     this.submitResults = results;
     this.openModal(template);
+    this.ngOnInit(true);
+  }
+
+  async onDelete(template: TemplateRef<any>): Promise<void> {
+    this.openModal(template);
+  }
+
+  async onDeleteConfirm(template: TemplateRef<any>): Promise<void> {
+    this.modalRef = this.modalService.show(template);
+    const results: { errors: any[], successes: any[] } =
+      await this.itemService.putItem(this.itemType, unstringed);
+    this.submitResults = results;
+    this.openModal(template);
+    this.ngOnInit(true);
+  }
+
+  async onReset(): Promise<void> {
+    await this.ngOnInit(true);
+  }
+
+  async onResetState(): Promise<void> {
+    const itemId: string = this.route.snapshot.params['id'];
+    const currentItem: IItem = await this.itemService.getItem(this.itemType, itemId);
+    this.item.state = CircularJSON.parse(CircularJSON.stringify(currentItem.state));
+    this.item = ItemUtil.booleansToStrings(this.item);
+  }
+
+  async onResetAction(): Promise<void> {
+    const itemId: string = this.route.snapshot.params['id'];
+    const currentItem: IItem = await this.itemService.getItem(this.itemType, itemId);
+    this.item.action = CircularJSON.parse(CircularJSON.stringify(currentItem.action));
+    this.item = ItemUtil.booleansToStrings(this.item);
   }
 
   onBack(): void {

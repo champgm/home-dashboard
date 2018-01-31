@@ -1,5 +1,5 @@
 import { BsModalService, BsModalRef } from 'ngx-bootstrap';
-import { Component, OnInit, Input, TemplateRef } from '@angular/core';
+import { Component, OnInit, Input, TemplateRef, Output, EventEmitter } from '@angular/core';
 import { createLogger } from 'browser-bunyan';
 import { ItemService } from 'frontend/app/service/item.service';
 import * as CircularJSON from 'circular-json';
@@ -16,15 +16,20 @@ import * as _ from 'lodash';
   styleUrls: ['./item-display.component.css']
 })
 export class ItemDisplayComponent implements OnInit {
+  submitActionResults: { errors: any[]; successes: any[]; };
+  stateBackup: any;
   bunyanLogger: any;
   modalRef: BsModalRef;
   submitStateResults: { errors: any[]; successes: any[]; };
   @Input() itemKey: string;
   @Input() item: any;
+  @Output() itemChange: EventEmitter<any> = new EventEmitter<any>();
   @Input() lights: IMap<ILight>;
   @Input() originalItemId: string;
   @Input() itemType: any;
   @Input() allUneditable: any;
+  @Output() resetState: EventEmitter<void> = new EventEmitter<void>();
+  @Output() resetAction: EventEmitter<void> = new EventEmitter<void>();
 
   constructor(
     private itemService: ItemService,
@@ -40,11 +45,8 @@ export class ItemDisplayComponent implements OnInit {
     }
   }
 
-  objectKeys(object: any): string[] {
-    if (object) {
-      return Object.keys(object);
-    }
-    return [];
+  objectKeys(object: any, itemType?: string, itemKey?: string): string[] {
+    return ItemUtil.getItemAttributeList(object, itemType, itemKey);
   }
 
   isStringOrNumber(key: string): boolean {
@@ -58,8 +60,8 @@ export class ItemDisplayComponent implements OnInit {
   }
 
   isBooleanToggle(key: any): boolean {
-    return this.canEdit(key) &&
-      this.isBoolean(key);
+    // this.canEdit(key) &&
+    return this.isBoolean(key);
   }
 
   isAlert(key: any): boolean {
@@ -80,6 +82,7 @@ export class ItemDisplayComponent implements OnInit {
     } else if (this.item[key] === 'false') {
       this.item[key] = 'true';
     }
+    this.itemChange.emit(this.item);
   }
 
   isLightArray(key: string): boolean {
@@ -107,23 +110,30 @@ export class ItemDisplayComponent implements OnInit {
   removeItem(index: number): void {
     const array: any[] = this.item;
     array.splice(index, 1);
+    this.itemChange.emit(this.item);
   }
 
   addItem(): void {
     const array: any[] = this.item;
     this.item = array.concat([0]);
+    this.itemChange.emit(this.item);
   }
 
   shouldDisplay(key: string): boolean {
-    return !(ItemUtil.fieldsToRedact.indexOf(key.toLowerCase()) > -1);
+    return ObjectUtil.notEmpty(this.item[key]) &&
+      !(ItemUtil.fieldsToRedact.indexOf(key.toLowerCase()) > -1);
   }
 
   canEdit(key: string): boolean {
     return !(ItemUtil.uneditableFields.indexOf(key.toLowerCase()) > -1) && !this.allUneditable;
   }
 
+  lightsReady(): boolean {
+    return ObjectUtil.notEmpty(this.lights);
+  }
+
   isEditableField(key: string): boolean {
-    const isEditable: boolean = this.canEdit(key) &&
+    const isEditable: boolean = // this.canEdit(key) &&
       this.isStringOrNumber(key) &&
       !this.isBoolean(key) &&
       !this.isAlert(key) &&
@@ -136,11 +146,28 @@ export class ItemDisplayComponent implements OnInit {
 
   async onSubmitState(template: TemplateRef<any>): Promise<void> {
     const unstringed: IItem = ItemUtil.stringsToBooleans(this.item);
-    // unstringed.id = this.originalItemId;
     const results: { errors: any[], successes: any[] } =
       await this.itemService.putState(this.itemType, unstringed, this.originalItemId);
     this.submitStateResults = results;
     this.openModal(template);
+    this.onResetState();
+  }
+
+  async onSubmitAction(template: TemplateRef<any>): Promise<void> {
+    const unstringed: IItem = ItemUtil.stringsToBooleans(this.item);
+    const results: { errors: any[], successes: any[] } =
+      await this.itemService.putAction(this.itemType, unstringed, this.originalItemId);
+    this.submitActionResults = results;
+    this.openModal(template);
+    this.onResetState();
+  }
+
+  async onResetState(): Promise<void> {
+    this.resetState.emit();
+  }
+
+  async onResetAction(): Promise<void> {
+    this.resetAction.emit();
   }
 
   openModal(template: TemplateRef<any>): void {

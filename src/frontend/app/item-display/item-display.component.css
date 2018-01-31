@@ -1,6 +1,36 @@
 input {
-    min-width: 300px !important;
-    max-width: 99.99% !important;
-    transition: width 0.25s;
-    text-align: center;
+  min-width: 300px !important;
+  max-width: 99.99% !important;
+  transition: width 0.25s;
+  text-align: center;
+}
+
+.needs-margin-bottom {
+  margin-bottom: 2%;
+}
+
+.needs-margin-top {
+  margin-top: 2%;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.left-align-text {
+  text-align: left;
+}
+
+.sub-card-header {
+  background-color: silver;
+}
+
+.mat-card {
+  padding: 0px;
+}
+
+.mat-card-content {
+  margin-left: 2%;
+  margin-right: 2%;
+  margin-bottom: 2% !important;
 }
