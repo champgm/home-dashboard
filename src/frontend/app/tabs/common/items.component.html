@@ -12,5 +12,21 @@
                          fxFlex="50%"
                          fxFlex.sm="80%"></app-editable-item>
     </div>
+    <div *ngIf="canAdd()">
+      <div class="btn-group btn-list-item needs-margin-bottom"
+           fxLayout="row"
+           fxLayoutAlign="center center">
+        <button type="button"
+                class="btn btn-primary"
+                fxFlex="none"
+                (click)="onAdd(addItemModal)">
+          Add New
+        </button>
+      </div>
+    </div>
   </div>
 </div>
+
+<ng-template #addItemModal>
+  <app-item-creator [itemType]="itemType"></app-item-creator>
+</ng-template>

@@ -31,6 +31,7 @@ import { ItemEditorComponent } from './item-editor/item-editor.component';
 import { ItemService } from 'frontend/app/service/item.service';
 import { ItemDisplayComponent } from './item-display/item-display.component';
 import { AutoExpandDirective } from './directive/auto-expand.directive';
+import { ItemCreatorComponent } from './item-creator/item-creator.component';
 
 @NgModule({
   imports: [
@@ -62,7 +63,8 @@ import { AutoExpandDirective } from './directive/auto-expand.directive';
     EditableItemComponent,
     ItemEditorComponent,
     ItemDisplayComponent,
-    AutoExpandDirective
+    AutoExpandDirective,
+    ItemCreatorComponent
   ],
   providers: [
     ItemService,

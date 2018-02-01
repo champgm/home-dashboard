@@ -1,7 +1,7 @@
-import { Component, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { Component, ViewChild, ChangeDetectorRef, TemplateRef } from '@angular/core';
 import { OnInit } from '@angular/core';
 import { Http, Response } from '@angular/http';
-import { ModalDirective } from 'ngx-bootstrap';
+import { ModalDirective, BsModalService, BsModalRef } from 'ngx-bootstrap';
 import 'rxjs/add/operator/toPromise';
 import IItem from '../../../../common/interfaces/IItem';
 import IMap from 'common/interfaces/IMap';
@@ -16,13 +16,14 @@ import ItemUtil from 'common/util/ItemUtil';
   styleUrls: ['./items.component.scss']
 })
 export abstract class ItemsComponent<T extends IItem> implements OnInit {
-  selectedStates: any = {};
+  addModalRef: BsModalRef;
   bunyanLogger: any;
-  itemType: string;
-  items: IMap<T>;
   itemIds: string[];
+  items: IMap<T>;
+  itemType: string;
+  selectedStates: any = {};
 
-  constructor(private itemService: ItemService) {
+  constructor(private itemService: ItemService, private modalService: BsModalService) {
     this.bunyanLogger = createLogger({ name: 'Items component' });
     this.itemService = itemService;
   }
@@ -42,4 +43,16 @@ export abstract class ItemsComponent<T extends IItem> implements OnInit {
       this.items = json;
     }
   }
+
+  canAdd(): boolean {
+    return false;
+  }
+
+  onAdd(template: TemplateRef<any>): void {
+    this.addModalRef = this.modalService.show(template);
+  }
+
+  // onAddSubmit(): void {
+  //   this.addModalRef.hide();
+  // }
 }

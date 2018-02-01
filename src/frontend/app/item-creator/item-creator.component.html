@@ -1,0 +1,44 @@
+<!-- <ng-template #addLightModal> -->
+<div class="modal-header">
+  <div class="modal-title pull-left">
+    <!-- <h4 *ngIf="itemType === 'lights'">Search For New Lights</h4> -->
+    <h4>Search For New Lights</h4>
+  </div>
+  <button type="button"
+          class="close pull-right"
+          aria-label="Close"
+          (click)="modalRef.hide()">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+
+<div fxLayout="column"
+     fxLayoutAlign="center center">
+  <mat-form-field class="needs-margin-bottom"
+                  style="width:90%">
+    <textarea matInput
+              class="left-align-text"
+              placeholder="Comma separated"
+              matTextareaAutosize
+              matAutosizeMinRows="1"
+              matAutosizeMaxRows="10"
+              [(ngModel)]="specificDeviceIds"></textarea>
+    <mat-hint>(Optional) Specific device IDs for which to search</mat-hint>
+  </mat-form-field>
+
+  <div class="btn-group needs-margin-bottom"
+       fxLayout="row"
+       fxLayoutAlign="center center">
+    <button type="button"
+            class="btn btn-warning"
+            (click)="omodalRef.hide()">
+      Cancel
+    </button>
+    <button type="button"
+            class="btn btn-success"
+            (click)="onAddSubmit()">
+      Submit
+    </button>
+  </div>
+</div>
+<!-- </ng-template> -->

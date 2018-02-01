@@ -6,6 +6,7 @@ import { ItemsComponent } from '../common/items.component';
 import 'rxjs/add/operator/toPromise';
 import IScene from '../../../../common/interfaces/IScene';
 import { ItemService } from 'frontend/app/service/item.service';
+import { BsModalService } from 'ngx-bootstrap';
 
 @Component({
   // moduleId: module.id,
@@ -16,8 +17,8 @@ export class ScenesComponent extends ItemsComponent<IScene> implements OnInit {
   itemType: string = 'scenes';
   parameters: string = `?v2=true&`;
 
-  constructor(http: Http, itemService: ItemService) {
-    super( itemService);
+  constructor(http: Http, itemService: ItemService, private bsModalService: BsModalService) {
+    super(itemService, bsModalService);
   }
 
   async getItems(): Promise<void> {
