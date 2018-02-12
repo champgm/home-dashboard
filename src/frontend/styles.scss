@@ -1,66 +1,81 @@
 /* You can add global styles to this file, and also import other style files */
 
-@import '../../node_modules/@angular/material/prebuilt-themes/indigo-pink.css';
-@import './assets/bootstrap.min.css';
-@import './assets/bootstrap.override.css';
+@import "../../node_modules/@angular/material/prebuilt-themes/indigo-pink.css";
+@import "./assets/bootstrap.min.css";
+@import "./assets/bootstrap.override.css";
 
 html, body {
-  box-sizing: border-box;
-  height: 100%;
-  width: 100%;
-  margin: 0;
+    box-sizing: border-box;
+    height: 100%;
+    width: 100%;
+    margin: 0;
 }
 
-
 button.light-toggler {
-  -webkit-border-radius: 28;
-  -moz-border-radius: 28;
-  border-radius: 28px;
-  font-family: Arial;
-  color: #ffffff;
-  font-size: 20px;
-  background: #dbdbdb;
-  padding: 20px 100px 20px 50px;
-  text-decoration: none;
-  width: 220px;
-  height: 220px;
-  margin: 20px
+    -webkit-border-radius: 28;
+    -moz-border-radius: 28;
+    border-radius: 28px;
+    font-family: Arial;
+    color: #ffffff;
+    font-size: 20px;
+    background: #dbdbdb;
+    padding: 20px 100px 20px 50px;
+    text-decoration: none;
+    width: 220px;
+    height: 220px;
+    margin: 20px;
 }
 
 button.light-toggler.on {
-  background: red;
+    background: red;
 }
 
 button.scene {
-  -webkit-border-radius: 28;
-  -moz-border-radius: 28;
-  border-radius: 28px;
-  font-family: Arial;
-  color: #ffffff;
-  font-size: 12px;
-  background: #dbdbdb;
-  padding: 20px 100px 20px 50px;
-  text-decoration: none;
-  width: 220px;
-  height: 150px;
-  margin: 20px
+    -webkit-border-radius: 28;
+    -moz-border-radius: 28;
+    border-radius: 28px;
+    font-family: Arial;
+    color: #ffffff;
+    font-size: 12px;
+    background: #dbdbdb;
+    padding: 20px 100px 20px 50px;
+    text-decoration: none;
+    width: 220px;
+    height: 150px;
+    margin: 20px;
 }
 
 [class*="col-"] {
-  background-clip: padding-box;
-  border: 10px solid transparent;
+    background-clip: padding-box;
+    border: 10px solid transparent;
 }
 
 .btn.item.btn-off.btn-lg {
-  background-color: #E0E0E0;
-  text-decoration: none;
-  background-position: 0;
-  transition: none;
+    background-color: #E0E0E0;
+    text-decoration: none;
+    background-position: 0;
+    transition: none;
 }
 
 .btn.item.btn-on.btn-lg {
-  background-color: #FF9933;
-  text-decoration: none;
-  background-position: 0;
-  transition: none;
+    background-color: #FF9933;
+    text-decoration: none;
+    background-position: 0;
+    transition: none;
+}
+
+.needs-margin-bottom {
+    margin-bottom: 2%;
+}
+
+.needs-margin-top {
+    margin-top: 2%;
+}
+
+.full-width {
+    width: 100%;
+}
+
+.cdk-global-overlay-wrapper, .cdk-overlay-container {
+  z-index: 99999 !important;
 }

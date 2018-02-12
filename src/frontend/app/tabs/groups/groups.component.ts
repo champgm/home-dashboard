@@ -5,6 +5,7 @@ import { ItemsComponent } from '../common/items.component';
 import 'rxjs/add/operator/toPromise';
 import IGroup from '../../../../common/interfaces/IGroup';
 import { ItemService } from 'frontend/app/service/item.service';
+import { BsModalService } from 'ngx-bootstrap';
 
 @Component({
   // moduleId: module.id,
@@ -14,7 +15,7 @@ import { ItemService } from 'frontend/app/service/item.service';
 export class GroupsComponent extends ItemsComponent<IGroup> implements OnInit {
   itemType: string = 'groups';
 
-  constructor(http: Http, itemService: ItemService) {
-    super( itemService);
+  constructor(http: Http, itemService: ItemService, private bsModalService: BsModalService) {
+    super(itemService, bsModalService);
   }
 }

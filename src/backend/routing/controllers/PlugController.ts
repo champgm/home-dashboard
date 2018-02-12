@@ -6,6 +6,7 @@ import CommonController from '../../routing/controllers/CommonController';
 import IMap from '../../../common/interfaces/IMap';
 import IPlug from '../../../common/interfaces/IPlug';
 import IState from '../../../common/interfaces/IState';
+import * as CircularJSON from 'circular-json';
 
 const bunyanLogger: bunyan = LoggerParent.child({ fileName: `${path.basename(__filename)}` });
 
@@ -27,7 +28,7 @@ export default class PlugController extends CommonController<IPlug> {
       plug.getInfo().then((info) => {
         bunyanLogger.info({ plugName: plug.name, host: plug.host }, 'New plug found.');
       });
-      plug.setPowerState(true);
+      plug.state = { on: plug.getPowerState() };
       this.knownPlugs[plug.host] = this.trimPlug(plug);
       if (!(plug.host in this.knownPlugs)) {
         plug.id = plug.host;
@@ -38,6 +39,7 @@ export default class PlugController extends CommonController<IPlug> {
     const watchForKnownPlugs: any = (plug: any): void => {
       plug.getInfo().then((info) => {
         bunyanLogger.info({ plugName: plug.name, host: plug.host }, 'Known plug found.');
+        plug.state = { on: plug.getPowerState() };
         this.knownPlugs[plug.host] = this.trimPlug(plug);
         if (!(plug.host in this.knownPlugs)) {
           plug.id = plug.host;
@@ -46,10 +48,19 @@ export default class PlugController extends CommonController<IPlug> {
       });
     };
 
+    const watchForOfflinePlugs: any = (plug: any): void => {
+      plug.getInfo().then((info) => {
+        bunyanLogger.info({ plugName: plug.name, host: plug.host }, 'Plug not found.');
+        this.knownPlugIps.splice(this.knownPlugIps.indexOf(plug.host), 1);
+        delete this.knownPlugs[plug.host];
+      });
+    };
+
     bunyanLogger.info('Starting plug discovery.');
     this.client.startDiscovery()
       .on('plug-new', watchForNewPlugs)
-      .on('plug-online', watchForKnownPlugs);
+      .on('plug-online', watchForKnownPlugs)
+      .on('plug-offline', watchForOfflinePlugs);
     this.client.sendDiscovery();
   }
 
@@ -88,23 +99,7 @@ export default class PlugController extends CommonController<IPlug> {
   }
 
   trimPlug(originalPlug: IPlug): IPlug {
-    const trimmedPlug: any = {};
-    trimmedPlug.deviceId = originalPlug.deviceId;
-    trimmedPlug.host = originalPlug.host;
-    trimmedPlug.port = originalPlug.port;
-    trimmedPlug.name = originalPlug.name;
-    trimmedPlug.deviceName = originalPlug.deviceName;
-    trimmedPlug.model = originalPlug.model;
-    trimmedPlug.softwareVersion = originalPlug.softwareVersion;
-    trimmedPlug.hardwareVersion = originalPlug.hardwareVersion;
-    trimmedPlug.mac = originalPlug.mac;
-    trimmedPlug.latitude = originalPlug.latitude;
-    trimmedPlug.longitude = originalPlug.longitude;
-    trimmedPlug.status = originalPlug.status;
-    trimmedPlug.sysInfo = originalPlug.sysInfo;
-    trimmedPlug.cloudInfo = originalPlug.cloudInfo;
-    trimmedPlug.consumption = originalPlug.consumption;
-    return trimmedPlug;
+    return CircularJSON.parse(CircularJSON.stringify(originalPlug));
   }
 
   async getState(plugId: string): Promise<IState> {

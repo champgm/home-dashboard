@@ -5,4 +5,5 @@ export default interface IItem {
   name?: string;
   state?: IState;
   action?: IState;
+  lights?: string[];
 }

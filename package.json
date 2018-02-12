@@ -8,7 +8,7 @@
     "kill-port": "kill $(lsof -t -i:1981)",
     "start": "true && ts-node src/backend/server.ts | bunyan",
     "serve": "ng serve --host 0.0.0.0",
-    "build": "ng build",
+    "build": "ng build --prod --build-optimizer",
     "build-watch": "ng build --watch",
     "build-docker": "docker build -t home-dashboard .",
     "start-watch": "nodemon -e ts --watch src/backend -x \"npm run start\"",

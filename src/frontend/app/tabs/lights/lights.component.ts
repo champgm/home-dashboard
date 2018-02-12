@@ -6,6 +6,7 @@ import { ItemsComponent } from '../common/items.component';
 import 'rxjs/add/operator/toPromise';
 import ILight from '../../../../common/interfaces/ILight';
 import { ItemService } from 'frontend/app/service/item.service';
+import { BsModalService } from 'ngx-bootstrap';
 
 @Component({
   // moduleId: module.id,
@@ -15,8 +16,8 @@ import { ItemService } from 'frontend/app/service/item.service';
 export class LightsComponent extends ItemsComponent<ILight> implements OnInit {
   itemType: string = 'lights';
 
-  constructor(http: Http, itemService: ItemService) {
-    super( itemService);
+  constructor(http: Http, itemService: ItemService, private bsModalService: BsModalService) {
+    super(itemService, bsModalService);
   }
 
   isSelected(itemId: string): boolean {
@@ -25,5 +26,9 @@ export class LightsComponent extends ItemsComponent<ILight> implements OnInit {
       return false;
     }
     return item.state.on;
+  }
+
+  canAdd(): boolean {
+    return true;
   }
 }

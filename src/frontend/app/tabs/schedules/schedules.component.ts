@@ -6,6 +6,7 @@ import { ItemsComponent } from '../common/items.component';
 import 'rxjs/add/operator/toPromise';
 import ISchedule from '../../../../common/interfaces/ISchedule';
 import { ItemService } from 'frontend/app/service/item.service';
+import { BsModalService } from 'ngx-bootstrap';
 
 @Component({
   // moduleId: module.id,
@@ -15,7 +16,7 @@ import { ItemService } from 'frontend/app/service/item.service';
 export class SchedulesComponent extends ItemsComponent<ISchedule> implements OnInit {
   itemType: string = 'schedules';
 
-  constructor(http: Http, itemService: ItemService) {
-    super( itemService);
+  constructor(http: Http, itemService: ItemService, private bsModalService: BsModalService) {
+    super(itemService, bsModalService);
   }
 }

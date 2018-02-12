@@ -13,8 +13,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatInputModule } from '@angular/material';
-import {MatSlideToggleModule} from '@angular/material/slide-toggle';
-import {MatCardModule} from '@angular/material/card';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatCardModule } from '@angular/material/card';
 
 import { AppRoutingModule } from './app-routing.module';
 import { GroupsComponent } from './tabs/groups/groups.component';
@@ -31,6 +31,8 @@ import { ItemEditorComponent } from './item-editor/item-editor.component';
 import { ItemService } from 'frontend/app/service/item.service';
 import { ItemDisplayComponent } from './item-display/item-display.component';
 import { AutoExpandDirective } from './directive/auto-expand.directive';
+import { ItemCreatorComponent } from './item-creator/item-creator.component';
+import { LightsListComponent } from './lights-list/lights-list.component';
 
 @NgModule({
   imports: [
@@ -62,7 +64,9 @@ import { AutoExpandDirective } from './directive/auto-expand.directive';
     EditableItemComponent,
     ItemEditorComponent,
     ItemDisplayComponent,
-    AutoExpandDirective
+    AutoExpandDirective,
+    ItemCreatorComponent,
+    LightsListComponent
   ],
   providers: [
     ItemService,
