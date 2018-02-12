@@ -5,10 +5,12 @@ import IItem from './IItem';
 export default interface IScene extends IItem {
   sceneId?: string;
   id?: string;
-  version: number;
+  version?: number;
   lightStates?: IMap<State>;
   name: string;
   storelightstate?: boolean;
   lights?: string[];
+  transitiontime?: number;
+  recycle: boolean;
 }
 

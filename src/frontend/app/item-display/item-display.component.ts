@@ -21,15 +21,15 @@ export class ItemDisplayComponent implements OnInit {
   bunyanLogger: any;
   modalRef: BsModalRef;
   submitStateResults: { errors: any[]; successes: any[]; };
-  @Input() itemKey: string;
+  @Input() allUneditable: any;
   @Input() item: any;
-  @Output() itemChange: EventEmitter<any> = new EventEmitter<any>();
+  @Input() itemKey: string;
+  @Input() itemType: any;
   @Input() lights: IMap<ILight>;
   @Input() originalItemId: string;
-  @Input() itemType: any;
-  @Input() allUneditable: any;
-  @Output() resetState: EventEmitter<void> = new EventEmitter<void>();
+  @Output() itemChange: EventEmitter<any> = new EventEmitter<any>();
   @Output() resetAction: EventEmitter<void> = new EventEmitter<void>();
+  @Output() resetState: EventEmitter<void> = new EventEmitter<void>();
 
   constructor(
     private itemService: ItemService,
@@ -55,13 +55,7 @@ export class ItemDisplayComponent implements OnInit {
   }
 
   isBoolean(key: any): boolean {
-    return this.item[key] === 'true' ||
-      this.item[key] === 'false';
-  }
-
-  isBooleanToggle(key: any): boolean {
-    // this.canEdit(key) &&
-    return this.isBoolean(key);
+    return (typeof this.item[key] === 'boolean');
   }
 
   isAlert(key: any): boolean {
@@ -77,11 +71,24 @@ export class ItemDisplayComponent implements OnInit {
   }
 
   toggle(key: string): void {
-    if (this.item[key] === 'true') {
-      this.item[key] = 'false';
-    } else if (this.item[key] === 'false') {
-      this.item[key] = 'true';
+    console.log(`TOGGLE: ${key}`);
+    console.log(`NOW: ${this.item[key]} & ${typeof this.item[key]}`);
+    // if (this.item[key] === 'true') {
+    //   this.item[key] = 'false';
+    // } else if (this.item[key] === 'false') {
+    //   this.item[key] = 'true';
+    // }
+
+    if (this.item[key] === true) {
+      this.item[key] = false;
+    } else if (this.item[key] === false) {
+      this.item[key] = true;
     }
+    console.log(`TOGGLED: ${this.item[key]} & ${typeof this.item[key]}`);
+    this.onItemChange();
+  }
+
+  onItemChange(): void {
     this.itemChange.emit(this.item);
   }
 
@@ -107,21 +114,10 @@ export class ItemDisplayComponent implements OnInit {
     }
   }
 
-  removeItem(index: number): void {
-    const array: any[] = this.item;
-    array.splice(index, 1);
-    this.itemChange.emit(this.item);
-  }
-
-  addItem(): void {
-    const array: any[] = this.item;
-    this.item = array.concat([0]);
-    this.itemChange.emit(this.item);
-  }
-
   shouldDisplay(key: string): boolean {
-    return ObjectUtil.notEmpty(this.item[key]) &&
-      !(ItemUtil.fieldsToRedact.indexOf(key.toLowerCase()) > -1);
+    return (typeof this.item[key] === 'boolean') ||
+      (ObjectUtil.notEmpty(this.item[key]) &&
+        !(ItemUtil.fieldsToRedact.indexOf(key.toLowerCase()) > -1));
   }
 
   canEdit(key: string): boolean {
@@ -145,18 +141,20 @@ export class ItemDisplayComponent implements OnInit {
   }
 
   async onSubmitState(template: TemplateRef<any>): Promise<void> {
-    const unstringed: IItem = ItemUtil.stringsToBooleans(this.item);
+    // const unstringed: IItem = ItemUtil.stringsToBooleans(this.item);
     const results: { errors: any[], successes: any[] } =
-      await this.itemService.putState(this.itemType, unstringed, this.originalItemId);
+      // await this.itemService.putState(this.itemType, unstringed, this.originalItemId);
+      await this.itemService.putState(this.itemType, this.item, this.originalItemId);
     this.submitStateResults = results;
     this.openModal(template);
     this.onResetState();
   }
 
   async onSubmitAction(template: TemplateRef<any>): Promise<void> {
-    const unstringed: IItem = ItemUtil.stringsToBooleans(this.item);
+    // const unstringed: IItem = ItemUtil.stringsToBooleans(this.item);
     const results: { errors: any[], successes: any[] } =
-      await this.itemService.putAction(this.itemType, unstringed, this.originalItemId);
+      // await this.itemService.putAction(this.itemType, unstringed, this.originalItemId);
+      await this.itemService.putAction(this.itemType, this.item, this.originalItemId);
     this.submitActionResults = results;
     this.openModal(template);
     this.onResetState();
@@ -171,6 +169,6 @@ export class ItemDisplayComponent implements OnInit {
   }
 
   openModal(template: TemplateRef<any>): void {
-    this.modalRef = this.modalService.show(template);
+    this.modalRef = this.modalService.show(template, { class: 'modal-lg' });
   }
 }

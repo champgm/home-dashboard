@@ -95,12 +95,12 @@
   </div>
 
   <div fxLayoutAlign="center center">
-    <div class="btn-group needs-margin-bottom"
+    <div class="btn-group needs-margin-bottom needs-margin-top"
          fxLayout="row"
          fxLayoutAlign="center center">
       <button type="button"
               class="btn btn-success"
-              (click)="omodalRef.hide()">
+              (click)="modalRef.hide()">
         Cancel
       </button>
       <button type="button"
@@ -118,7 +118,7 @@
     <button type="button"
             class="close pull-right"
             aria-label="Close"
-            (click)="modalRef.hide()">
+            (click)="onDeleteDone()">
       <span aria-hidden="true">&times;</span>
     </button>
   </div>
@@ -129,10 +129,19 @@
         There was a problem deleting '{{error.address}}': {{error.description}}
       </div>
       <div *ngFor="let success of submitResults.successes">
-        <div *ngFor="let key of objectKeys(success)">
-          '{{key}}' was successfully set to '{{success[key]}}'
-        </div>
+        {{success}}
       </div>
+    </div>
+  </div>
+  <div fxLayoutAlign="center center">
+    <div class="btn-group needs-margin-bottom needs-margin-top"
+         fxLayout="row"
+         fxLayoutAlign="center center">
+      <button type="button"
+              class="btn btn-success"
+              (click)="onDeleteDone()">
+        OK
+      </button>
     </div>
   </div>
 </ng-template>

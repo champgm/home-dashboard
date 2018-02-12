@@ -27,6 +27,10 @@
   </div>
 </div>
 
-<ng-template #addItemModal>
-  <app-item-creator [itemType]="itemType"></app-item-creator>
+<ng-template #addItemModal
+             id="addItemModal">
+  <app-item-creator [itemType]="itemType"
+                    [modalReference]="addModalRef"></app-item-creator>
+
+  <!-- (done)="editDone($event)" -->
 </ng-template>

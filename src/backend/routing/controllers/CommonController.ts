@@ -55,6 +55,21 @@ export default abstract class CommonController<ItemType extends IItem> {
     return this.setState(itemId, onState);
   }
 
+  async add(newObject: any): Promise<any> {
+    this.bunyanLogger.info(`Add called for ${this.type}`);
+    const options: any = this.requestOptionsUtil.postWithBody(`${this.type}`, newObject);
+    this.bunyanLogger.info({ options }, 'Will POST with options.');
+    const response: any = await makeRequest(options);
+    return response;
+  }
+
+  async delete(itemId: string): Promise<IState> {
+    const uri: string = `${this.type}/${itemId}`;
+    const putOptions: any = this.requestOptionsUtil.delete(uri);
+    const response: any = await makeRequest(putOptions);
+    return response;
+  }
+
   abstract async setState(itemId: string, state: IState): Promise<IState>;
   abstract async getState(itemId: string): Promise<IState>;
   abstract async select(itemId: string): Promise<IState>;

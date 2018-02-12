@@ -38,6 +38,15 @@ export default class RequestOptionsUtil {
     return getOptions;
   }
 
+  delete(uri: string): IRequestOptions {
+    const deleteOptions: IRequestOptions = {
+      method: 'DELETE',
+      uri: `${this.bridgeUri}/${uri}`,
+      json: true
+    };
+    return deleteOptions;
+  }
+
   /**
    * Builds a PUT with the given URI and includes the given body
    *
@@ -55,6 +64,16 @@ export default class RequestOptionsUtil {
       body
     };
     return putOptions;
+  }
+
+  postWithBody(uri: string, body: any): IRequestOptions {
+    const postOptions: IRequestOptions = {
+      method: 'POST',
+      uri: `${this.bridgeUri}/${uri}`,
+      json: true,
+      body
+    };
+    return postOptions;
   }
 
 }

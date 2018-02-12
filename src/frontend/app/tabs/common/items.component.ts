@@ -30,6 +30,7 @@ export abstract class ItemsComponent<T extends IItem> implements OnInit {
 
   ngOnInit(): void {
     this.getItems();
+    this.bunyanLogger.info({ items: this.items }, 'this.items');
   }
 
   objectKeys(items: IMap<T>): string[] {
@@ -52,7 +53,8 @@ export abstract class ItemsComponent<T extends IItem> implements OnInit {
     this.addModalRef = this.modalService.show(template);
   }
 
-  // onAddSubmit(): void {
-  //   this.addModalRef.hide();
-  // }
+  addDone(event: any): void {
+    this.addModalRef.hide();
+    this.getItems();
+  }
 }

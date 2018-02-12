@@ -36,10 +36,25 @@ export default function routeCommon<T extends CommonController<IItem>>(itemType:
     bunyanLogger.info('Request handled.');
   });
 
+  application.delete(`/${itemType}/:itemId`, async (request: any, response: any, next: any) => {
+    const itemId: string = request.itemId;
+    bunyanLogger.info({ itemId }, `delete ${itemType} called`);
+    const item: IItem = await controller.delete(itemId);
+    response.json(item);
+    bunyanLogger.info('Request handled.');
+  });
+
   application.put(`/${itemType}/:itemId`, async (request: any, response: any, next: any) => {
     const itemId: string = request.itemId;
     bunyanLogger.info({ itemId }, `put ${itemType} called`);
     const item: IItem = await controller.update(itemId, request.body);
+    response.json(item);
+    bunyanLogger.info('Request handled.');
+  });
+
+  application.post(`/${itemType}`, async (request: any, response: any, next: any) => {
+    bunyanLogger.info(`post ${itemType} called`);
+    const item: IItem = await controller.add(request.body);
     response.json(item);
     bunyanLogger.info('Request handled.');
   });

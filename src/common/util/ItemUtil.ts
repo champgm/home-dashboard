@@ -12,8 +12,7 @@ import RuleAttributeOrderUtil from 'common/util/attributeOrder/RuleAttributeOrde
 export default class ItemUtil {
   static fieldsToRedact: string[] = [
     'appdata',
-    'picture',
-    'recycle'
+    'picture'
   ];
   static uneditableFields: string[] = [
     'type',
@@ -54,38 +53,10 @@ export default class ItemUtil {
     return [];
   }
 
-  public static booleansToStrings(item: any): any {
-    const traversable: any = traverse(item);
-    return traversable.map(function (value: any): any {
-      if (ObjectUtil.notEmpty(this.key)) {
-        // bunyanLogger.info({ this: this }, 'this');
-        if (typeof this.node === 'boolean') {
-          if (this.node) {
-            this.update('true');
-          } else {
-            this.update('false');
-          }
-        }
-      }
-    });
-  }
-
-  public static stringsToBooleans(item: any): IItem {
-    const traversable: any = traverse(item);
-    return traversable.map(function (value: any): any {
-      if (ObjectUtil.notEmpty(this.key)) {
-        if (this.node === 'true') {
-          this.update(true);
-        } else if (this.node === 'false') {
-          this.update(false);
-        }
-      }
-    });
-  }
-
   public static isSelected(item: IItem, itemType: string): boolean {
     switch (itemType) {
       case 'lights':
+      case 'plugs':
         if (!item || !item.state) {
           return false;
         }

@@ -24,4 +24,8 @@ export class ScenesComponent extends ItemsComponent<IScene> implements OnInit {
   async getItems(): Promise<void> {
     return super.getItems(this.parameters);
   }
+
+  canAdd(): boolean {
+    return true;
+  }
 }

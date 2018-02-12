@@ -7,6 +7,9 @@ import * as traverse from 'traverse';
 import ObjectUtil from 'common/util/ObjectUtil';
 import ItemUtil from 'common/util/ItemUtil';
 import IState from 'common/interfaces/IState';
+import emptyScene from './emptyItems/EmptyScene';
+import * as CircularJSON from 'circular-json';
+import IScene from 'common/interfaces/IScene';
 
 @Injectable()
 export class ItemService {
@@ -46,6 +49,7 @@ export class ItemService {
   }
 
   async doPut(url: string, item: any): Promise<any> {
+    this.bunyanLogger.info({ item }, 'Putting item');
     const response: Response = await this.http.put(url, item).toPromise();
     return this.parseResponse(response);
   }
@@ -57,9 +61,16 @@ export class ItemService {
     return response;
   }
 
+  async deleteItem(itemType: string, itemId: string): Promise<{ errors: any[], successes: any[], singleResult: any }> {
+    const response: Response = await this.http.delete(`/${itemType}/${itemId}`).toPromise();
+    const unsortedResult: any[] = JSON.parse(response['_body']);
+    this.bunyanLogger.info({ unsortedResult }, 'Unsorted delete result');
+    return this.parseResponse(response);
+  }
+
   parseResponse(response: Response): { errors: any[], successes: any[], singleResult: any } {
     const unsortedResult: any[] = JSON.parse(response['_body']);
-    this.bunyanLogger.info({ unsortedResult }, 'Unsorted edit result');
+    this.bunyanLogger.info({ unsortedResult }, 'Unsorted result');
     const sortedResults: any = { errors: [], successes: [], singleResult: {} };
     if (Array.isArray(unsortedResult)) {
       for (const result of unsortedResult) {
@@ -73,8 +84,29 @@ export class ItemService {
     } else {
       sortedResults.singleResult = unsortedResult;
     }
-    this.bunyanLogger.info({ sortedResults }, 'Sorted edit result');
+    this.bunyanLogger.info({ sortedResults }, 'Sorted result');
     return sortedResults;
+  }
+
+  getEmptyItem(itemType: string): any {
+    switch (itemType) {
+      case 'scenes':
+        return CircularJSON.parse(CircularJSON.stringify(emptyScene));
+      default:
+        break;
+    }
+  }
+
+  // Type-centric stuff
+  async addLights(deviceIds: string[]): Promise<{ errors: any[], successes: any[], singleResult: any }> {
+    const response: Response = await this.http.post('lights', { deviceid: deviceIds }).toPromise();
+    return this.parseResponse(response);
+  }
+
+  async addScene(newScene: IScene): Promise<{ errors: any[], successes: any[], singleResult: any }> {
+    this.bunyanLogger.info({ newScene }, 'newScene');
+    const response: Response = await this.http.post('scenes', newScene).toPromise();
+    return this.parseResponse(response);
   }
 
   private removeUneditableFields(item: any): any {
