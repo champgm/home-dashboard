@@ -15,7 +15,7 @@ export default function route(controller: PlugController, application: core.Expr
   routeSelect(itemType, controller, application);
 
   application.get(`/${itemType}/:itemId/select`, async (request: any, response, next) => {
-    bunyanLogger.info(`select ${itemType} called`);
+    bunyanLogger.info(`get ${itemType} called`);
     const itemId: string = request.itemId;
     bunyanLogger.info(`Plugid from request: ${itemId}`);
     const item: IState = await controller.select(itemId);

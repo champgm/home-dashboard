@@ -39,6 +39,7 @@ export class EditableItemComponent implements OnInit {
   }
 
   async onSelect(): Promise<Response> {
+    this.bunyanLogger.info({ item: this.item }, 'Selecting Item');
     const selectResponse: Response = await this.itemService.selectItem(this.itemType, this.item.id);
     this.item = await this.itemService.getItem(this.itemType, this.item.id);
     this.isSelected = ItemUtil.isSelected(this.item, this.itemType);

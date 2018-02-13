@@ -5,6 +5,7 @@ import { LoggerParent } from '../../../logger/logger';
 import CommonController from '../../controllers/CommonController';
 import IItem from '../../../../common/interfaces/IItem';
 import IMap from '../../../../common/interfaces/IMap';
+import * as CircularJSON from 'circular-json';
 const bunyanLogger: bunyan = LoggerParent.child({ fileName: `${path.basename(__filename)}` });
 
 
@@ -15,7 +16,7 @@ export default function routeCommon<T extends CommonController<IItem>>(itemType:
     try {
       bunyanLogger.info(`get ${itemType} called`);
       const items: IMap<IItem> = await controller.getAll();
-      response.json(items);
+      response.json(CircularJSON.parse(CircularJSON.stringify(items)));
       bunyanLogger.info('Request handled.');
     } catch (caughtError) {
       bunyanLogger.error({ keys: Object.getOwnPropertyNames(caughtError) }, 'error keys');
@@ -32,7 +33,7 @@ export default function routeCommon<T extends CommonController<IItem>>(itemType:
     const itemId: string = request.itemId;
     bunyanLogger.info({ itemId }, `get ${itemType} called`);
     const item: IItem = await controller.get(itemId);
-    response.json(item);
+    response.json(CircularJSON.parse(CircularJSON.stringify(item)));
     bunyanLogger.info('Request handled.');
   });
 
@@ -40,7 +41,7 @@ export default function routeCommon<T extends CommonController<IItem>>(itemType:
     const itemId: string = request.itemId;
     bunyanLogger.info({ itemId }, `delete ${itemType} called`);
     const item: IItem = await controller.delete(itemId);
-    response.json(item);
+    response.json(CircularJSON.parse(CircularJSON.stringify(item)));
     bunyanLogger.info('Request handled.');
   });
 
@@ -48,14 +49,14 @@ export default function routeCommon<T extends CommonController<IItem>>(itemType:
     const itemId: string = request.itemId;
     bunyanLogger.info({ itemId }, `put ${itemType} called`);
     const item: IItem = await controller.update(itemId, request.body);
-    response.json(item);
+    response.json(CircularJSON.parse(CircularJSON.stringify(item)));
     bunyanLogger.info('Request handled.');
   });
 
   application.post(`/${itemType}`, async (request: any, response: any, next: any) => {
     bunyanLogger.info(`post ${itemType} called`);
     const item: IItem = await controller.add(request.body);
-    response.json(item);
+    response.json(CircularJSON.parse(CircularJSON.stringify(item)));
     bunyanLogger.info('Request handled.');
   });
 

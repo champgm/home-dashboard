@@ -1,48 +1,48 @@
 import { LoggerParent } from '../../logger/logger';
 import * as bunyan from 'bunyan';
-import * as Hs100Api from 'tplink-smarthome-api';
+import { Client } from 'tplink-smarthome-api';
 import * as path from 'path';
 import CommonController from '../../routing/controllers/CommonController';
 import IMap from '../../../common/interfaces/IMap';
 import IPlug from '../../../common/interfaces/IPlug';
 import IState from '../../../common/interfaces/IState';
 import * as CircularJSON from 'circular-json';
+import * as _ from 'lodash';
 
 const bunyanLogger: bunyan = LoggerParent.child({ fileName: `${path.basename(__filename)}` });
 
 export default class PlugController extends CommonController<IPlug> {
 
-  client: Hs100Api.Client;
+  client: Client;
   knownPlugs: IMap<IPlug> = {};
   knownPlugIps: any[];
+  broadcastAddress: string;
 
   constructor(broadcastAddress: string) {
     super('', '', bunyanLogger);
+    this.broadcastAddress = broadcastAddress;
     this.knownPlugIps = [];
     this.knownPlugs = {};
-    this.client = new Hs100Api.Client({
-      broadcast: broadcastAddress
-    });
+    this.client = new Client();
+    // this.client = new Hs100Api.Client({
+    //   broadcast: broadcastAddress
+    // });
 
-    const watchForNewPlugs: any = (plug: any): void => {
-      plug.getInfo().then((info) => {
-        bunyanLogger.info({ plugName: plug.name, host: plug.host }, 'New plug found.');
-      });
+    const watchForNewPlugs: any = async (plug: any): Promise<void> => {
       plug.state = { on: plug.getPowerState() };
-      this.knownPlugs[plug.host] = this.trimPlug(plug);
+      this.knownPlugs[plug.host] = await this.get(plug.host);
+      bunyanLogger.info({ plug: this.knownPlugs[plug.host] }, 'New plug found.');
       if (!(plug.host in this.knownPlugs)) {
-        plug.id = plug.host;
         this.knownPlugIps.push(plug.host);
       }
     };
 
     const watchForKnownPlugs: any = (plug: any): void => {
-      plug.getInfo().then((info) => {
-        bunyanLogger.info({ plugName: plug.name, host: plug.host }, 'Known plug found.');
+      plug.getInfo().then(async (info) => {
         plug.state = { on: plug.getPowerState() };
-        this.knownPlugs[plug.host] = this.trimPlug(plug);
+        this.knownPlugs[plug.host] = await this.get(plug.host);
+        bunyanLogger.info({ plug: plug.host }, 'Known plug found.');
         if (!(plug.host in this.knownPlugs)) {
-          plug.id = plug.host;
           this.knownPlugIps.push(plug.host);
         }
       });
@@ -50,14 +50,14 @@ export default class PlugController extends CommonController<IPlug> {
 
     const watchForOfflinePlugs: any = (plug: any): void => {
       plug.getInfo().then((info) => {
-        bunyanLogger.info({ plugName: plug.name, host: plug.host }, 'Plug not found.');
+        bunyanLogger.info({ plug }, 'Plug not found.');
         this.knownPlugIps.splice(this.knownPlugIps.indexOf(plug.host), 1);
         delete this.knownPlugs[plug.host];
       });
     };
 
     bunyanLogger.info('Starting plug discovery.');
-    this.client.startDiscovery()
+    this.client.startDiscovery({ broadcast: this.broadcastAddress })
       .on('plug-new', watchForNewPlugs)
       .on('plug-online', watchForKnownPlugs)
       .on('plug-offline', watchForOfflinePlugs);
@@ -68,19 +68,29 @@ export default class PlugController extends CommonController<IPlug> {
     return this.knownPlugs;
   }
 
-  async get(plugId: string): Promise<IPlug> {
-    const plug: IPlug = await this.client.getPlug({ host: plugId });
-    return plug;
+  async get(plugId: string): Promise<any> {
+    const rawData: any = await this.client.getDevice({ host: plugId });
+    const plugDataPromise: Promise<any> = rawData.getSysInfo();
+    const plugStatePromise: Promise<any> = rawData.getPowerState();
+    const plugData: any = await plugDataPromise;
+    plugData.id = plugId;
+    plugData.name = plugData.alias;
+    plugData.state = { on: await plugStatePromise };
+    return plugData;
+  }
+
+  async getPlugClient(plugId: string): Promise<IPlug> {
+    return await this.client.getDevice({ host: plugId });
   }
 
   async setState(plugId: string, state: IState): Promise<IState> {
-    const plug: IPlug = await this.get(plugId);
+    const plug: IPlug = await this.getPlugClient(plugId);
     const setStateResult: boolean = await plug.setPowerState(state.on);
-    return { on: state.on };
+    return { on: await plug.getPowerState() };
   }
 
   async select(plugId: string): Promise<IState> {
-    const plug: IPlug = await this.get(plugId);
+    const plug: IPlug = await this.getPlugClient(plugId);
     const currentPowerState: boolean = await plug.getPowerState();
     return this.setState(plugId, { on: !currentPowerState });
   }
@@ -98,12 +108,8 @@ export default class PlugController extends CommonController<IPlug> {
     return this.get(itemId);
   }
 
-  trimPlug(originalPlug: IPlug): IPlug {
-    return CircularJSON.parse(CircularJSON.stringify(originalPlug));
-  }
-
   async getState(plugId: string): Promise<IState> {
-    const plug: IPlug = await this.get(plugId);
+    const plug: IPlug = await this.getPlugClient(plugId);
     const currentPowerState: boolean = await plug.getPowerState();
     return { on: currentPowerState };
   }
