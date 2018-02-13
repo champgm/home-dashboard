@@ -1,6 +1,6 @@
 import { LoggerParent } from '../../logger/logger';
 import * as bunyan from 'bunyan';
-import * as Hs100Api from 'hs100-api';
+import * as Hs100Api from 'tplink-smarthome-api';
 import * as path from 'path';
 import CommonController from '../../routing/controllers/CommonController';
 import IMap from '../../../common/interfaces/IMap';
