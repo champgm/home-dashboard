@@ -141,9 +141,7 @@ export class ItemDisplayComponent implements OnInit {
   }
 
   async onSubmitState(template: TemplateRef<any>): Promise<void> {
-    // const unstringed: IItem = ItemUtil.stringsToBooleans(this.item);
     const results: { errors: any[], successes: any[] } =
-      // await this.itemService.putState(this.itemType, unstringed, this.originalItemId);
       await this.itemService.putState(this.itemType, this.item, this.originalItemId);
     this.submitStateResults = results;
     this.openModal(template);
@@ -151,9 +149,7 @@ export class ItemDisplayComponent implements OnInit {
   }
 
   async onSubmitAction(template: TemplateRef<any>): Promise<void> {
-    // const unstringed: IItem = ItemUtil.stringsToBooleans(this.item);
     const results: { errors: any[], successes: any[] } =
-      // await this.itemService.putAction(this.itemType, unstringed, this.originalItemId);
       await this.itemService.putAction(this.itemType, this.item, this.originalItemId);
     this.submitActionResults = results;
     this.openModal(template);
