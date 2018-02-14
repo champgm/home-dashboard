@@ -10,11 +10,11 @@ import { ItemService } from 'frontend/app/service/item.service';
 import ObjectUtil from 'common/util/ObjectUtil';
 import ItemUtil from 'common/util/ItemUtil';
 
-@Component({
-  selector: 'app-items',
-  templateUrl: './items.component.html',
-  styleUrls: ['./items.component.scss']
-})
+// @Component({
+//   selector: 'app-items',
+//   templateUrl: './items.component.html',
+//   styleUrls: ['./items.component.scss']
+// })
 export abstract class ItemsComponent<T extends IItem> implements OnInit {
   addModalRef: BsModalRef;
   bunyanLogger: any;

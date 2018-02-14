@@ -92,7 +92,7 @@ export class ItemDisplayComponent implements OnInit {
     this.itemChange.emit(this.item);
   }
 
-  isLightArray(key: string): boolean {
+  isLightArray(): boolean {
     if (this.itemKey === 'lights') {
       return Array.isArray(this.item);
     }
@@ -108,7 +108,7 @@ export class ItemDisplayComponent implements OnInit {
     return false;
   }
 
-  isState(key: string): boolean {
+  isState(): boolean {
     if (this.itemKey === 'state') {
       return true;
     }
@@ -135,7 +135,7 @@ export class ItemDisplayComponent implements OnInit {
       !this.isAlert(key) &&
       !this.isEffect(key) &&
       !this.isColorMode(key) &&
-      !this.isLightArray(key) &&
+      !this.isLightArray() &&
       !this.isInLightArray();
     return isEditable;
   }

@@ -7,13 +7,13 @@
        fxLayoutAlign="start start">
 
     <div class="full-width"
-         *ngIf="isLightArray(key)">
+         *ngIf="isLightArray()">
       <app-lights-list [(lightIdArray)]="item"
                        (lightIdArrayChange)="onItemChange($event)"
                        [lights]="lights"></app-lights-list>
     </div>
 
-    <div *ngIf="!isLightArray(key)"
+    <div *ngIf="!isLightArray()"
          class="full-width">
       <div id='key-item'
            class="full-width"
@@ -120,7 +120,7 @@
       </div>
     </div>
 
-    <div *ngIf="isState(key)"
+    <div *ngIf="isState()"
          class="btn-group needs-margin-bottom"
          fxLayout="row"
          fxLayoutAlign="center center">

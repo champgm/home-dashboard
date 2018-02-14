@@ -4,9 +4,6 @@ import { BrowserModule } from '@angular/platform-browser';
 import { HttpModule } from '@angular/http';
 import { HashLocationStrategy, LocationStrategy } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TabsModule } from 'ngx-bootstrap/tabs';
-import { ButtonsModule } from 'ngx-bootstrap';
-import { ModalModule } from 'ngx-bootstrap';
 import { FlexLayoutModule } from '@angular/flex-layout';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -15,6 +12,10 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatInputModule } from '@angular/material';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatCardModule } from '@angular/material/card';
+
+import { TabsModule } from 'ngx-bootstrap/tabs';
+import { ButtonsModule } from 'ngx-bootstrap';
+import { ModalModule } from 'ngx-bootstrap';
 
 import { AppRoutingModule } from './app-routing.module';
 import { GroupsComponent } from './tabs/groups/groups.component';
@@ -33,6 +34,7 @@ import { ItemDisplayComponent } from './item-display/item-display.component';
 import { AutoExpandDirective } from './directive/auto-expand.directive';
 import { ItemCreatorComponent } from './item-creator/item-creator.component';
 import { LightsListComponent } from './lights-list/lights-list.component';
+import { ItemsComponent } from './tabs/common/items.component';
 
 @NgModule({
   imports: [
