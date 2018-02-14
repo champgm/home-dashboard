@@ -18,4 +18,8 @@ export class GroupsComponent extends ItemsComponent<IGroup> implements OnInit {
   constructor(http: Http, itemService: ItemService, private bsModalService: BsModalService) {
     super(itemService, bsModalService);
   }
+
+  canAdd(): boolean {
+    return true;
+  }
 }

@@ -10,6 +10,7 @@ import IState from 'common/interfaces/IState';
 import emptyScene from './emptyItems/EmptyScene';
 import * as CircularJSON from 'circular-json';
 import IScene from 'common/interfaces/IScene';
+import IGroup from '../../../common/interfaces/IGroup';
 
 @Injectable()
 export class ItemService {
@@ -106,6 +107,12 @@ export class ItemService {
   async addScene(newScene: IScene): Promise<{ errors: any[], successes: any[], singleResult: any }> {
     this.bunyanLogger.info({ newScene }, 'newScene');
     const response: Response = await this.http.post('scenes', newScene).toPromise();
+    return this.parseResponse(response);
+  }
+
+  async addGroup(newGroup: IGroup): Promise<{ errors: any[], successes: any[], singleResult: any }> {
+    this.bunyanLogger.info({ newGroup }, 'newGroup');
+    const response: Response = await this.http.post('groups', newGroup).toPromise();
     return this.parseResponse(response);
   }
 

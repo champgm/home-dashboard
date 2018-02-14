@@ -58,7 +58,7 @@
           </button>
           <button type="button"
                   class="btn btn-success"
-                  (click)="onAddSubmit()">
+                  (click)="onAddSubmit(submitItemModal)">
             Submit
           </button>
         </div>
@@ -66,3 +66,26 @@
     </div>
   </div>
 </div>
+
+<ng-template #submitItemModal>
+  <div class="modal-header">
+    <h4 class="modal-title pull-left">Submission Results</h4>
+    <button type="button"
+            class="close pull-right"
+            aria-label="Close"
+            (click)="submitResultModalReference.hide()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div fxLayout="column"
+         fxLayoutAlign="center center">
+      <div *ngFor="let error of response.errors">
+        {{error.address}}: {{error.description}}
+      </div>
+      <div *ngFor="let success of response.successes">
+        Scene created with ID, '{{success.id}}'
+      </div>
+    </div>
+  </div>
+</ng-template>

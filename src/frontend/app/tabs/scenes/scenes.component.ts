@@ -15,15 +15,15 @@ import { BsModalService } from 'ngx-bootstrap';
 })
 export class ScenesComponent extends ItemsComponent<IScene> implements OnInit {
   itemType: string = 'scenes';
-  parameters: string = `?v2=true&`;
+  // parameters: string = `?v2=true&`;
 
   constructor(http: Http, itemService: ItemService, private bsModalService: BsModalService) {
     super(itemService, bsModalService);
   }
 
-  async getItems(): Promise<void> {
-    return super.getItems(this.parameters);
-  }
+  // async getItems(): Promise<void> {
+  //   return super.getItems(this.parameters);
+  // }
 
   canAdd(): boolean {
     return true;
