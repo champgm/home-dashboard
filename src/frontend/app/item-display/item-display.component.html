@@ -23,10 +23,14 @@
           <div id='isStringOrNumber'
                *ngIf="isStringOrNumber(key)">
             <ng-container *ngIf="!canEdit(key); then uneditableField"></ng-container>
-            <ng-container *ngIf="isEditableField(key); then editableField"></ng-container>
             <ng-container *ngIf="isAlert(key); then alertChoice"></ng-container>
+            <ng-container *ngIf="isMethod(key); then methodChoice"></ng-container>
+            <ng-container *ngIf="isOperator(key); then operatorChoice"></ng-container>
+            <ng-container *ngIf="isStatus(key); then statusChoice"></ng-container>
             <ng-container *ngIf="isColorMode(key); then colorMode"></ng-container>
             <ng-container *ngIf="isEffect(key); then effectChoice"></ng-container>
+            <!-- <ng-container *ngIf="isGroupClass(key); then groupClassChoice"></ng-container> -->
+            <ng-container *ngIf="isEditableField(key); then editableField"></ng-container>
 
             <ng-template #editableField>
               <div fxLayout="row"
@@ -65,6 +69,79 @@
                 </mat-select>
               </mat-form-field>
             </ng-template>
+
+            <!-- status picker -->
+            <ng-template #statusChoice>
+              <mat-form-field class="full-width">
+                <mat-select [(ngModel)]="item[key]"
+                            placeholder="Current Status"
+                            [disabled]="!canEdit(key)">
+                  <mat-option value="enabled">enabled</mat-option>
+                  <mat-option value="disabled">disabled</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </ng-template>
+
+            <!-- method picker -->
+            <ng-template #methodChoice>
+              <mat-form-field class="full-width">
+                <mat-select [(ngModel)]="item[key]"
+                            placeholder="REST Method"
+                            [disabled]="!canEdit(key)">
+                  <mat-option value="PUT">PUT</mat-option>
+                  <mat-option value="POST">POST</mat-option>
+                  <mat-option value="GET">GET</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </ng-template>
+
+            <!-- operator picker -->
+            <ng-template #operatorChoice>
+              <mat-form-field class="full-width">
+                <mat-select [(ngModel)]="item[key]"
+                            placeholder="Operator"
+                            [disabled]="!canEdit(key)">
+                  <mat-option value="eq">equals</mat-option>
+                  <mat-option value="gt">greater than</mat-option>
+                  <mat-option value="lt">less than</mat-option>
+                  <mat-option value="dx">on change</mat-option>
+                  <mat-option value="ddx">on delayed change</mat-option>
+                  <mat-option value="stable">stable</mat-option>
+                  <mat-option value="not stable">not stable</mat-option>
+                  <mat-option value="in">in interval</mat-option>
+                  <mat-option value="not in">not in interval</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </ng-template>
+
+            <!-- group class choice -->
+            <!-- <ng-template #groupClassChoice>
+              <mat-form-field class="full-width">
+                <mat-select [(ngModel)]="item[key]"
+                            placeholder="Room Class"
+                            [disabled]="!canEdit(key)">
+                  <mat-option value="Bathroom">Bathroom</mat-option>
+                  <mat-option value="Bedroom">Bedroom</mat-option>
+                  <mat-option value="Carport">Carport</mat-option>
+                  <mat-option value="Dining">Dining</mat-option>
+                  <mat-option value="Driveway">Driveway</mat-option>
+                  <mat-option value="Front door">Front door</mat-option>
+                  <mat-option value="Garage">Garage</mat-option>
+                  <mat-option value="Garden">Garden</mat-option>
+                  <mat-option value="Gym">Gym</mat-option>
+                  <mat-option value="Hallway">Hallway</mat-option>
+                  <mat-option value="Kids bedroom">Kids bedroom</mat-option>
+                  <mat-option value="Kitchen">Kitchen</mat-option>
+                  <mat-option value="Living room">Living room</mat-option>
+                  <mat-option value="Nursery">Nursery</mat-option>
+                  <mat-option value="Office">Office</mat-option>
+                  <mat-option value="Other">Other</mat-option>
+                  <mat-option value="Recreation">Recreation</mat-option>
+                  <mat-option value="Terrace">Terrace</mat-option>
+                  <mat-option value="Toilet">Toilet</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </ng-template> -->
 
             <!-- color mode selector -->
             <ng-template #colorMode>

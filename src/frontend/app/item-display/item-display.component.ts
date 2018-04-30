@@ -39,7 +39,7 @@ export class ItemDisplayComponent implements OnInit {
 
   ngOnInit(): void {
     if (ObjectUtil.notEmpty(this.itemKey)) {
-      if (ItemUtil.uneditableFields.indexOf(this.itemKey) > -1) {
+      if (ItemUtil.getUneditableFields(this.itemType).indexOf(this.itemKey) > -1) {
         this.allUneditable = true;
       }
     }
@@ -62,22 +62,33 @@ export class ItemDisplayComponent implements OnInit {
     return (key === 'alert');
   }
 
+  isStatus(key: any): boolean {
+    return (key === 'status');
+  }
+
   isEffect(key: any): boolean {
     return key === 'effect';
+  }
+
+  isGroupClass(key: any): boolean {
+    return key === 'class';
   }
 
   isColorMode(key: any): boolean {
     return key === 'colormode';
   }
 
+  isMethod(key: any): boolean {
+    return key === 'method';
+  }
+
+  isOperator(key: any): boolean {
+    return key === 'operator';
+  }
+
   toggle(key: string): void {
     console.log(`TOGGLE: ${key}`);
     console.log(`NOW: ${this.item[key]} & ${typeof this.item[key]}`);
-    // if (this.item[key] === 'true') {
-    //   this.item[key] = 'false';
-    // } else if (this.item[key] === 'false') {
-    //   this.item[key] = 'true';
-    // }
 
     if (this.item[key] === true) {
       this.item[key] = false;
@@ -115,13 +126,16 @@ export class ItemDisplayComponent implements OnInit {
   }
 
   shouldDisplay(key: string): boolean {
+    // if (ObjectUtil.isNull(this.item[key])) {
+    //   this.item[key] = 'undefined';
+    // }
     return (typeof this.item[key] === 'boolean') ||
-      (ObjectUtil.notEmpty(this.item[key]) &&
-        !(ItemUtil.fieldsToRedact.indexOf(key.toLowerCase()) > -1));
+      !(ItemUtil.fieldsToRedact.indexOf(key.toLowerCase()) > -1);
   }
 
   canEdit(key: string): boolean {
-    return !(ItemUtil.uneditableFields.indexOf(key.toLowerCase()) > -1) && !this.allUneditable;
+    return !(ItemUtil.getUneditableFields(this.itemType).indexOf(key.toLowerCase()) > -1) &&
+      !this.allUneditable;
   }
 
   lightsReady(): boolean {
@@ -133,9 +147,13 @@ export class ItemDisplayComponent implements OnInit {
       this.isStringOrNumber(key) &&
       !this.isBoolean(key) &&
       !this.isAlert(key) &&
+      !this.isStatus(key) &&
+      !this.isMethod(key) &&
+      !this.isOperator(key) &&
       !this.isEffect(key) &&
       !this.isColorMode(key) &&
       !this.isLightArray() &&
+      !this.isGroupClass(key) &&
       !this.isInLightArray();
     return isEditable;
   }

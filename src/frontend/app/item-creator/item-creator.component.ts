@@ -49,7 +49,10 @@ export class ItemCreatorComponent implements OnInit {
   async onAddSubmit(template: TemplateRef<any>): Promise<void> {
     switch (this.itemType) {
       case 'lights':
-        const deviceIdArray: string[] = this.newThing.split(',').map((id) => id.trim());
+        let deviceIdArray: string[];
+        if (ObjectUtil.notEmpty(this.newThing)) {
+          deviceIdArray = this.newThing.split(',').map((id) => id.trim());
+        }
         this.response = await this.itemService.addLights(deviceIdArray);
         break;
       case 'scenes':

@@ -30,7 +30,6 @@ export abstract class ItemsComponent<T extends IItem> implements OnInit {
 
   ngOnInit(): void {
     this.getItems();
-    this.bunyanLogger.info({ items: this.items }, 'this.items');
   }
 
   objectKeys(items: IMap<T>): string[] {

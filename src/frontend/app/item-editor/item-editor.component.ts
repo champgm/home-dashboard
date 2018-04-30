@@ -44,9 +44,9 @@ export class ItemEditorComponent implements OnInit {
     if (!this.lights || force) {
       this.lights = await this.itemService.getItem('lights', '');
     }
+    this.bunyanLogger.info({ item: this.item }, 'this.item');
     this.item = CircularJSON.parse(CircularJSON.stringify(this.item));
     this.itemId = this.item.id;
-    console.log(`${CircularJSON.stringify(this.item)}`);
   }
 
   async onSubmit(template: TemplateRef<any>): Promise<void> {
