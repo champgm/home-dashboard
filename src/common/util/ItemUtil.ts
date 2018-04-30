@@ -8,40 +8,21 @@ import GroupAttributeOrderUtil from 'common/util/attributeOrder/GroupAttributeOr
 import ScheduleAttributeOrderUtil from 'common/util/attributeOrder/ScheduleAttributeOrderUtil';
 import SensorAttributeOrderUtil from 'common/util/attributeOrder/SensorAttributeOrderUtil';
 import RuleAttributeOrderUtil from 'common/util/attributeOrder/RuleAttributeOrderUtil';
+import PlugAttributeOrderUtil from 'common/util/attributeOrder/PlugAttributeOrderUtil';
 
 export default class ItemUtil {
   static fieldsToRedact: string[] = [
     'appdata',
-    'picture'
+    'picture',
+    'class'
   ];
-  static uneditableFields: string[] = [
-    'type',
-    'modelid',
-    'manufacturername',
-    'uniqueid',
-    'swversion',
-    'reachable',
+  static commonUneditableFields: string[] = [
+    'id',
     'version',
     'owner',
-    'locked',
-    'lastupdated',
-    'all_on',
-    'any_on',
-    'created',
-    'address',
-    'description',
-    'id',
-    'lightstates',
-    'buttonevent',
-    'battery',
-    'lasttriggered',
-    'timestriggered',
-    '_eventsCount',
-    'host',
-    'port',
-    'timeout',
-    'inUseThreshold'
-  ].concat(ItemUtil.fieldsToRedact);
+    'uniqueid',
+    'swversion'
+  ];
 
   public static getKeysSortedByName(object: IMap<IItem>): string[] {
     if (ObjectUtil.notEmpty(object)) {
@@ -66,6 +47,45 @@ export default class ItemUtil {
     }
   }
 
+  public static getUneditableFields(itemType: string): string[] {
+    switch (itemType) {
+      case 'scenes':
+        return []
+          .concat(ItemUtil.commonUneditableFields)
+          .concat(ItemUtil.fieldsToRedact);
+      case 'lights':
+        return ['type', 'modelid', 'manufacturername', 'luminaireuniqueid', 'streaming']
+          .concat(ItemUtil.commonUneditableFields)
+          .concat(ItemUtil.fieldsToRedact);
+      case 'plugs':
+        return ['err_code', 'sw_ver', 'hw_ver', 'type', 'model', 'mac', 'deviceid', 'hwid', 'fwid',
+          'oemid', 'alias', 'dev_name', 'icon_hash', 'relay_state', 'on_time', 'active_mode', 'feature',
+          'updating', 'rssi', 'led_off', 'latitude', 'longitude', 'state']
+          .concat(ItemUtil.commonUneditableFields)
+          .concat(ItemUtil.fieldsToRedact);
+      case 'groups':
+        return ['action', 'type', 'modelid', 'class']
+          .concat(ItemUtil.commonUneditableFields)
+          .concat(ItemUtil.fieldsToRedact);
+      case 'schedules':
+        return ['starttime']
+          .concat(ItemUtil.commonUneditableFields)
+          .concat(ItemUtil.fieldsToRedact);
+      case 'sensors':
+        return ['modelid', 'type', 'manufacturername', 'state', 'config', 'recycle']
+          .concat(ItemUtil.commonUneditableFields)
+          .concat(ItemUtil.fieldsToRedact);
+      case 'rules':
+        return ['created', 'lasttriggered', 'timestriggered', 'recycle']
+          .concat(ItemUtil.commonUneditableFields)
+          .concat(ItemUtil.fieldsToRedact);
+      default:
+        return []
+          .concat(ItemUtil.commonUneditableFields)
+          .concat(ItemUtil.fieldsToRedact);
+    }
+  }
+
   public static getItemAttributeList(item: IItem, itemType: string, itemKey: string): string[] {
     if (!ObjectUtil.isEmpty(itemKey)) {
       if (ObjectUtil.notEmpty(item)) {
@@ -87,6 +107,8 @@ export default class ItemUtil {
         return SensorAttributeOrderUtil.getOrderedFields(item, itemKey);
       case 'rules':
         return RuleAttributeOrderUtil.getOrderedFields(item, itemKey);
+      case 'plugs':
+        return PlugAttributeOrderUtil.getOrderedFields(item, itemKey);
       default:
         if (ObjectUtil.notEmpty(item)) {
           return Object.keys(item);

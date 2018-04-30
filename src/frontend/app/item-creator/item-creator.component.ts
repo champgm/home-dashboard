@@ -1,5 +1,5 @@
-import { Component, OnInit, Input, Output } from '@angular/core';
-import { BsModalRef } from 'ngx-bootstrap';
+import { Component, OnInit, Input, Output, TemplateRef } from '@angular/core';
+import { BsModalRef, BsModalService } from 'ngx-bootstrap';
 import { ItemService } from 'frontend/app/service/item.service';
 import IMap from 'common/interfaces/IMap';
 import ILight from 'common/interfaces/ILight';
@@ -21,8 +21,12 @@ export class ItemCreatorComponent implements OnInit {
   bunyanLogger: any;
   lights: IMap<ILight>;
   newThing: any;
+  submitResultModalReference: BsModalRef;
+  response: { errors: any[], successes: any[], singleResult: any };
 
-  constructor(private itemService: ItemService) {
+  constructor(
+    private itemService: ItemService,
+    private modalService: BsModalService) {
     this.bunyanLogger = createLogger({ name: 'Item Creator' });
   }
 
@@ -42,27 +46,29 @@ export class ItemCreatorComponent implements OnInit {
     this.modalReference.hide();
   }
 
-  async onAddSubmit(): Promise<void> {
+  async onAddSubmit(template: TemplateRef<any>): Promise<void> {
     switch (this.itemType) {
       case 'lights':
-        try {
-          const deviceIdArray: string[] = this.newThing.split(',').map((id) => id.trim());
-          const lightResponse: { errors: any[], successes: any[], singleResult: any } =
-            await this.itemService.addLights(deviceIdArray);
-        } catch (error) {
-          // do something here if string parsing had an error or something
+        let deviceIdArray: string[];
+        if (ObjectUtil.notEmpty(this.newThing)) {
+          deviceIdArray = this.newThing.split(',').map((id) => id.trim());
         }
+        this.response = await this.itemService.addLights(deviceIdArray);
         break;
       case 'scenes':
-        const sceneResponse: { errors: any[], successes: any[], singleResult: any } =
-          await this.itemService.addScene(this.newThing);
-        if (ObjectUtil.isEmpty(sceneResponse.errors)) {
-
-        }
+        this.response = await this.itemService.addScene(this.newThing);
+        break;
+      case 'groups':
+        this.response = await this.itemService.addGroup(this.newThing);
         break;
       default:
         break;
     }
+    this.bunyanLogger.info({ response: this.response }, 'response');
+    if (this.modalReference) {
+      this.modalReference.hide();
+    }
+    this.openModal(template);
   }
 
   toggle(key: string): void {
@@ -71,5 +77,16 @@ export class ItemCreatorComponent implements OnInit {
     } else if (this.newThing[key] === 'false') {
       this.newThing[key] = 'true';
     }
+  }
+
+  openModal(template: TemplateRef<any>): void {
+    this.submitResultModalReference = this.modalService.show(template);
+  }
+
+  objectKeys(object: any): string[] {
+    if (object) {
+      return Object.keys(object);
+    }
+    return [];
   }
 }

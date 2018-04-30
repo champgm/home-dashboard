@@ -1,15 +1,17 @@
-import { Injectable } from '@angular/core';
-import { Http, Response } from '@angular/http';
-import IMap from 'common/interfaces/IMap';
-import IItem from 'common/interfaces/IItem';
 import { createLogger } from 'browser-bunyan';
-import * as traverse from 'traverse';
-import ObjectUtil from 'common/util/ObjectUtil';
-import ItemUtil from 'common/util/ItemUtil';
-import IState from 'common/interfaces/IState';
-import emptyScene from './emptyItems/EmptyScene';
+import { Http, Response } from '@angular/http';
+import { Injectable } from '@angular/core';
 import * as CircularJSON from 'circular-json';
+import * as traverse from 'traverse';
+import emptyGroup from './emptyItems/EmptyGroup';
+import emptyScene from './emptyItems/EmptyScene';
+import IGroup from '../../../common/interfaces/IGroup';
+import IItem from 'common/interfaces/IItem';
+import IMap from 'common/interfaces/IMap';
 import IScene from 'common/interfaces/IScene';
+import IState from 'common/interfaces/IState';
+import ItemUtil from 'common/util/ItemUtil';
+import ObjectUtil from 'common/util/ObjectUtil';
 
 @Injectable()
 export class ItemService {
@@ -34,17 +36,17 @@ export class ItemService {
   }
 
   async putState(itemType: string, state: any, originalItemId: string): Promise<{ errors: any[], successes: any[], singleResult: any }> {
-    const editableFieldsOnly: any = this.removeUneditableFields(state);
+    const editableFieldsOnly: any = this.removeUneditableFields(state, itemType);
     return await this.doPut(`${itemType}/${originalItemId}/state`, editableFieldsOnly);
   }
 
   async putAction(itemType: string, action: any, originalItemId: string): Promise<{ errors: any[], successes: any[], singleResult: any }> {
-    const editableFieldsOnly: any = this.removeUneditableFields(action);
+    const editableFieldsOnly: any = this.removeUneditableFields(action, itemType);
     return await this.doPut(`${itemType}/${originalItemId}/action`, editableFieldsOnly);
   }
 
   async putItem(itemType: string, item: IItem): Promise<{ errors: any[], successes: any[], singleResult: any }> {
-    const editableFieldsOnly: IItem = this.removeUneditableFields(item);
+    const editableFieldsOnly: IItem = this.removeUneditableFields(item, itemType);
     return await this.doPut(`${itemType}/${item.id}`, editableFieldsOnly);
   }
 
@@ -92,6 +94,8 @@ export class ItemService {
     switch (itemType) {
       case 'scenes':
         return CircularJSON.parse(CircularJSON.stringify(emptyScene));
+      case 'groups':
+        return CircularJSON.parse(CircularJSON.stringify(emptyGroup));
       default:
         break;
     }
@@ -109,13 +113,21 @@ export class ItemService {
     return this.parseResponse(response);
   }
 
-  private removeUneditableFields(item: any): any {
+  async addGroup(newGroup: IGroup): Promise<{ errors: any[], successes: any[], singleResult: any }> {
+    this.bunyanLogger.info({ newGroup }, 'newGroup');
+    const response: Response = await this.http.post('groups', newGroup).toPromise();
+    return this.parseResponse(response);
+  }
+
+  private removeUneditableFields(item: any, itemType: string): any {
     const traversable: any = traverse(item);
     return traversable.map(function (value: any): any {
       if (ObjectUtil.notEmpty(this.key)) {
-        if (ItemUtil.uneditableFields.indexOf(this.key) > -1) {
+        if (ItemUtil.getUneditableFields(itemType).indexOf(this.key) > -1) {
           this.remove();
         }
+        // The API doesn't allow you to edit an item's state while editing that item.
+        // You have to hit /itemType/item/state to do that.
         if (this.key === 'state') {
           this.remove();
         }

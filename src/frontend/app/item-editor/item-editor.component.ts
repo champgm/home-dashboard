@@ -44,17 +44,13 @@ export class ItemEditorComponent implements OnInit {
     if (!this.lights || force) {
       this.lights = await this.itemService.getItem('lights', '');
     }
-    // console.log(`${CircularJSON.stringify(this.item)}`);
+    this.bunyanLogger.info({ item: this.item }, 'this.item');
     this.item = CircularJSON.parse(CircularJSON.stringify(this.item));
-    // this.item = ItemUtil.booleansToStrings(this.item);
     this.itemId = this.item.id;
-    console.log(`${CircularJSON.stringify(this.item)}`);
   }
 
   async onSubmit(template: TemplateRef<any>): Promise<void> {
-    // const unstringed: IItem = ItemUtil.stringsToBooleans(this.item);
     const results: { errors: any[], successes: any[] } =
-      // await this.itemService.putItem(this.itemType, unstringed);
       await this.itemService.putItem(this.itemType, this.item);
     this.submitResults = results;
     this.openModal(template);
@@ -91,14 +87,12 @@ export class ItemEditorComponent implements OnInit {
     const itemId: string = this.route.snapshot.params['id'];
     const currentItem: IItem = await this.itemService.getItem(this.itemType, itemId);
     this.item.state = CircularJSON.parse(CircularJSON.stringify(currentItem.state));
-    // this.item = ItemUtil.booleansToStrings(this.item);
   }
 
   async onResetAction(): Promise<void> {
     const itemId: string = this.route.snapshot.params['id'];
     const currentItem: IItem = await this.itemService.getItem(this.itemType, itemId);
     this.item.action = CircularJSON.parse(CircularJSON.stringify(currentItem.action));
-    // this.item = ItemUtil.booleansToStrings(this.item);
   }
 
   onBack(): void {
