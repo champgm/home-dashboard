@@ -52,6 +52,8 @@ export default class ApplicationRouter {
       plugController: new PlugController(this.broadcastAddress)
     };
 
+
+
     const webApplication: WebApplication = new WebApplication(
       controllers,
       this.internalExpressPort);

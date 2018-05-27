@@ -2,6 +2,7 @@ import ApplicationRouter from './routing/ApplicationRouter';
 import { getPorts, Ports } from './configuration/Ports';
 import { getBridgeDetails, BridgeDetails } from './configuration/BridgeDetails';
 import { getBroadcastAddress } from './configuration/BroadcastAddress';
+import DashButtonRouter from './routing/DashButtonRouter';
 
 const expressPorts: Ports = getPorts();
 const bridgeDetails: BridgeDetails = getBridgeDetails();
@@ -19,3 +20,6 @@ const server: ApplicationRouter = new ApplicationRouter(
 
 server.start();
 
+
+const dashButtonRouter: DashButtonRouter = new DashButtonRouter(expressPorts);
+dashButtonRouter.watch();
