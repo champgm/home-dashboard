@@ -41,7 +41,7 @@ export default class PlugController extends CommonController<IPlug> {
       plug.getInfo().then(async (info) => {
         plug.state = { on: plug.getPowerState() };
         this.knownPlugs[plug.host] = await this.get(plug.host);
-        bunyanLogger.info({ plug: plug.host }, 'Known plug found.');
+        // bunyanLogger.info({ plug: plug.host }, 'Known plug found.');
         if (!(plug.host in this.knownPlugs)) {
           this.knownPlugIps.push(plug.host);
         }
