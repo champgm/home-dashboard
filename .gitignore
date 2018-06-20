@@ -43,3 +43,6 @@ testem.log
 Thumbs.db
 
 package-lock.json
+
+#configuration
+.env.ts
