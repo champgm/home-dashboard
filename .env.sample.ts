@@ -12,10 +12,12 @@ export const bridgeConfiguration: BridgeConfiguration = {
 
 export class NetworkConfiguration {
   BROADCAST_ADDRESS: string;
+  INTERFACE_NAME: string;
 }
 
 export const networkConfiguration: NetworkConfiguration = {
-  BROADCAST_ADDRESS: '10.0.0.255'
+  BROADCAST_ADDRESS: '10.0.0.255',
+  INTERFACE_NAME: 'en0'
 };
 
 export class DashButtonConfiguration {

@@ -2,6 +2,7 @@ import * as nodeDashButton from 'node-dash-button';
 import { getDashButtonMap } from '../configuration/DashButtons';
 import { Ports } from '../configuration/Ports';
 import * as makeRequest from 'request-promise';
+import { networkConfiguration } from '../../../.env';
 
 export default class DashButtonRouter {
   expressPorts: Ports;
@@ -13,7 +14,11 @@ export default class DashButtonRouter {
   }
 
   async watch(): Promise<boolean> {
-    const dashWatcher: any = nodeDashButton(Object.keys(this.dashButtonMap), null, null, 'all');
+    const dashWatcher: any = nodeDashButton(
+      Object.keys(this.dashButtonMap),
+      networkConfiguration.INTERFACE_NAME,
+      null,
+      'all');
     dashWatcher.on('detected', (macAddress) => {
       const url: string = this.dashButtonMap[macAddress];
       console.log(`Found a dash button: ${macAddress} mapped to url: ${url}`);
