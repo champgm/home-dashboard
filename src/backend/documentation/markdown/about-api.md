@@ -1,1 +1,0 @@
-This is the backend API which wraps the Phillips Hue API which is provided by the Hue Bridge. More info about Hue Stuff can be found here: https://github.com/champgm/hue-stuff

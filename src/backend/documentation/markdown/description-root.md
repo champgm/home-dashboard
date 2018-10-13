@@ -1,1 +1,0 @@
-Displays the documentation that you are currently reading.

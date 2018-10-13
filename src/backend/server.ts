@@ -1,25 +1,18 @@
-import ApplicationRouter from './routing/ApplicationRouter';
-import { getPorts, Ports } from './configuration/Ports';
-import { getBridgeDetails, BridgeDetails } from './configuration/BridgeDetails';
-import { getBroadcastAddress } from './configuration/BroadcastAddress';
-import DashButtonRouter from './routing/DashButtonRouter';
+import DashButtonRouter from './dash/DashButtonRouter';
+import express from 'express';
+import path from 'path';
+import bunyan from 'bunyan';
+import LoggerParent from './common/logger';
 
-const expressPorts: Ports = getPorts();
-const bridgeDetails: BridgeDetails = getBridgeDetails();
-const broadcastAddress: string = getBroadcastAddress();
-
+const bunyanLogger: bunyan = LoggerParent.child({ fileName: `${path.basename(__filename)}` });
 process.on('unhandledRejection', error => {
-  console.error(error);
+  bunyanLogger.error(error);
 });
 
-const server: ApplicationRouter = new ApplicationRouter(
-  expressPorts,
-  bridgeDetails,
-  broadcastAddress
-);
+new DashButtonRouter().watch();
 
-server.start();
+const expressApplication = express();
 
-
-const dashButtonRouter: DashButtonRouter = new DashButtonRouter(expressPorts);
-dashButtonRouter.watch();
+expressApplication.listen(this.port, () => {
+  bunyanLogger.info({ port: this.port }, 'Hue Application listening.');
+});
