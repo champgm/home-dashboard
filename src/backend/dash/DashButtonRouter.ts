@@ -1,28 +1,33 @@
-import * as nodeDashButton from 'node-dash-button';
-import { getDashButtonMap } from './DashButtons';
-import * as makeRequest from 'request-promise';
+import nodeDashButton from 'node-dash-button';
+import { getDashButtonMap } from '../common/Configuration';
+import request from 'request-promise-native';
+import { notEmptyOrBlank } from '../common/Util';
+import bunyan from 'bunyan';
 
 export default class DashButtonRouter {
-  dashButtonMap: any;
+  public dashButtonMap: any;
 
-  constructor() {
+  constructor(private logger: bunyan) {
     this.dashButtonMap = getDashButtonMap();
   }
 
-  async watch(): Promise<boolean> {
+  public async watch(): Promise<boolean> {
     const dashWatcher: any = nodeDashButton(Object.keys(this.dashButtonMap), null, null, 'all');
-    dashWatcher.on('detected', macAddress => {
+    dashWatcher.on('detected', async (macAddress) => {
       const url: string = this.dashButtonMap[macAddress];
-      console.log(`Found a dash button: ${macAddress} mapped to url: ${url}`);
-
-      const options: any = {
-        method: 'GET',
-        uri: `${url}`,
-        json: true
-      };
-      makeRequest(options);
+      if (notEmptyOrBlank(url)) {
+        this.logger.info({ macAddress, url }, 'Found and mapped dash button');
+        const options: any = {
+          method: 'GET',
+          uri: `${url}`,
+          json: true,
+        };
+        await request(options);
+      } else {
+        this.logger.info({ macAddress }, 'Found unmapped dash button');
+      }
     });
-
+    this.logger.info('Watching for dash buttons');
     return true;
   }
 }
