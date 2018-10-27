@@ -1,5 +1,5 @@
 import { LoggerParent } from './logger';
-import { environment } from '../../../.env';
+import { environment } from '../../.env';
 import bunyan from 'bunyan';
 import path from 'path';
 const bunyanLogger: bunyan = LoggerParent.child({ fileName: `${path.basename(__filename)}` });

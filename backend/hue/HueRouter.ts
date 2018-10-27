@@ -1,6 +1,6 @@
 import core, { Router } from 'express';
 import { HueApi } from 'node-hue-api';
-import { environment } from '../../../.env';
+import { environment } from '../../.env';
 import bunyan from 'bunyan';
 
 // This is a wrapper for all route handlers
