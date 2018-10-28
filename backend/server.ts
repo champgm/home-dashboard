@@ -7,14 +7,14 @@ import bodyParser from 'body-parser';
 import LoggerParent from './common/logger';
 import { getPort } from './common/Configuration';
 import { routeStaticEndpoints } from './static/Static';
-import { routeHueEndpoints } from './hue/HueRouter';
+import { routeEndpoints } from './hue/HueRouter';
+import TpLinkRouter from './tplink/TpLinkRouter';
 
 const bunyanLogger: bunyan = LoggerParent.child({ fileName: `${path.basename(__filename)}` });
 process.on('unhandledRejection', (error) => {
   bunyanLogger.error(error);
 });
 
-new DashButtonRouter(bunyanLogger).watch();
 
 
 const router = core.Router();
@@ -23,7 +23,6 @@ router.use(bodyParser.urlencoded({ extended: true }));
 
 const expressApp: core.Express = core();
 expressApp.use(morgan('common'));
-
 expressApp.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', '*');
@@ -32,8 +31,10 @@ expressApp.use((req, res, next) => {
 });
 
 
+new DashButtonRouter(bunyanLogger).watch();
+new TpLinkRouter().watch().routeEndpoints(router);
 routeStaticEndpoints(expressApp);
-routeHueEndpoints(router, bunyanLogger);
+routeEndpoints(router, bunyanLogger);
 expressApp.use(router);
 
 

@@ -18,6 +18,7 @@ import { ILight } from "node-hue-api";
 export default class Home extends Vue {
   mounted() {
     this.$store.dispatch(Mutators.refreshLights);
+    this.$store.dispatch(Mutators.refreshPlugs);
   }
 }
 </script>

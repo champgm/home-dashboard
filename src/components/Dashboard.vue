@@ -11,7 +11,13 @@
     <div v-else>
       <v-container class="iconcontainer">
         <v-layout row justify-center wrap class="iconcontainer">
-          <v-flex v-for="lightId in lightIds" v-bind:key="lightId">
+          <v-flex v-for="plugId in plugIds" v-bind:key="plugId">
+            <PlugButton :plug="plugs[plugId]"></PlugButton>
+          </v-flex>
+          <v-flex
+            v-for="lightId in lightIds"
+            v-bind:key="lightId"
+            v-if="lightReachable(lights[lightId])">
             <LightButton :light="lights[lightId]"></LightButton>
           </v-flex>
         </v-layout>
@@ -23,12 +29,14 @@
 <script lang="ts">
 import { Component, Prop, Vue } from "vue-property-decorator";
 import LightButton from "@/components/LightButton.vue";
+import PlugButton from "@/components/PlugButton.vue";
 import { MyStore, Mutators, Getters } from "@/store";
 import { ILight } from "node-hue-api";
 
 @Component({
   components: {
-    LightButton
+    LightButton,
+    PlugButton
   }
 })
 export default class Dashboard extends Vue {
@@ -40,7 +48,9 @@ export default class Dashboard extends Vue {
     // this.$set(this, "lights", await this.$store.state.lightsPromise);
     // console.log(`got lights: ${JSON.stringify(this.lights, null, 2)}`);
   }
-  async updated() {}
+  lightReachable(light: ILight): boolean {
+    return light.state.reachable;
+  }
   get lights() {
     return this.$store.getters[Getters.lights];
   }
@@ -49,6 +59,12 @@ export default class Dashboard extends Vue {
   }
   get lightsLoading() {
     return this.$store.getters[Getters.lightsLoading];
+  }
+  get plugs() {
+    return this.$store.getters[Getters.plugs];
+  }
+  get plugIds() {
+    return Object.keys(this.$store.getters[Getters.plugs]);
   }
 }
 </script>
