@@ -1,5 +1,5 @@
 import core, { Router } from 'express';
-import { HueApi } from 'node-hue-api';
+import { HueApi, ILightsApiResponse } from 'node-hue-api';
 import { environment } from '../../.env';
 import bunyan from 'bunyan';
 
@@ -36,7 +36,14 @@ export function routeHueEndpoints(router: Router, logger: bunyan) {
     return { code: 200, payload };
   }));
   router.get('/lights', asyncHandler(async (request, response) => {
-    const payload = await api.getLights();
-    return { code: 200, payload };
+    const lightResponse: ILightsApiResponse = await api.getLights();
+    return { code: 200, payload: lightResponse.lights };
+  }));
+  router.put('/lights/:id/state', asyncHandler(async (request, response) => {
+    const lightId = request.params.id;
+    console.log(`Setting state: ${JSON.stringify(request.body, null, 2)}`);
+    await api.setLightState(lightId, request.body);
+    const lightResponse: ILightsApiResponse = await api.getLights();
+    return { code: 200, payload: lightResponse.lights };
   }));
 }
