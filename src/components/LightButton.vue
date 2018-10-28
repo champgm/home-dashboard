@@ -1,17 +1,17 @@
 <template>
   <div class="lightbuttoncontainer">
-      <v-btn
-        large
-        :color="getButtonColor()"
-        class="lightbutton"
-        v-on:click="toggle()">
-        <div class="lightbuttontitle">
-          {{light.name}}
-        </div>
-      </v-btn>
-      <v-btn fab dark color="cyan" class="editbutton">
-        <v-icon dark>edit</v-icon>
-      </v-btn>
+    <v-btn
+      large
+      :color="getButtonColor()"
+      class="lightbutton"
+      v-on:click="toggle()">
+      <div class="lightbuttontitle">
+        {{light.name}}
+      </div>
+    </v-btn>
+    <v-btn fab dark color="cyan" class="editbutton">
+      <v-icon dark>edit</v-icon>
+    </v-btn>
   </div>
 </template>
 

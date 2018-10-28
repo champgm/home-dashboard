@@ -1,15 +1,20 @@
 <template>
-  <div class="buttoncontainer">
+  <div class="plugbuttoncontainer">
     <v-btn
       large
       :color="getButtonColor()"
-      class="button"
+      class="plugbutton"
       v-on:click="toggle()">
-      <div class="buttontitle">
+      <div class="plugbuttontitle">
         {{plug.name}}
       </div>
     </v-btn>
-    <v-btn fab dark absolute color="cyan" class="editbutton">
+    <v-btn
+      fab
+      dark
+      color="cyan"
+      class="editbutton"
+      v-on:click="edit()">
       <v-icon dark>edit</v-icon>
     </v-btn>
   </div>
@@ -41,15 +46,15 @@ export default class PlugButton extends Vue {
 </script>
 
 <style scoped lang="scss">
-.buttoncontainer {
+.plugbuttoncontainer {
   padding-bottom: 10px;
   max-width: 113px;
 }
-.buttontitle {
+.plugbuttontitle {
   position: absolute;
   white-space: normal !important;
 }
-.button {
+.plugbutton {
   width: 88px !important;
   height: 88px !important;
   max-width: 88px !important;
