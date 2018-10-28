@@ -11,13 +11,17 @@
     <div v-else>
       <v-container class="iconcontainer">
         <v-layout row justify-center wrap class="iconcontainer">
-          <v-flex v-for="plugId in plugIds" v-bind:key="plugId">
+          <v-flex
+            v-for="plugId in plugIds"
+            v-bind:key="plugId"
+            class="buttonflex">
             <PlugButton :plug="plugs[plugId]"></PlugButton>
           </v-flex>
           <v-flex
             v-for="lightId in lightIds"
             v-bind:key="lightId"
-            v-if="lightReachable(lights[lightId])">
+            v-if="lightReachable(lights[lightId])"
+            class="buttonflex">
             <LightButton :light="lights[lightId]"></LightButton>
           </v-flex>
         </v-layout>
@@ -70,6 +74,10 @@ export default class Dashboard extends Vue {
 </script>
 
 <style scoped lang="scss">
+.buttonflex {
+  max-width: 105px;
+  max-height: 155px;
+}
 .container {
   max-width: 600px;
 }

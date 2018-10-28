@@ -1,6 +1,5 @@
 <template>
   <div class="lightbuttoncontainer">
-    <div>
       <v-btn
         large
         :color="getButtonColor()"
@@ -9,23 +8,10 @@
         <div class="lightbuttontitle">
           {{light.name}}
         </div>
-        <v-btn fab dark absolute color="cyan" class="editbutton">
-          <v-icon dark>edit</v-icon>
-        </v-btn>
       </v-btn>
-    </div>
-
-
-      <!-- <v-btn
-                v-show="!hidden"
-                color="pink"
-                fab
-                dark
-                small
-                absolute
-                bottom
-                left
-              > -->
+      <v-btn fab dark color="cyan" class="editbutton">
+        <v-icon dark>edit</v-icon>
+      </v-btn>
   </div>
 </template>
 
@@ -57,6 +43,7 @@ export default class LightButton extends Vue {
 <style scoped lang="scss">
 .lightbuttoncontainer {
   padding-bottom: 10px;
+  max-width: 113px;
 }
 .lightbuttontitle {
   position: absolute;
@@ -71,8 +58,8 @@ export default class LightButton extends Vue {
 .editbutton {
   width: 33px !important;
   height: 33px !important;
-  top: 17px;
-  left: 62px;
+  top: -40px;
+  left: 35px;
   z-index: 7000;
 }
 </style>

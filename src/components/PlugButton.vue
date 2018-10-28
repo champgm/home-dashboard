@@ -1,19 +1,17 @@
 <template>
   <div class="buttoncontainer">
-    <div>
-      <v-btn
-        large
-        :color="getButtonColor()"
-        class="button"
-        v-on:click="toggle()">
-        <div class="buttontitle">
-          {{plug.name}}
-        </div>
-        <v-btn fab dark absolute color="cyan" class="editbutton">
-          <v-icon dark>edit</v-icon>
-        </v-btn>
-      </v-btn>
-    </div>
+    <v-btn
+      large
+      :color="getButtonColor()"
+      class="button"
+      v-on:click="toggle()">
+      <div class="buttontitle">
+        {{plug.name}}
+      </div>
+    </v-btn>
+    <v-btn fab dark absolute color="cyan" class="editbutton">
+      <v-icon dark>edit</v-icon>
+    </v-btn>
   </div>
 </template>
 
@@ -45,6 +43,7 @@ export default class PlugButton extends Vue {
 <style scoped lang="scss">
 .buttoncontainer {
   padding-bottom: 10px;
+  max-width: 113px;
 }
 .buttontitle {
   position: absolute;
@@ -59,8 +58,8 @@ export default class PlugButton extends Vue {
 .editbutton {
   width: 33px !important;
   height: 33px !important;
-  top: 17px;
-  left: 62px;
+  top: -40px;
+  left: 35px;
   z-index: 7000;
 }
 </style>
