@@ -16,6 +16,12 @@ export default class Api {
     const response = await requestPromise.put(url, options);
     return response.payload;
   }
+  public async editLight(light: ILight) {
+    const options = { body: light, json: true };
+    const url = `http://localhost:1981/lights`;
+    const response = await requestPromise.put(url, options);
+    return response.payload;
+  }
   public async getPlugs() {
     const response = await requestPromise.get('http://localhost:1981/plugs', { json: true });
     return response.payload;

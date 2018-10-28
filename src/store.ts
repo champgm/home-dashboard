@@ -1,17 +1,15 @@
 import Vue from 'vue';
-import Vuex, { StoreOptions, MutationTree, CommitOptions, Payload, Commit, GetterTree } from 'vuex';
+import Vuex, { StoreOptions, CommitOptions, Commit } from 'vuex';
 import { ILight } from 'node-hue-api';
 import Api from './util/Api';
-import { isContext } from 'vm';
-import { isEmptyOrBlank } from './util/Objects';
 import { IPlug } from './util/IPlug';
+import { isEmptyOrBlank } from './util/Objects';
 
 const api = new Api();
 Vue.use(Vuex);
 
 
 export interface RootState {
-  lightsLoading: boolean;
   lightsPromise: Promise<ILight[]>;
   lights: { [id: string]: ILight };
   plugs: { [id: string]: IPlug };
@@ -29,6 +27,7 @@ export class MyStore extends Vuex.Store<RootState> {
 export enum Mutators {
   refreshLights = 'refreshLights',
   toggleLight = 'toggleLight',
+  editLight = 'editLight',
   refreshPlugs = 'refreshPlugs',
   togglePlug = 'togglePlug',
 }
@@ -43,41 +42,41 @@ async function updateIndividualLights(state, lightsPromise: Promise<ILight[]>) {
   const newLights = await lightsPromise;
   newLights.forEach((newLight) => {
     const currentLight = state.lights[newLight.id];
-    if (newLight !== currentLight) {
+    if ((isEmptyOrBlank(currentLight) || !currentLight.isBeingEdited) &&
+      (newLight !== currentLight)) {
       Vue.set(state.lights, newLight.id, newLight);
+      Vue.set(state.lights[newLight.id], 'name', newLight.name);
     }
   });
-  console.log(`All lights: ${JSON.stringify(state.lights)}`);
+  // console.log(`All lights: ${JSON.stringify(state.lights)}`);
 }
 async function updateIndividualPlugs(state, promise: Promise<{ [id: string]: IPlug }>) {
   const newPlugs = await promise;
   Object.keys(newPlugs).forEach((id) => {
     const currentPlug = state.plugs[id];
     const newPlug = newPlugs[id];
-    if (newPlug !== currentPlug) {
+    if ((isEmptyOrBlank(currentPlug) || !currentPlug.isBeingEdited) &&
+      (newPlug !== currentPlug)) {
       Vue.set(state.plugs, id, newPlug);
     }
   });
-  console.log(`All plugs: ${JSON.stringify(state.plugs)}`);
+  // console.log(`All plugs: ${JSON.stringify(state.plugs)}`);
 }
 
 const storeOptions: StoreOptions<RootState> = {
   state: {
-    lightsLoading: true,
     lightsPromise: undefined,
     lights: {},
     plugs: {},
   },
   mutations: {
     [Mutators.refreshLights]: async (state) => {
-      console.log(`refreshLights called`);
-      state.lightsLoading = true;
       await updateIndividualLights(state, api.getLights());
-      console.log(`Lights are loaded`);
-      state.lightsLoading = false;
+    },
+    [Mutators.editLight]: async (state, payload: ILight) => {
+      await updateIndividualLights(state, api.editLight(payload));
     },
     [Mutators.toggleLight]: async (state, payload: ILight) => {
-      console.log(`toggleLight called with payload: ${payload}`);
       await updateIndividualLights(state, api.toggleLight(payload));
     },
     [Mutators.refreshPlugs]: async (state) => {
@@ -90,6 +89,9 @@ const storeOptions: StoreOptions<RootState> = {
   actions: {
     [Mutators.refreshLights]: async (context) => {
       context.commit(Mutators.refreshLights);
+    },
+    [Mutators.editLight]: async (context, payload: ILight) => {
+      context.commit(Mutators.editLight, payload);
     },
     [Mutators.toggleLight]: async (context, payload: ILight) => {
       context.commit(Mutators.toggleLight, payload);
@@ -111,6 +113,7 @@ const storeOptions: StoreOptions<RootState> = {
 // export const store = new Vuex.Store(storeOptions);
 export const store = new MyStore(storeOptions);
 setInterval(() => {
+  console.log(`Refreshing device lists`);
   updateIndividualLights(store.state, api.getLights());
   updateIndividualPlugs(store.state, api.getPlugs());
 }, 5000);

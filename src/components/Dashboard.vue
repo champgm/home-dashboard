@@ -1,7 +1,7 @@
 <template>
 
   <div class="hello">
-    <div v-if="lightsLoading">
+    <div v-if="lights.length < 1">
         <v-progress-circular
       :size="50"
       color="amber"
@@ -18,11 +18,11 @@
             <PlugButton :plug="plugs[plugId]"></PlugButton>
           </v-flex>
           <v-flex
-            v-for="lightId in lightIds"
-            v-bind:key="lightId"
-            v-if="lightReachable(lights[lightId])"
+            v-for="light in lights"
+            v-if="lightReachable(light)"
+            v-bind:key="light.id"
             class="buttonflex">
-            <LightButton :light="lights[lightId]"></LightButton>
+            <LightButton :lightId="light.id"></LightButton>
           </v-flex>
         </v-layout>
       </v-container>
@@ -44,22 +44,10 @@ import { ILight } from "node-hue-api";
   }
 })
 export default class Dashboard extends Vue {
-  @Prop()
-  private msg!: string;
-  $store: MyStore;
-  // private lights: ILight[] = [];
-  async created() {
-    // this.$set(this, "lights", await this.$store.state.lightsPromise);
-    // console.log(`got lights: ${JSON.stringify(this.lights, null, 2)}`);
-  }
-  lightReachable(light: ILight): boolean {
-    return light.state.reachable;
-  }
   get lights() {
-    return this.$store.getters[Getters.lights];
-  }
-  get lightIds() {
-    return Object.keys(this.$store.getters[Getters.lights]);
+    const lightMap = this.$store.getters[Getters.lights];
+    const sortedLights = Object.values(lightMap).sort(byName);
+    return sortedLights;
   }
   get lightsLoading() {
     return this.$store.getters[Getters.lightsLoading];
@@ -70,6 +58,22 @@ export default class Dashboard extends Vue {
   get plugIds() {
     return Object.keys(this.$store.getters[Getters.plugs]);
   }
+  public $store: MyStore;
+  @Prop()
+  private msg!: string;
+  public lightReachable(light: ILight): boolean {
+    return light.state.reachable;
+  }
+}
+
+function byName(a, b) {
+  if (a.name < b.name) {
+    return -1;
+  }
+  if (a.name > b.name) {
+    return 1;
+  }
+  return 0;
 }
 </script>
 
