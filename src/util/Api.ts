@@ -26,6 +26,12 @@ export default class Api {
     const response = await requestPromise.get('http://localhost:1981/plugs', { json: true });
     return response.payload;
   }
+  public async editPlug(plug: IPlug) {
+    const options = { body: plug, json: true };
+    const url = `http://localhost:1981/plugs`;
+    const response = await requestPromise.put(url, options);
+    return response.payload;
+  }
   public async togglePlug(plug: IPlug) {
     const body = { on: !plug.state.on };
     const options = { body, json: true };

@@ -61,7 +61,7 @@ export default class ObjectEditor extends Vue {
     this.$set(this.$store.state, this.stateAddress, newThing);
   }
   hasName(thing) {
-    return !isEmptyOrBlank(thing.name);
+    return thing.name === "" || !isEmptyOrBlank(thing.name);
   }
   public getSubAddress(key: string) {
     return `${this.stateAddress}.${key}`;

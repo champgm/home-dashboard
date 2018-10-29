@@ -2,21 +2,46 @@ import { Client } from 'tplink-smarthome-api';
 import { environment } from '../../.env';
 import { Router } from 'express';
 import { asyncHandler } from '../common/Util';
+import { IPlug } from '../../src/util/IPlug';
 
 export default class TpLinkRouter {
-
-  public client: Client;
-  public knownPlugs: { [key: string]: any } = {};
-  public knownPlugIps: string[];
-  public broadcastAddress: string;
-
-
-  public function;
+  private client: Client;
+  private knownPlugs: { [key: string]: any } = {};
+  private knownPlugIps: string[];
+  private broadcastAddress: string;
   constructor() {
     this.broadcastAddress = environment.BROADCAST_ADDRESS;
     this.knownPlugIps = [];
     this.knownPlugs = {};
     this.client = new Client();
+  }
+
+  public routeEndpoints(router: Router) {
+    router.get('/plugs', asyncHandler(async (request, response) => {
+      return { code: 200, payload: this.knownPlugs };
+    }));
+    router.put('/plugs', asyncHandler(async (request, response) => {
+      const plugChanges: IPlug = request.body;
+      console.log(`got plug update: ${JSON.stringify(plugChanges, null, 2)}`);
+      const plug = await this.get(plugChanges.id);
+      console.log(`Got current plug: ${JSON.stringify(plug)}`);
+      if (plugChanges.name !== plug.name) {
+        const plugClient = await this.getPlugClient(plugChanges.id);
+        console.log(`Got plug client`);
+        console.log(`Setting plug alias: ${plugChanges.name}`);
+        await plugClient.setAlias(plugChanges.name);
+      }
+      this.knownPlugs[plug.id] = await this.get(plugChanges.id);
+      return { code: 200, payload: this.knownPlugs };
+    }));
+    router.put('/plugs/:id/state', asyncHandler(async (request, response) => {
+      const id = request.params.id;
+      console.log(`Setting state: ${JSON.stringify(request.body, null, 2)}`);
+      await this.setState(id, request.body);
+      const plug = await this.get(id);
+      this.knownPlugs[plug.id] = plug;
+      return { code: 200, payload: this.knownPlugs };
+    }));
   }
 
   public watch() {
@@ -56,11 +81,11 @@ export default class TpLinkRouter {
     return this;
   }
 
-  public async getAll(): Promise<{}> {
+  private async getAll(): Promise<{}> {
     return this.knownPlugs;
   }
 
-  public async get(plugId: string): Promise<any> {
+  private async get(plugId: string): Promise<any> {
     const rawData: any = await this.client.getDevice({ host: plugId });
     const plugDataPromise: Promise<any> = rawData.getSysInfo();
     const plugStatePromise: Promise<any> = rawData.getPowerState();
@@ -71,52 +96,38 @@ export default class TpLinkRouter {
     return plugData;
   }
 
-  public async getPlugClient(plugId: string): Promise<any> {
+  private async getPlugClient(plugId: string): Promise<any> {
     return await this.client.getDevice({ host: plugId });
   }
 
-  public async setState(plugId: string, state: any): Promise<any> {
+  private async setState(plugId: string, state: any): Promise<any> {
     const plug: any = await this.getPlugClient(plugId);
     const setStateResult: boolean = await plug.setPowerState(state.on);
     return { on: await plug.getPowerState() };
   }
 
-  public async select(plugId: string): Promise<any> {
+  private async select(plugId: string): Promise<any> {
     const plug: any = await this.getPlugClient(plugId);
     const currentPowerState: boolean = await plug.getPowerState();
     return this.setState(plugId, { on: !currentPowerState });
   }
 
-  public async turnOff(plugId: string): Promise<any> {
+  private async turnOff(plugId: string): Promise<any> {
     return await this.setState(plugId, { on: false });
   }
 
-  public async turnOn(plugId: string): Promise<any> {
+  private async turnOn(plugId: string): Promise<any> {
     return await this.setState(plugId, { on: true });
   }
 
-  public async update(itemId: string, json: any): Promise<any> {
+  private async update(itemId: string, json: any): Promise<any> {
     await this.setState(itemId, { on: json.on });
     return this.get(itemId);
   }
 
-  public async getState(plugId: string): Promise<any> {
+  private async getState(plugId: string): Promise<any> {
     const plug: any = await this.getPlugClient(plugId);
     const currentPowerState: boolean = await plug.getPowerState();
     return { on: currentPowerState };
-  }
-
-  public routeEndpoints(router: Router) {
-    router.get('/plugs', asyncHandler(async (request, response) => {
-      return { code: 200, payload: this.knownPlugs };
-    }));
-    router.put('/plugs/:id/state', asyncHandler(async (request, response) => {
-      const id = request.params.id;
-      console.log(`Setting state: ${JSON.stringify(request.body, null, 2)}`);
-      await this.setState(id, request.body);
-      const plug = await this.get(id);
-      this.knownPlugs[plug.id] = plug;
-      return { code: 200, payload: this.knownPlugs };
-    }));
   }
 }

@@ -4,7 +4,8 @@
       large
       :color="getButtonColor()"
       class="lightbutton"
-      v-on:click="toggle()">
+      v-on:click="toggle()"
+    >
       <div class="lightbuttontitle">
         {{light.name}}
       </div>
@@ -14,10 +15,16 @@
       dark
       color="cyan"
       class="editbutton"
-      v-on:click="showEditor()">
+      v-on:click="showEditor()"
+    >
       <v-icon dark>edit</v-icon>
     </v-btn>
-    <v-dialog v-model="light.isBeingEdited" scrollable max-width="300px">
+    <v-dialog
+      v-model="light.isBeingEdited"
+      scrollable
+      max-width="600px"
+      persistent
+    >
       <v-card>
         <v-card-title>Edit Light</v-card-title>
         <v-divider></v-divider>
@@ -26,8 +33,7 @@
               :stateAddress="lightAddress"
               :editableFields="editableFields"
               :fieldRules="fieldRules"
-              ref="lightEditor"
-              ></ObjectEditor>
+            ></ObjectEditor>
           </v-card-text>
         <v-divider></v-divider>
         <v-card-actions>
@@ -62,19 +68,39 @@ export default class LightButton extends Vue {
     "bri",
     "hue",
     "sat",
-    "xy",
     "ct",
     "alert",
-    "effect",
-    "transitiontime",
-    "bri_inc",
-    "sat_inc",
-    "hue_inc",
-    "ct_inc",
-    "xy_inc"
+    "effect"
+    // "xy",
+    // "transitiontime",
+    // "bri_inc",
+    // "sat_inc",
+    // "hue_inc",
+    // "ct_inc",
+    // "xy_inc"
   ];
   private fieldRules = {
-    on: [v => v === "true" || v === "false" || "Must be 'true' or 'false'"]
+    bri: [v => (1 >= v && v <= 254) || "Must be 1 to 254"],
+    hue: [v => (0 >= v && v <= 65535) || "Must be 0 to 65535"],
+    sat: [v => (1 >= v && v <= 254) || "Must be 1 to 254"],
+    ct: [v => (153 >= v && v <= 500) || "Must be 153 to 500"],
+    alert: [
+      v =>
+        v === "none" ||
+        v === "select" ||
+        v === "lselect" ||
+        "Must be 'none' or 'select' or 'lselect'"
+    ],
+    effect: [
+      v => v === "none" || v === "colorloop" || "Must be 'none' or 'colorloop'"
+    ]
+    // xy: [v => v || "asdf"],
+    // transitiontime: [v => v || "asdf"],
+    // bri_inc: [v => v || "asdf"],
+    // sat_inc: [v => v || "asdf"],
+    // hue_inc: [v => v || "asdf"],
+    // ct_inc: [v => v || "asdf"],
+    // xy_in: [v => v || "asdf"]
   };
   get lightAddress() {
     return `lights.${this.lightId}`;
@@ -107,9 +133,6 @@ export default class LightButton extends Vue {
     console.log(`Showing editor for light: ${JSON.stringify(this.light)}`);
     this.$set(this.light, "isBeingEdited", true);
   }
-  public clone(thing) {
-    return cloneDeep(thing);
-  }
 }
 </script>
 
@@ -133,6 +156,5 @@ export default class LightButton extends Vue {
   height: 33px !important;
   top: -40px;
   left: 35px;
-  // z-index: 000;
 }
 </style>

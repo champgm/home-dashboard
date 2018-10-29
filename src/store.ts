@@ -29,6 +29,7 @@ export enum Mutators {
   toggleLight = 'toggleLight',
   editLight = 'editLight',
   refreshPlugs = 'refreshPlugs',
+  editPlug = 'editPlug',
   togglePlug = 'togglePlug',
 }
 
@@ -37,6 +38,13 @@ export enum Getters {
   lightsLoading = 'lightsLoading',
   plugs = 'plugs',
 }
+
+// function nothingIsBeingEdited(state) {
+//   const isBeingEdited = (thing) => thing.isBeingEdited;
+//   return !Object.values(state.lights)
+//     .concat(Object.values(state.plugs))
+//     .some(isBeingEdited);
+// }
 
 async function updateIndividualLights(state, lightsPromise: Promise<ILight[]>) {
   const newLights = await lightsPromise;
@@ -82,6 +90,9 @@ const storeOptions: StoreOptions<RootState> = {
     [Mutators.refreshPlugs]: async (state) => {
       await updateIndividualPlugs(state, api.getPlugs());
     },
+    [Mutators.editPlug]: async (state, payload: IPlug) => {
+      await updateIndividualPlugs(state, api.editPlug(payload));
+    },
     [Mutators.togglePlug]: async (state, payload: IPlug) => {
       await updateIndividualPlugs(state, api.togglePlug(payload));
     },
@@ -99,13 +110,15 @@ const storeOptions: StoreOptions<RootState> = {
     [Mutators.refreshPlugs]: async (context) => {
       context.commit(Mutators.refreshPlugs);
     },
-    [Mutators.togglePlug]: async (context, payload: ILight) => {
+    [Mutators.editPlug]: async (context, payload: IPlug) => {
+      context.commit(Mutators.editPlug, payload);
+    },
+    [Mutators.togglePlug]: async (context, payload: IPlug) => {
       context.commit(Mutators.togglePlug, payload);
     },
   },
   getters: {
     [Getters.lights]: (state) => state.lights,
-    [Getters.lightsLoading]: (state) => state.lightsLoading,
     [Getters.plugs]: (state) => state.plugs,
   },
 };

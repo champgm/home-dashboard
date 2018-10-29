@@ -12,10 +12,10 @@
       <v-container class="iconcontainer">
         <v-layout row justify-center wrap class="iconcontainer">
           <v-flex
-            v-for="plugId in plugIds"
-            v-bind:key="plugId"
+            v-for="plug in plugs"
+            v-bind:key="plug.id"
             class="buttonflex">
-            <PlugButton :plug="plugs[plugId]"></PlugButton>
+            <PlugButton :id="plug.id"></PlugButton>
           </v-flex>
           <v-flex
             v-for="light in lights"
@@ -46,14 +46,16 @@ import { ILight } from "node-hue-api";
 export default class Dashboard extends Vue {
   get lights() {
     const lightMap = this.$store.getters[Getters.lights];
-    const sortedLights = Object.values(lightMap).sort(byName);
-    return sortedLights;
+    const sorted = Object.values(lightMap).sort(byName);
+    return sorted;
   }
   get lightsLoading() {
     return this.$store.getters[Getters.lightsLoading];
   }
   get plugs() {
-    return this.$store.getters[Getters.plugs];
+    const plugMap = this.$store.getters[Getters.plugs];
+    const sorted = Object.values(plugMap).sort(byName);
+    return sorted;
   }
   get plugIds() {
     return Object.keys(this.$store.getters[Getters.plugs]);
