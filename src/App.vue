@@ -1,8 +1,9 @@
 <template>
   <v-app>
     <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
+      <router-link to="/">Favorites</router-link> |
+      <router-link to="/lights">Lights</router-link> |
+      <router-link to="/plugs">Plugs</router-link>
     </div>
     <router-view/>
   </v-app>

@@ -3,18 +3,26 @@ import Vuex, { StoreOptions, CommitOptions, Commit } from 'vuex';
 import { ILight } from 'node-hue-api';
 import Api from './util/Api';
 import { IPlug } from './util/IPlug';
-import { isEmptyOrBlank } from './util/Objects';
+import { isEmptyOrBlank, byName } from './util/Objects';
 
 const api = new Api();
 Vue.use(Vuex);
 
+interface Favorites {
+  plugs: string[];
+  lights: string[];
+}
 
 export interface RootState {
   lightsPromise: Promise<ILight[]>;
   lights: { [id: string]: ILight };
   plugs: { [id: string]: IPlug };
+  favorites: Favorites;
 }
 
+export function isFavorite(item: any, favorites: string[]) {
+  return favorites.indexOf(item.id) > -1;
+}
 
 export interface MyCommit extends Commit {
   (type: Mutators, payload?: any, options?: CommitOptions): void;
@@ -31,22 +39,17 @@ export enum Mutators {
   refreshPlugs = 'refreshPlugs',
   editPlug = 'editPlug',
   togglePlug = 'togglePlug',
+  refreshFavorites = 'refreshFavorites',
 }
 
 export enum Getters {
   lights = 'lights',
   lightsLoading = 'lightsLoading',
   plugs = 'plugs',
+  favorites = 'favorites',
 }
 
-// function nothingIsBeingEdited(state) {
-//   const isBeingEdited = (thing) => thing.isBeingEdited;
-//   return !Object.values(state.lights)
-//     .concat(Object.values(state.plugs))
-//     .some(isBeingEdited);
-// }
-
-async function updateIndividualLights(state, lightsPromise: Promise<ILight[]>) {
+async function updateLights(state, lightsPromise: Promise<ILight[]>) {
   const newLights = await lightsPromise;
   newLights.forEach((newLight) => {
     const currentLight = state.lights[newLight.id];
@@ -56,9 +59,8 @@ async function updateIndividualLights(state, lightsPromise: Promise<ILight[]>) {
       Vue.set(state.lights[newLight.id], 'name', newLight.name);
     }
   });
-  // console.log(`All lights: ${JSON.stringify(state.lights)}`);
 }
-async function updateIndividualPlugs(state, promise: Promise<{ [id: string]: IPlug }>) {
+async function updatePlugs(state, promise: Promise<{ [id: string]: IPlug }>) {
   const newPlugs = await promise;
   Object.keys(newPlugs).forEach((id) => {
     const currentPlug = state.plugs[id];
@@ -68,7 +70,10 @@ async function updateIndividualPlugs(state, promise: Promise<{ [id: string]: IPl
       Vue.set(state.plugs, id, newPlug);
     }
   });
-  // console.log(`All plugs: ${JSON.stringify(state.plugs)}`);
+}
+
+async function updateFavorites(state, promise: Promise<Favorites>) {
+  Vue.set(state, 'favorites', await promise);
 }
 
 const storeOptions: StoreOptions<RootState> = {
@@ -76,25 +81,29 @@ const storeOptions: StoreOptions<RootState> = {
     lightsPromise: undefined,
     lights: {},
     plugs: {},
+    favorites: { plugs: [], lights: [] },
   },
   mutations: {
     [Mutators.refreshLights]: async (state) => {
-      await updateIndividualLights(state, api.getLights());
+      await updateLights(state, api.getLights());
     },
     [Mutators.editLight]: async (state, payload: ILight) => {
-      await updateIndividualLights(state, api.editLight(payload));
+      await updateLights(state, api.editLight(payload));
     },
     [Mutators.toggleLight]: async (state, payload: ILight) => {
-      await updateIndividualLights(state, api.toggleLight(payload));
+      await updateLights(state, api.toggleLight(payload));
     },
     [Mutators.refreshPlugs]: async (state) => {
-      await updateIndividualPlugs(state, api.getPlugs());
+      await updatePlugs(state, api.getPlugs());
     },
     [Mutators.editPlug]: async (state, payload: IPlug) => {
-      await updateIndividualPlugs(state, api.editPlug(payload));
+      await updatePlugs(state, api.editPlug(payload));
     },
     [Mutators.togglePlug]: async (state, payload: IPlug) => {
-      await updateIndividualPlugs(state, api.togglePlug(payload));
+      await updatePlugs(state, api.togglePlug(payload));
+    },
+    [Mutators.refreshFavorites]: async (state) => {
+      await updateFavorites(state, api.getFavorites());
     },
   },
   actions: {
@@ -116,18 +125,30 @@ const storeOptions: StoreOptions<RootState> = {
     [Mutators.togglePlug]: async (context, payload: IPlug) => {
       context.commit(Mutators.togglePlug, payload);
     },
+    [Mutators.refreshFavorites]: async (context) => {
+      context.commit(Mutators.refreshFavorites);
+    },
   },
   getters: {
     [Getters.lights]: (state) => state.lights,
     [Getters.plugs]: (state) => state.plugs,
+    [Getters.favorites]: (state) => {
+      const lights = Object.values(state.lights)
+        .filter((item) => isFavorite(item, state.favorites.lights))
+        .sort(byName);
+      const plugs = Object.values(state.plugs)
+        .filter((item) => isFavorite(item, state.favorites.plugs))
+        .sort(byName);
+      return { lights, plugs };
+    },
   },
 };
 
-// export const store = new Vuex.Store(storeOptions);
 export const store = new MyStore(storeOptions);
 setInterval(() => {
   console.log(`Refreshing device lists`);
-  updateIndividualLights(store.state, api.getLights());
-  updateIndividualPlugs(store.state, api.getPlugs());
+  updateLights(store.state, api.getLights());
+  updatePlugs(store.state, api.getPlugs());
+  updateFavorites(store.state, api.getFavorites());
 }, 5000);
 

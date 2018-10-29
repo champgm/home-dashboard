@@ -22,6 +22,7 @@ export default class Api {
     const response = await requestPromise.put(url, options);
     return response.payload;
   }
+
   public async getPlugs() {
     const response = await requestPromise.get('http://localhost:1981/plugs', { json: true });
     return response.payload;
@@ -39,4 +40,11 @@ export default class Api {
     const response = await requestPromise.put(url, options);
     return response.payload;
   }
+
+  public async getFavorites() {
+    const response = await requestPromise.get('http://localhost:1981/favorites', { json: true });
+    console.log(`Favorites from backend: ${JSON.stringify(response)}`);
+    return response.payload;
+  }
+
 }

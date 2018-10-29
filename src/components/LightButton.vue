@@ -55,9 +55,12 @@ import { isObject } from "util";
 import ObjectEditor from "./ObjectEditor.vue";
 import cloneDeep from "lodash.clonedeep";
 import { MyStore, Mutators, Getters } from "@/store";
+import { isEmptyOrBlank } from "@/util/Objects";
 
 @Component({ components: { ObjectEditor } })
 export default class LightButton extends Vue {
+  @Prop()
+  private stateAddress!: string;
   @Prop()
   private lightId!: string;
   private api = new Api();
@@ -103,7 +106,8 @@ export default class LightButton extends Vue {
     // xy_in: [v => v || "asdf"]
   };
   get lightAddress() {
-    return `lights.${this.lightId}`;
+    const address = `${this.stateAddress}.${this.lightId}`;
+    return address;
   }
   get light() {
     return this.$store.getters[Getters.lights][this.lightId];
@@ -116,11 +120,9 @@ export default class LightButton extends Vue {
     await this.$store.dispatch(Mutators.refreshLights);
   }
   public async submit() {
-    console.log(`save clicked: ${JSON.stringify(this.light)}`);
     await this.$store.dispatch(Mutators.editLight, this.light);
   }
   public async toggle() {
-    console.log(`Will toggle light: ${JSON.stringify(this.light)}`);
     await this.$store.dispatch(Mutators.toggleLight, this.light);
   }
   public getButtonColor() {
@@ -130,7 +132,6 @@ export default class LightButton extends Vue {
     return "primary";
   }
   public showEditor() {
-    console.log(`Showing editor for light: ${JSON.stringify(this.light)}`);
     this.$set(this.light, "isBeingEdited", true);
   }
 }

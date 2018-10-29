@@ -4,6 +4,8 @@ import { Router } from 'express';
 import { asyncHandler } from '../common/Util';
 import { IPlug } from '../../src/util/IPlug';
 
+
+
 export default class TpLinkRouter {
   private client: Client;
   private knownPlugs: { [key: string]: any } = {};
@@ -81,7 +83,7 @@ export default class TpLinkRouter {
     return this;
   }
 
-  private async getAll(): Promise<{}> {
+  public getAll() {
     return this.knownPlugs;
   }
 
@@ -130,4 +132,10 @@ export default class TpLinkRouter {
     const currentPowerState: boolean = await plug.getPowerState();
     return { on: currentPowerState };
   }
+}
+
+export const tpLinkRouter = new TpLinkRouter();
+
+export function getPlugs() {
+  return tpLinkRouter.getAll();
 }

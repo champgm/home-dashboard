@@ -8,7 +8,8 @@ import LoggerParent from './common/logger';
 import { getPort } from './common/Configuration';
 import { routeStaticEndpoints } from './static/Static';
 import { routeEndpoints } from './hue/HueRouter';
-import TpLinkRouter from './tplink/TpLinkRouter';
+import TpLinkRouter, { tpLinkRouter } from './tplink/TpLinkRouter';
+import { routeFavoritesEndpoints } from './common/FavoritesRouter';
 
 const bunyanLogger: bunyan = LoggerParent.child({ fileName: `${path.basename(__filename)}` });
 process.on('unhandledRejection', (error) => {
@@ -32,9 +33,10 @@ expressApp.use((req, res, next) => {
 
 
 new DashButtonRouter(bunyanLogger).watch();
-new TpLinkRouter().watch().routeEndpoints(router);
+tpLinkRouter.watch().routeEndpoints(router);
 routeStaticEndpoints(expressApp);
 routeEndpoints(router, bunyanLogger);
+routeFavoritesEndpoints(router, bunyanLogger);
 expressApp.use(router);
 
 

@@ -1,24 +1,23 @@
 <template>
   <div class="home">
-    <Dashboard msg="Welcome to Your Vue.js + TypeScript App"/>
+    <Lights/>
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from "vue-property-decorator";
-import Dashboard from "@/components/Dashboard.vue"; // @ is an alias to /src
+import Lights from "@/components/Lights.vue"; // @ is an alias to /src
 import { Mutators } from "@/store";
 import { ILight } from "node-hue-api";
 
 @Component({
   components: {
-    Dashboard
+    Lights
   }
 })
-export default class Home extends Vue {
-  mounted() {
+export default class LightsView extends Vue {
+  public mounted() {
     this.$store.dispatch(Mutators.refreshLights);
-    this.$store.dispatch(Mutators.refreshPlugs);
   }
 }
 </script>
