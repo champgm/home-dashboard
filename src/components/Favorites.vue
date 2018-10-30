@@ -33,7 +33,7 @@
             class="buttonflex"
           >
             <LightButton
-              :lightId="light.id"
+              :id="light.id"
               :stateAddress="lightStateAddress"
             ></LightButton>
           </v-flex>
@@ -47,7 +47,7 @@
 import { Component, Prop, Vue } from "vue-property-decorator";
 import LightButton from "@/components/LightButton.vue";
 import PlugButton from "@/components/PlugButton.vue";
-import { MyStore, Mutators, Getters } from "@/store";
+import { MyStore, Get } from "@/store";
 import { ILight } from "node-hue-api";
 import { byName } from "../util/Objects";
 
@@ -61,7 +61,7 @@ export default class Favorites extends Vue {
   private lightStateAddress = "lights";
   private plugStateAddress = "plugs";
   get favorites() {
-    const favorites = this.$store.getters[Getters.favorites];
+    const favorites = this.$store.getters[Get.favorites];
     const sorted = { plugs: favorites.plugs, lights: favorites.lights };
     return sorted;
   }

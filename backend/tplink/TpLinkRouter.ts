@@ -2,7 +2,7 @@ import { Client } from 'tplink-smarthome-api';
 import { environment } from '../../.env';
 import { Router } from 'express';
 import { asyncHandler } from '../common/Util';
-import { IPlug } from '../../src/util/IPlug';
+import { IPlug } from '../../src/util/Interfaces';
 
 
 
@@ -20,7 +20,7 @@ export default class TpLinkRouter {
 
   public routeEndpoints(router: Router) {
     router.get('/plugs', asyncHandler(async (request, response) => {
-      return { code: 200, payload: this.knownPlugs };
+      return { code: 200, payload: this.getAll() };
     }));
     router.put('/plugs', asyncHandler(async (request, response) => {
       const plugChanges: IPlug = request.body;
@@ -83,7 +83,13 @@ export default class TpLinkRouter {
     return this;
   }
 
-  public getAll() {
+  public async getAll() {
+    const allPlugData = await Promise.all(this.knownPlugIps.map((ip) => {
+      return this.get(ip);
+    }));
+    allPlugData.forEach((plug) => {
+      this.knownPlugs[plug.host] = plug;
+    });
     return this.knownPlugs;
   }
 
@@ -135,7 +141,3 @@ export default class TpLinkRouter {
 }
 
 export const tpLinkRouter = new TpLinkRouter();
-
-export function getPlugs() {
-  return tpLinkRouter.getAll();
-}

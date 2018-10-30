@@ -2,11 +2,11 @@
 
   <div class="hello">
     <div v-if="plugs.length < 1">
-        <v-progress-circular
-      :size="50"
-      color="amber"
-      indeterminate
-    ></v-progress-circular>
+      <v-progress-circular
+        :size="50"
+        color="amber"
+        indeterminate
+      ></v-progress-circular>
     </div>
     <div v-else>
       <v-container class="iconcontainer">
@@ -31,7 +31,7 @@
 <script lang="ts">
 import { Component, Prop, Vue } from "vue-property-decorator";
 import PlugButton from "@/components/PlugButton.vue";
-import { MyStore, Mutators, Getters } from "@/store";
+import { MyStore, Get } from "@/store";
 import { ILight } from "node-hue-api";
 import { byName } from "../util/Objects";
 
@@ -39,7 +39,7 @@ import { byName } from "../util/Objects";
 export default class Plugs extends Vue {
   private stateAddress = "plugs";
   get plugs() {
-    const plugs = this.$store.getters[Getters.plugs];
+    const plugs = this.$store.getters[Get.plugs];
     const sorted = Object.values(plugs).sort(byName);
     return sorted;
   }

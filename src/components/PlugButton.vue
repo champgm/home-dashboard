@@ -41,6 +41,19 @@
           <v-spacer></v-spacer>
           <v-btn color="green darken-1" flat @click.native="submit()">Apply</v-btn>
         </v-card-actions>
+        <v-btn
+          class="favoritebutton"
+          :color="isFavorite()? 'yellow' : 'grey' "
+          small
+          dark
+          absolute
+          bottom
+          right
+          fab
+          v-on:click="toggleFavorite()"
+        >
+          <v-icon>star</v-icon>
+        </v-btn>
       </v-card>
     </v-dialog>
   </div>
@@ -48,11 +61,11 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from "vue-property-decorator";
-import { IPlug } from "../util/IPlug";
+import { IPlug } from "../util/Interfaces";
 import Api from "../util/Api";
 import { stringify } from "querystring";
 import ObjectEditor from "./ObjectEditor.vue";
-import { MyStore, Mutators, Getters } from "@/store";
+import { MyStore, Mutate, Get } from "@/store";
 
 @Component({ components: { ObjectEditor } })
 export default class PlugButton extends Vue {
@@ -62,24 +75,40 @@ export default class PlugButton extends Vue {
   private editorVisible = false;
   private editableFields = ["name"];
   private fieldRules = {};
+  private toggleFavoriteOnSubmit = false;
   get plugAddress() {
     return `plugs['${this.id}']`;
   }
   get plug(): IPlug {
-    return this.$store.getters[Getters.plugs][this.id];
+    return this.$store.getters[Get.plugs][this.id];
   }
   set plug(plug) {
     this.$set(this.$store.state.plugs, `[${this.id}]`, plug);
   }
+  public isFavorite() {
+    const favoriteIds: string[] = this.$store.getters[Get.favoriteIds].plugs;
+    const isFavorite = favoriteIds.indexOf(this.id) > -1;
+    const isFavoriteNoToggle = !this.toggleFavoriteOnSubmit && isFavorite;
+    const notFavoriteButToggle = this.toggleFavoriteOnSubmit && !isFavorite;
+    return isFavoriteNoToggle || notFavoriteButToggle;
+  }
+  public async toggleFavorite() {
+    this.toggleFavoriteOnSubmit = !this.toggleFavoriteOnSubmit;
+  }
   public async reset() {
     this.$set(this.plug, "isBeingEdited", false);
-    await this.$store.dispatch(Mutators.refreshPlugs);
+    await this.$store.dispatch(Mutate.refreshPlugs);
+    await this.$store.dispatch(Mutate.refreshFavorites);
   }
   public async submit() {
-    await this.$store.dispatch(Mutators.editPlug, this.plug);
+    if (this.toggleFavoriteOnSubmit) {
+      await this.$store.dispatch(Mutate.toggleFavorite, this.plug);
+      this.toggleFavoriteOnSubmit = false;
+    }
+    await this.$store.dispatch(Mutate.editPlug, this.plug);
   }
   public async toggle() {
-    await this.$store.dispatch(Mutators.togglePlug, this.plug);
+    await this.$store.dispatch(Mutate.togglePlug, this.plug);
   }
   public getButtonColor() {
     if (this.plug.state.on) {
@@ -113,5 +142,8 @@ export default class PlugButton extends Vue {
   height: 33px !important;
   top: -40px;
   left: 35px;
+}
+.favoritebutton {
+  bottom: 70px !important;
 }
 </style>

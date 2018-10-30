@@ -1,5 +1,1 @@
-{
-  "lights": ["1"],
-  "plugs": [],
-  "groups": []
-}
+{"lights":[],"plugs":["192.168.2.210"],"groups":[]}

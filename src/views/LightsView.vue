@@ -7,7 +7,7 @@
 <script lang="ts">
 import { Component, Vue } from "vue-property-decorator";
 import Lights from "@/components/Lights.vue"; // @ is an alias to /src
-import { Mutators } from "@/store";
+import { Mutate } from "@/store";
 import { ILight } from "node-hue-api";
 
 @Component({
@@ -17,7 +17,7 @@ import { ILight } from "node-hue-api";
 })
 export default class LightsView extends Vue {
   public mounted() {
-    this.$store.dispatch(Mutators.refreshLights);
+    this.$store.dispatch(Mutate.refreshLights);
   }
 }
 </script>

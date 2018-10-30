@@ -18,7 +18,7 @@
             class="buttonflex"
           >
             <LightButton
-              :lightId="light.id"
+              :id="light.id"
               :stateAddress="stateAddress"
             ></LightButton>
           </v-flex>
@@ -31,7 +31,7 @@
 <script lang="ts">
 import { Component, Prop, Vue } from "vue-property-decorator";
 import LightButton from "@/components/LightButton.vue";
-import { MyStore, Mutators, Getters } from "@/store";
+import { MyStore, Mutate, Get } from "@/store";
 import { ILight } from "node-hue-api";
 import { byName } from "../util/Objects";
 
@@ -39,7 +39,7 @@ import { byName } from "../util/Objects";
 export default class Lights extends Vue {
   private stateAddress = "lights";
   get lights() {
-    const lights = this.$store.getters[Getters.lights];
+    const lights = this.$store.getters[Get.lights];
     const sorted = Object.values(lights).sort(byName);
     return sorted;
   }

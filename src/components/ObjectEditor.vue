@@ -34,10 +34,9 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from "vue-property-decorator";
-import { IPlug } from "../util/IPlug";
 import Api from "../util/Api";
 import { stringify } from "querystring";
-import { Mutators } from "@/store";
+import { Mutate } from "@/store";
 import { isObject } from "util";
 import get from "lodash.get";
 import set from "lodash.set";

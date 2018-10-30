@@ -2,16 +2,11 @@ import Vue from 'vue';
 import Vuex, { StoreOptions, CommitOptions, Commit } from 'vuex';
 import { ILight } from 'node-hue-api';
 import Api from './util/Api';
-import { IPlug } from './util/IPlug';
+import { IPlug, Favorites } from './util/Interfaces';
 import { isEmptyOrBlank, byName } from './util/Objects';
 
 const api = new Api();
 Vue.use(Vuex);
-
-interface Favorites {
-  plugs: string[];
-  lights: string[];
-}
 
 export interface RootState {
   lightsPromise: Promise<ILight[]>;
@@ -20,19 +15,19 @@ export interface RootState {
   favorites: Favorites;
 }
 
-export function isFavorite(item: any, favorites: string[]) {
-  return favorites.indexOf(item.id) > -1;
+export function isFavorite(itemId: any, favorites: string[]) {
+  return favorites.indexOf(itemId) > -1;
 }
 
 export interface MyCommit extends Commit {
-  (type: Mutators, payload?: any, options?: CommitOptions): void;
+  (type: Mutate, payload?: any, options?: CommitOptions): void;
 }
 
 export class MyStore extends Vuex.Store<RootState> {
   public commit: MyCommit = super.commit;
 }
 
-export enum Mutators {
+export enum Mutate {
   refreshLights = 'refreshLights',
   toggleLight = 'toggleLight',
   editLight = 'editLight',
@@ -40,13 +35,15 @@ export enum Mutators {
   editPlug = 'editPlug',
   togglePlug = 'togglePlug',
   refreshFavorites = 'refreshFavorites',
+  toggleFavorite = 'toggleFavorite',
 }
 
-export enum Getters {
+export enum Get {
   lights = 'lights',
   lightsLoading = 'lightsLoading',
   plugs = 'plugs',
   favorites = 'favorites',
+  favoriteIds = 'favoriteIds',
 }
 
 async function updateLights(state, lightsPromise: Promise<ILight[]>) {
@@ -55,6 +52,7 @@ async function updateLights(state, lightsPromise: Promise<ILight[]>) {
     const currentLight = state.lights[newLight.id];
     if ((isEmptyOrBlank(currentLight) || !currentLight.isBeingEdited) &&
       (newLight !== currentLight)) {
+      (newLight as any).deviceType = 'light';
       Vue.set(state.lights, newLight.id, newLight);
       Vue.set(state.lights[newLight.id], 'name', newLight.name);
     }
@@ -67,13 +65,38 @@ async function updatePlugs(state, promise: Promise<{ [id: string]: IPlug }>) {
     const newPlug = newPlugs[id];
     if ((isEmptyOrBlank(currentPlug) || !currentPlug.isBeingEdited) &&
       (newPlug !== currentPlug)) {
+      (newPlug as any).deviceType = 'plug';
       Vue.set(state.plugs, id, newPlug);
     }
   });
 }
 
 async function updateFavorites(state, promise: Promise<Favorites>) {
-  Vue.set(state, 'favorites', await promise);
+  const updatedFavorites = await promise;
+
+  const currentFavoritePlugs: string[] = state.favorites.plugs;
+  const newFavoritePlugs: string[] = updatedFavorites.plugs;
+  currentFavoritePlugs.forEach((id) => {
+    if (newFavoritePlugs.indexOf(id) < 0 && !state.plugs[id].isBeingEdited) {
+      currentFavoritePlugs.splice(currentFavoritePlugs.indexOf(id), 1);
+      newFavoritePlugs.splice(newFavoritePlugs.indexOf(id), 1);
+    }
+  });
+  newFavoritePlugs.forEach((id) => {
+    currentFavoritePlugs.push(id);
+  });
+
+  const currentFavoriteLights: string[] = state.favorites.lights;
+  const newFavoriteLights: string[] = updatedFavorites.lights;
+  currentFavoriteLights.forEach((id) => {
+    if (newFavoriteLights.indexOf(id) < 0 && !state.lights[id].isBeingEdited) {
+      currentFavoriteLights.splice(currentFavoriteLights.indexOf(id), 1);
+      newFavoriteLights.splice(newFavoriteLights.indexOf(id), 1);
+    }
+  });
+  newFavoriteLights.forEach((id) => {
+    currentFavoriteLights.push(id);
+  });
 }
 
 const storeOptions: StoreOptions<RootState> = {
@@ -84,61 +107,74 @@ const storeOptions: StoreOptions<RootState> = {
     favorites: { plugs: [], lights: [] },
   },
   mutations: {
-    [Mutators.refreshLights]: async (state) => {
+    [Mutate.refreshLights]: async (state) => {
       await updateLights(state, api.getLights());
     },
-    [Mutators.editLight]: async (state, payload: ILight) => {
+    [Mutate.editLight]: async (state, payload: ILight) => {
       await updateLights(state, api.editLight(payload));
     },
-    [Mutators.toggleLight]: async (state, payload: ILight) => {
+    [Mutate.toggleLight]: async (state, payload: ILight) => {
       await updateLights(state, api.toggleLight(payload));
     },
-    [Mutators.refreshPlugs]: async (state) => {
+    [Mutate.refreshPlugs]: async (state) => {
       await updatePlugs(state, api.getPlugs());
     },
-    [Mutators.editPlug]: async (state, payload: IPlug) => {
+    [Mutate.editPlug]: async (state, payload: IPlug) => {
       await updatePlugs(state, api.editPlug(payload));
     },
-    [Mutators.togglePlug]: async (state, payload: IPlug) => {
+    [Mutate.togglePlug]: async (state, payload: IPlug) => {
       await updatePlugs(state, api.togglePlug(payload));
     },
-    [Mutators.refreshFavorites]: async (state) => {
+    [Mutate.refreshFavorites]: async (state) => {
       await updateFavorites(state, api.getFavorites());
+    },
+    [Mutate.toggleFavorite]: async (state, payload) => {
+      await updateFavorites(state, api.toggleFavorite(payload));
     },
   },
   actions: {
-    [Mutators.refreshLights]: async (context) => {
-      context.commit(Mutators.refreshLights);
+    [Mutate.refreshLights]: async (context) => {
+      context.commit(Mutate.refreshLights);
     },
-    [Mutators.editLight]: async (context, payload: ILight) => {
-      context.commit(Mutators.editLight, payload);
+    [Mutate.editLight]: async (context, payload: ILight) => {
+      context.commit(Mutate.editLight, payload);
     },
-    [Mutators.toggleLight]: async (context, payload: ILight) => {
-      context.commit(Mutators.toggleLight, payload);
+    [Mutate.toggleLight]: async (context, payload: ILight) => {
+      context.commit(Mutate.toggleLight, payload);
     },
-    [Mutators.refreshPlugs]: async (context) => {
-      context.commit(Mutators.refreshPlugs);
+    [Mutate.refreshPlugs]: async (context) => {
+      context.commit(Mutate.refreshPlugs);
     },
-    [Mutators.editPlug]: async (context, payload: IPlug) => {
-      context.commit(Mutators.editPlug, payload);
+    [Mutate.editPlug]: async (context, payload: IPlug) => {
+      context.commit(Mutate.editPlug, payload);
     },
-    [Mutators.togglePlug]: async (context, payload: IPlug) => {
-      context.commit(Mutators.togglePlug, payload);
+    [Mutate.togglePlug]: async (context, payload: IPlug) => {
+      context.commit(Mutate.togglePlug, payload);
     },
-    [Mutators.refreshFavorites]: async (context) => {
-      context.commit(Mutators.refreshFavorites);
+    [Mutate.refreshFavorites]: async (context) => {
+      context.commit(Mutate.refreshFavorites);
+    },
+    [Mutate.toggleFavorite]: async (context, payload) => {
+      context.commit(Mutate.toggleFavorite, payload);
     },
   },
   getters: {
-    [Getters.lights]: (state) => state.lights,
-    [Getters.plugs]: (state) => state.plugs,
-    [Getters.favorites]: (state) => {
+    [Get.lights]: (state) => state.lights,
+    [Get.plugs]: (state) => state.plugs,
+    [Get.favorites]: (state) => {
       const lights = Object.values(state.lights)
-        .filter((item) => isFavorite(item, state.favorites.lights))
+        .filter((item) => isFavorite(item.id, state.favorites.lights))
         .sort(byName);
       const plugs = Object.values(state.plugs)
-        .filter((item) => isFavorite(item, state.favorites.plugs))
+        .filter((item) => isFavorite(item.id, state.favorites.plugs))
         .sort(byName);
+      return { lights, plugs };
+    },
+    [Get.favoriteIds]: (state) => {
+      const lights = Object.keys(state.lights)
+        .filter((id) => isFavorite(id, state.favorites.lights));
+      const plugs = Object.keys(state.plugs)
+        .filter((id) => isFavorite(id, state.favorites.plugs));
       return { lights, plugs };
     },
   },

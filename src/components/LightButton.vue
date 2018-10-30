@@ -41,6 +41,19 @@
           <v-spacer></v-spacer>
           <v-btn color="green darken-1" flat @click.native="submit()">Apply</v-btn>
         </v-card-actions>
+        <v-btn
+          class="favoritebutton"
+          :color="isFavorite()? 'yellow' : 'grey' "
+          small
+          dark
+          absolute
+          bottom
+          right
+          fab
+          v-on:click="toggleFavorite()"
+        >
+          <v-icon>star</v-icon>
+        </v-btn>
       </v-card>
     </v-dialog>
   </div>
@@ -54,7 +67,7 @@ import { stringify } from "querystring";
 import { isObject } from "util";
 import ObjectEditor from "./ObjectEditor.vue";
 import cloneDeep from "lodash.clonedeep";
-import { MyStore, Mutators, Getters } from "@/store";
+import { MyStore, Mutate, Get } from "@/store";
 import { isEmptyOrBlank } from "@/util/Objects";
 
 @Component({ components: { ObjectEditor } })
@@ -62,9 +75,10 @@ export default class LightButton extends Vue {
   @Prop()
   private stateAddress!: string;
   @Prop()
-  private lightId!: string;
+  private id!: string;
   private api = new Api();
   private editorVisible = false;
+  private toggleFavoriteOnSubmit = false;
   private editableFields = [
     "name",
     "on",
@@ -106,24 +120,39 @@ export default class LightButton extends Vue {
     // xy_in: [v => v || "asdf"]
   };
   get lightAddress() {
-    const address = `${this.stateAddress}.${this.lightId}`;
+    const address = `${this.stateAddress}.${this.id}`;
     return address;
   }
   get light() {
-    return this.$store.getters[Getters.lights][this.lightId];
+    return this.$store.getters[Get.lights][this.id];
   }
   set light(light) {
-    this.$set(this.$store.state.lights, this.lightId, light);
+    this.$set(this.$store.state.lights, this.id, light);
   }
   public async reset() {
     this.$set(this.light, "isBeingEdited", false);
-    await this.$store.dispatch(Mutators.refreshLights);
+    await this.$store.dispatch(Mutate.refreshLights);
+    await this.$store.dispatch(Mutate.refreshFavorites);
+  }
+  public isFavorite() {
+    const favoriteIds: string[] = this.$store.getters[Get.favoriteIds].lights;
+    const isFavorite = favoriteIds.indexOf(this.id) > -1;
+    const isFavoriteNoToggle = !this.toggleFavoriteOnSubmit && isFavorite;
+    const notFavoriteButToggle = this.toggleFavoriteOnSubmit && !isFavorite;
+    return isFavoriteNoToggle || notFavoriteButToggle;
+  }
+  public async toggleFavorite() {
+    this.toggleFavoriteOnSubmit = !this.toggleFavoriteOnSubmit;
   }
   public async submit() {
-    await this.$store.dispatch(Mutators.editLight, this.light);
+    if (this.toggleFavoriteOnSubmit) {
+      await this.$store.dispatch(Mutate.toggleFavorite, this.light);
+      this.toggleFavoriteOnSubmit = false;
+    }
+    await this.$store.dispatch(Mutate.editLight, this.light);
   }
   public async toggle() {
-    await this.$store.dispatch(Mutators.toggleLight, this.light);
+    await this.$store.dispatch(Mutate.toggleLight, this.light);
   }
   public getButtonColor() {
     if (this.light.state.on) {
@@ -157,5 +186,8 @@ export default class LightButton extends Vue {
   height: 33px !important;
   top: -40px;
   left: 35px;
+}
+.favoritebutton {
+  bottom: 70px !important;
 }
 </style>

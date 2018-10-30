@@ -1,3 +1,9 @@
+
+export interface Favorites {
+  plugs: string[];
+  lights: string[];
+}
+
 export interface IPlug {
   setPowerState?: (powerState: boolean) => boolean;
   getPowerState?: () => boolean;

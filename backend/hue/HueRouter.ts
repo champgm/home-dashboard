@@ -11,6 +11,8 @@ const api = new HueApi(
   environment.HUE_BRIDGE_PORT);
 
 function byName(a, b) {
+  a.deviceType = 'light';
+  b.deviceType = 'light';
   if (a.name < b.name) {
     return -1;
   }
