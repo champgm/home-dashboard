@@ -20,7 +20,7 @@ export default class TpLinkRouter {
 
   public routeEndpoints(router: Router) {
     router.get('/plugs', asyncHandler(async (request, response) => {
-      return { code: 200, payload: this.getAll() };
+      return { code: 200, payload: await this.getAll() };
     }));
     router.put('/plugs', asyncHandler(async (request, response) => {
       const plugChanges: IPlug = request.body;
