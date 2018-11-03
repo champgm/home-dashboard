@@ -24,5 +24,10 @@ export default new Router({
       name: 'Plugs',
       component: () => import(/* webpackChunkName: "plugs" */ './views/PlugsView.vue'),
     },
+    {
+      path: '/groups',
+      name: 'Groups',
+      component: () => import(/* webpackChunkName: "groups" */ './views/GroupsView.vue'),
+    },
   ],
 });

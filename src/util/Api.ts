@@ -1,5 +1,5 @@
 import requestPromise from 'request-promise-native';
-import { ILight } from 'node-hue-api';
+import { ILight, ILightGroup } from 'node-hue-api';
 import cloneDeep from 'lodash.clonedeep';
 import { IPlug } from './Interfaces';
 import { Favorites } from './Interfaces';
@@ -20,6 +20,24 @@ export default class Api {
   public async editLight(light: ILight) {
     const options = { body: light, json: true };
     const url = `http://localhost:1981/lights`;
+    const response = await requestPromise.put(url, options);
+    return response.payload;
+  }
+  public async getGroups() {
+    const response = await requestPromise.get('http://localhost:1981/groups', { json: true });
+    return response.payload;
+  }
+  public async toggleGroup(group: ILightGroup) {
+    const body = cloneDeep(group.action);
+    body.on = !body.on;
+    const options = { body, json: true };
+    const url = `http://localhost:1981/groups/${group.id}/action`;
+    const response = await requestPromise.put(url, options);
+    return response.payload;
+  }
+  public async editGroup(group: ILightGroup) {
+    const options = { body: group, json: true };
+    const url = `http://localhost:1981/groups`;
     const response = await requestPromise.put(url, options);
     return response.payload;
   }

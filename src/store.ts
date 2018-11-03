@@ -1,6 +1,6 @@
 import Vue from 'vue';
 import Vuex, { StoreOptions, CommitOptions, Commit } from 'vuex';
-import { ILight } from 'node-hue-api';
+import { ILight, ILightGroup } from 'node-hue-api';
 import Api from './util/Api';
 import { IPlug, Favorites } from './util/Interfaces';
 import { isEmptyOrBlank, byName } from './util/Objects';
@@ -9,7 +9,7 @@ const api = new Api();
 Vue.use(Vuex);
 
 export interface RootState {
-  lightsPromise: Promise<ILight[]>;
+  groups: { [id: string]: ILightGroup };
   lights: { [id: string]: ILight };
   plugs: { [id: string]: IPlug };
   favorites: Favorites;
@@ -28,22 +28,26 @@ export class MyStore extends Vuex.Store<RootState> {
 }
 
 export enum Mutate {
-  refreshLights = 'refreshLights',
-  toggleLight = 'toggleLight',
+  editGroup = 'editGroup',
   editLight = 'editLight',
-  refreshPlugs = 'refreshPlugs',
   editPlug = 'editPlug',
-  togglePlug = 'togglePlug',
   refreshFavorites = 'refreshFavorites',
+  refreshGroups = 'refreshGroups',
+  refreshLights = 'refreshLights',
+  refreshPlugs = 'refreshPlugs',
   toggleFavorite = 'toggleFavorite',
+  toggleGroup = 'toggleGroup',
+  toggleLight = 'toggleLight',
+  togglePlug = 'togglePlug',
 }
 
 export enum Get {
+  favoriteIds = 'favoriteIds',
+  favorites = 'favorites',
+  groups = 'groups',
   lights = 'lights',
   lightsLoading = 'lightsLoading',
   plugs = 'plugs',
-  favorites = 'favorites',
-  favoriteIds = 'favoriteIds',
 }
 
 async function updateLights(state, lightsPromise: Promise<ILight[]>) {
@@ -55,6 +59,18 @@ async function updateLights(state, lightsPromise: Promise<ILight[]>) {
       (newLight as any).deviceType = 'light';
       Vue.set(state.lights, newLight.id, newLight);
       Vue.set(state.lights[newLight.id], 'name', newLight.name);
+    }
+  });
+}
+async function updateGroups(state, groupsPromise: Promise<ILightGroup[]>) {
+  const newGroups = await groupsPromise;
+  newGroups.forEach((newGroup) => {
+    const currentGroup = state.groups[newGroup.id];
+    if ((isEmptyOrBlank(currentGroup) || !currentGroup.isBeingEdited) &&
+      (newGroup !== currentGroup)) {
+      (newGroup as any).deviceType = 'group';
+      Vue.set(state.groups, newGroup.id, newGroup);
+      Vue.set(state.groups[newGroup.id], 'name', newGroup.name);
     }
   });
 }
@@ -97,14 +113,26 @@ async function updateFavorites(state, promise: Promise<Favorites>) {
   newFavoriteLights.forEach((id) => {
     currentFavoriteLights.push(id);
   });
+
+  const currentFavoriteGroups: string[] = state.favorites.groups;
+  const newFavoriteGroups: string[] = updatedFavorites.groups;
+  currentFavoriteGroups.forEach((id) => {
+    if (newFavoriteGroups.indexOf(id) < 0 && !state.groups[id].isBeingEdited) {
+      currentFavoriteGroups.splice(currentFavoriteGroups.indexOf(id), 1);
+      newFavoriteGroups.splice(newFavoriteGroups.indexOf(id), 1);
+    }
+  });
+  newFavoriteGroups.forEach((id) => {
+    currentFavoriteGroups.push(id);
+  });
 }
 
 const storeOptions: StoreOptions<RootState> = {
   state: {
-    lightsPromise: undefined,
+    groups: {},
     lights: {},
     plugs: {},
-    favorites: { plugs: [], lights: [] },
+    favorites: { plugs: [], lights: [], groups: [] },
   },
   mutations: {
     [Mutate.refreshLights]: async (state) => {
@@ -115,6 +143,15 @@ const storeOptions: StoreOptions<RootState> = {
     },
     [Mutate.toggleLight]: async (state, payload: ILight) => {
       await updateLights(state, api.toggleLight(payload));
+    },
+    [Mutate.refreshGroups]: async (state) => {
+      await updateGroups(state, api.getGroups());
+    },
+    [Mutate.editGroup]: async (state, payload: ILightGroup) => {
+      await updateGroups(state, api.editGroup(payload));
+    },
+    [Mutate.toggleGroup]: async (state, payload: ILightGroup) => {
+      await updateGroups(state, api.toggleGroup(payload));
     },
     [Mutate.refreshPlugs]: async (state) => {
       await updatePlugs(state, api.getPlugs());
@@ -142,6 +179,15 @@ const storeOptions: StoreOptions<RootState> = {
     [Mutate.toggleLight]: async (context, payload: ILight) => {
       context.commit(Mutate.toggleLight, payload);
     },
+    [Mutate.refreshGroups]: async (context) => {
+      context.commit(Mutate.refreshGroups);
+    },
+    [Mutate.editGroup]: async (context, payload: ILightGroup) => {
+      context.commit(Mutate.editGroup, payload);
+    },
+    [Mutate.toggleGroup]: async (context, payload: ILightGroup) => {
+      context.commit(Mutate.toggleGroup, payload);
+    },
     [Mutate.refreshPlugs]: async (context) => {
       context.commit(Mutate.refreshPlugs);
     },
@@ -161,6 +207,7 @@ const storeOptions: StoreOptions<RootState> = {
   getters: {
     [Get.lights]: (state) => state.lights,
     [Get.plugs]: (state) => state.plugs,
+    [Get.groups]: (state) => state.groups,
     [Get.favorites]: (state) => {
       const lights = Object.values(state.lights)
         .filter((item) => isFavorite(item.id, state.favorites.lights))
@@ -170,12 +217,14 @@ const storeOptions: StoreOptions<RootState> = {
         .sort(byName);
       return { lights, plugs };
     },
-    [Get.favoriteIds]: (state) => {
+    [Get.favoriteIds]: (state): { lights: string[], plugs: string[], groups: string[] } => {
       const lights = Object.keys(state.lights)
         .filter((id) => isFavorite(id, state.favorites.lights));
       const plugs = Object.keys(state.plugs)
         .filter((id) => isFavorite(id, state.favorites.plugs));
-      return { lights, plugs };
+      const groups = Object.keys(state.groups)
+        .filter((id) => isFavorite(id, state.favorites.groups));
+      return { lights, plugs, groups };
     },
   },
 };
@@ -183,8 +232,10 @@ const storeOptions: StoreOptions<RootState> = {
 export const store = new MyStore(storeOptions);
 setInterval(() => {
   console.log(`Refreshing device lists`);
+  updateGroups(store.state, api.getGroups());
   updateLights(store.state, api.getLights());
   updatePlugs(store.state, api.getPlugs());
+  // console.log(`Refreshed groups: ${JSON.stringify(store.state.groups)}`);
   updateFavorites(store.state, api.getFavorites());
 }, 5000);
 

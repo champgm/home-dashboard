@@ -54,10 +54,19 @@ export default class ObjectEditor extends Vue {
   @Prop()
   private fieldRules!: any;
   get thing() {
-    return get(this.$store.state, this.stateAddress);
+    const thing = get(this.$store.state, this.stateAddress);
+    if (Array.isArray(thing)) {
+      return JSON.stringify(thing);
+    }
+    return thing;
   }
   set thing(newThing) {
-    this.$set(this.$store.state, this.stateAddress, newThing);
+    try {
+      const thingArray = JSON.parse(newThing);
+      this.$set(this.$store.state, this.stateAddress, thingArray);
+    } catch (error) {
+      this.$set(this.$store.state, this.stateAddress, newThing);
+    }
   }
   hasName(thing) {
     return thing.name === "" || !isEmptyOrBlank(thing.name);
@@ -75,6 +84,10 @@ export default class ObjectEditor extends Vue {
     return isObject(thing);
   }
   public isString(thing) {
+    if (Array.isArray(thing)) {
+      // ;)
+      return true;
+    }
     return isString(thing);
   }
   public isBoolean(thing) {
