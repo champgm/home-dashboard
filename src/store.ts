@@ -215,7 +215,10 @@ const storeOptions: StoreOptions<RootState> = {
       const plugs = Object.values(state.plugs)
         .filter((item) => isFavorite(item.id, state.favorites.plugs))
         .sort(byName);
-      return { lights, plugs };
+      const groups = Object.values(state.groups)
+        .filter((item) => isFavorite(item.id, state.favorites.groups))
+        .sort(byName);
+      return { lights, plugs, groups };
     },
     [Get.favoriteIds]: (state): { lights: string[], plugs: string[], groups: string[] } => {
       const lights = Object.keys(state.lights)

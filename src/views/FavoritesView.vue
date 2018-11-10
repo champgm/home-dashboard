@@ -19,6 +19,7 @@ export default class FavoritesView extends Vue {
   public mounted() {
     this.$store.dispatch(Mutate.refreshLights);
     this.$store.dispatch(Mutate.refreshPlugs);
+    this.$store.dispatch(Mutate.refreshGroups);
     this.$store.dispatch(Mutate.refreshFavorites);
   }
 }

@@ -8,8 +8,9 @@
     ></v-text-field>
     <div v-for="key in keys(thing)" v-bind:key="key">
       <v-text-field
-        v-if="isString(thing[key]) && key !== 'name'"
+        v-if="isTextEditable(thing[key]) && key !== 'name'"
         :disabled="!isEditable(key)"
+        :type="getType(key)"
         v-model="thing[key]"
         :label="key"
         :rules="fieldRules[key]"
@@ -37,11 +38,12 @@ import { Component, Prop, Vue } from "vue-property-decorator";
 import Api from "../util/Api";
 import { stringify } from "querystring";
 import { Mutate } from "@/store";
-import { isObject } from "util";
 import get from "lodash.get";
 import set from "lodash.set";
 import isBoolean from "lodash.isboolean";
 import isString from "lodash.isstring";
+import isNumber from "lodash.isnumber";
+import isObject from "lodash.isobject";
 import cloneDeep from "lodash.clonedeep";
 import { isEmptyOrBlank } from "@/util/Objects";
 
@@ -72,7 +74,8 @@ export default class ObjectEditor extends Vue {
     return thing.name === "" || !isEmptyOrBlank(thing.name);
   }
   public getSubAddress(key: string) {
-    return `${this.stateAddress}.${key}`;
+    const subAddress = `${this.stateAddress}.${key}`;
+    return subAddress;
   }
   public isEditable(key: string) {
     return this.editableFields.indexOf(key) > -1;
@@ -83,12 +86,18 @@ export default class ObjectEditor extends Vue {
     }
     return isObject(thing);
   }
-  public isString(thing) {
+  public isTextEditable(thing) {
     if (Array.isArray(thing)) {
-      // ;)
       return true;
     }
-    return isString(thing);
+    return isString(thing) || isNumber(thing);
+  }
+  public getType(thing) {
+    if (isNumber(thing)) {
+      return "number";
+    } else {
+      return "text";
+    }
   }
   public isBoolean(thing) {
     return isBoolean(thing);

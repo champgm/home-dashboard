@@ -97,10 +97,14 @@ export default class LightButton extends Vue {
     // "xy_inc"
   ];
   private fieldRules = {
-    bri: [v => (1 >= v && v <= 254) || "Must be 1 to 254"],
-    hue: [v => (0 >= v && v <= 65535) || "Must be 0 to 65535"],
-    sat: [v => (1 >= v && v <= 254) || "Must be 1 to 254"],
-    ct: [v => (153 >= v && v <= 500) || "Must be 153 to 500"],
+    bri: [
+      v => {
+        return (1 <= parseInt(v) && parseInt(v) <= 254) || "Must be 1 to 254";
+      }
+    ],
+    hue: [v => (0 <= v && v <= 65535) || "Must be 0 to 65535"],
+    sat: [v => (1 <= parseInt(v) && v <= 254) || "Must be 1 to 254"],
+    ct: [v => (153 <= v && v <= 500) || "Must be 153 to 500"],
     alert: [
       v =>
         v === "none" ||

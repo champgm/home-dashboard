@@ -36,6 +36,18 @@ export function routeFavoritesEndpoints(router: Router, logger: bunyan) {
     return { code: 200 };
   }));
 
+  router.delete('/favorites/groups/:id', asyncHandler(async (request, response) => {
+    const id = request.params.id;
+    removeFavorite(id, 'groups');
+    return { code: 200 };
+  }));
+
+  router.put('/favorites/groups/:id', asyncHandler(async (request, response) => {
+    const id = request.params.id;
+    putFavorite(id, 'groups');
+    return { code: 200 };
+  }));
+
   router.delete('/favorites/lights/:id', asyncHandler(async (request, response) => {
     const id = request.params.id;
     removeFavorite(id, 'lights');

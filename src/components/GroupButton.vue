@@ -79,7 +79,7 @@ export default class GroupButton extends Vue {
   private api = new Api();
   private editorVisible = false;
   private toggleFavoriteOnSubmit = false;
-  private editableFields = ["name", "lights"];
+  private editableFields = ["name", "lights", "bri"];
   private fieldRules = {};
   get groupAddress() {
     const address = `${this.stateAddress}.${this.id}`;

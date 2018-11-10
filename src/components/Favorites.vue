@@ -37,6 +37,17 @@
               :stateAddress="lightStateAddress"
             ></LightButton>
           </v-flex>
+          <v-flex
+            v-for="group in favorites.groups"
+            v-if="favorites.groups.length > 0"
+            v-bind:key="group.id"
+            class="buttonflex"
+          >
+            <GroupButton
+              :id="group.id"
+              :stateAddress="groupStateAddress"
+            ></GroupButton>
+          </v-flex>
         </v-layout>
       </v-container>
     </div>
@@ -46,6 +57,7 @@
 <script lang="ts">
 import { Component, Prop, Vue } from "vue-property-decorator";
 import LightButton from "@/components/LightButton.vue";
+import GroupButton from "@/components/GroupButton.vue";
 import PlugButton from "@/components/PlugButton.vue";
 import { MyStore, Get } from "@/store";
 import { ILight } from "node-hue-api";
@@ -54,15 +66,21 @@ import { byName } from "../util/Objects";
 @Component({
   components: {
     LightButton,
+    GroupButton,
     PlugButton
   }
 })
 export default class Favorites extends Vue {
   private lightStateAddress = "lights";
   private plugStateAddress = "plugs";
+  private groupStateAddress = "groups";
   get favorites() {
     const favorites = this.$store.getters[Get.favorites];
-    const sorted = { plugs: favorites.plugs, lights: favorites.lights };
+    const sorted = {
+      plugs: favorites.plugs,
+      lights: favorites.lights,
+      groups: favorites.groups
+    };
     return sorted;
   }
   public lightReachable(light: ILight): boolean {
