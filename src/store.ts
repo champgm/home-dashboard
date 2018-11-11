@@ -235,13 +235,13 @@ const storeOptions: StoreOptions<RootState> = {
 export const store = new MyStore(storeOptions);
 setInterval(async () => {
   console.log(`Refreshing device lists`);
-  const updateGroupsPromise = updateGroups(store.state, api.getGroups());
-  const updateLightsPromise = updateLights(store.state, api.getLights());
-  const updatePlugsPromise = updatePlugs(store.state, api.getPlugs());
-  const updateFavoritesPromise = updateFavorites(store.state, api.getFavorites());
-  await updateGroupsPromise;
-  await updateLightsPromise;
-  await updatePlugsPromise;
-  await updateFavoritesPromise;
+  // const updateGroupsPromise = updateGroups(store.state, api.getGroups());
+  // const updateLightsPromise = updateLights(store.state, api.getLights());
+  // const updatePlugsPromise = updatePlugs(store.state, api.getPlugs());
+  // const updateFavoritesPromise = updateFavorites(store.state, api.getFavorites());
+  // await updateGroupsPromise;
+  // await updateLightsPromise;
+  // await updatePlugsPromise;
+  // await updateFavoritesPromise;
 }, 5000);
 

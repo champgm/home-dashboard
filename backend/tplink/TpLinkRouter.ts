@@ -48,7 +48,7 @@ export default class TpLinkRouter {
 
   public watch() {
     const watchForNewPlugs: any = async (plug: any): Promise<void> => {
-      plug.state = { on: plug.getPowerState() };
+      // plug.state = { on: plug.getPowerState() };
       this.knownPlugs[plug.host] = await this.get(plug.host);
       console.log(`New plug found: ${JSON.stringify(this.knownPlugs[plug.host])}`);
       if (!(plug.host in this.knownPlugs)) {
@@ -58,8 +58,8 @@ export default class TpLinkRouter {
 
     const watchForKnownPlugs: any = (plug: any): void => {
       plug.getInfo().then(async (info) => {
-        plug.state = { on: plug.getPowerState() };
         this.knownPlugs[plug.host] = await this.get(plug.host);
+        // console.log(`Known plug found: ${JSON.stringify(this.knownPlugs[plug.host])}`);
         if (!(plug.host in this.knownPlugs)) {
           this.knownPlugIps.push(plug.host);
         }
@@ -105,7 +105,7 @@ export default class TpLinkRouter {
   }
 
   private async getPlugClient(plugId: string): Promise<any> {
-    return await this.client.getDevice({ host: plugId });
+    return this.client.getDevice({ host: plugId });
   }
 
   private async setState(plugId: string, state: any): Promise<any> {
@@ -121,11 +121,11 @@ export default class TpLinkRouter {
   }
 
   private async turnOff(plugId: string): Promise<any> {
-    return await this.setState(plugId, { on: false });
+    return this.setState(plugId, { on: false });
   }
 
   private async turnOn(plugId: string): Promise<any> {
-    return await this.setState(plugId, { on: true });
+    return this.setState(plugId, { on: true });
   }
 
   private async update(itemId: string, json: any): Promise<any> {

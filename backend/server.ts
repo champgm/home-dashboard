@@ -13,10 +13,10 @@ import { routeFavoritesEndpoints } from './common/FavoritesRouter';
 
 const bunyanLogger: bunyan = LoggerParent.child({ fileName: `${path.basename(__filename)}` });
 process.on('unhandledRejection', (error) => {
-  bunyanLogger.error(error);
+  if (error.message !== "Cannot read property 'current' of undefined") {
+    bunyanLogger.error(error, 'Unhandled promise rejection caught');
+  }
 });
-
-
 
 const router = core.Router();
 router.use(bodyParser.json());
