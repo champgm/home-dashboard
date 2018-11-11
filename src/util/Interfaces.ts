@@ -2,7 +2,7 @@
 export interface Favorites {
   plugs: string[];
   lights: string[];
-  groups: string[]
+  groups: string[];
 }
 
 export interface IPlug {

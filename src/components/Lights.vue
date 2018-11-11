@@ -1,26 +1,18 @@
 <template>
-
   <div class="hello">
     <div v-if="lights.length < 1">
-        <v-progress-circular
-      :size="50"
-      color="amber"
-      indeterminate
-    ></v-progress-circular>
+      <v-progress-circular :size="50" color="amber" indeterminate></v-progress-circular>
     </div>
     <div v-else>
       <v-container class="iconcontainer">
-        <v-layout row justify-center wrap class="iconcontainer">
+        <v-layout row justify-center wrap="" class="iconcontainer">
           <v-flex
             v-for="light in lights"
             v-if="lightReachable(light)"
             v-bind:key="light.id"
             class="buttonflex"
           >
-            <LightButton
-              :id="light.id"
-              :stateAddress="stateAddress"
-            ></LightButton>
+            <LightButton :id="light.id" :stateAddress="stateAddress"></LightButton>
           </v-flex>
         </v-layout>
       </v-container>
@@ -29,15 +21,15 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
-import LightButton from "@/components/LightButton.vue";
-import { MyStore, Mutate, Get } from "@/store";
-import { ILight } from "node-hue-api";
-import { byName } from "../util/Objects";
+import { Component, Prop, Vue } from 'vue-property-decorator';
+import LightButton from '@/components/LightButton.vue';
+import { MyStore, Mutate, Get } from '@/store';
+import { ILight } from 'node-hue-api';
+import { byName } from '../util/Objects';
 
 @Component({ components: { LightButton } })
 export default class Lights extends Vue {
-  private stateAddress = "lights";
+  private stateAddress = 'lights';
   get lights() {
     const lights = this.$store.getters[Get.lights];
     const sorted = Object.values(lights).sort(byName);

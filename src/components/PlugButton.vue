@@ -1,40 +1,22 @@
 <template>
   <div class="plugbuttoncontainer">
-    <v-btn
-      large
-      :color="getButtonColor()"
-      class="plugbutton"
-      v-on:click="toggle()"
-    >
-      <div class="plugbuttontitle">
-        {{plug.name}}
-      </div>
+    <v-btn large :color="getButtonColor()" class="plugbutton" v-on:click="toggle()">
+      <div class="plugbuttontitle">{{plug.name}}</div>
     </v-btn>
-    <v-btn
-      fab
-      dark
-      color="cyan"
-      class="editbutton"
-      v-on:click="showEditor()"
-    >
+    <v-btn fab dark color="cyan" class="editbutton" v-on:click="showEditor()">
       <v-icon dark>edit</v-icon>
     </v-btn>
-    <v-dialog
-      v-model="plug.isBeingEdited"
-      scrollable
-      max-width="600px"
-      persistent
-    >
+    <v-dialog v-model="plug.isBeingEdited" scrollable max-width="600px" persistent>
       <v-card>
         <v-card-title>Edit Plug</v-card-title>
         <v-divider></v-divider>
-          <v-card-text>
-            <ObjectEditor
-              :stateAddress="plugAddress"
-              :editableFields="editableFields"
-              :fieldRules="fieldRules"
-            ></ObjectEditor>
-          </v-card-text>
+        <v-card-text>
+          <ObjectEditor
+            :stateAddress="plugAddress"
+            :editableFields="editableFields"
+            :fieldRules="fieldRules"
+          ></ObjectEditor>
+        </v-card-text>
         <v-divider></v-divider>
         <v-card-actions>
           <v-btn color="red darken-1" flat @click.native="reset()">Close</v-btn>
@@ -60,12 +42,12 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
-import { IPlug } from "../util/Interfaces";
-import Api from "../util/Api";
-import { stringify } from "querystring";
-import ObjectEditor from "./ObjectEditor.vue";
-import { MyStore, Mutate, Get } from "@/store";
+import { Component, Prop, Vue } from 'vue-property-decorator';
+import { IPlug } from '../util/Interfaces';
+import Api from '../util/Api';
+import { stringify } from 'querystring';
+import ObjectEditor from './ObjectEditor.vue';
+import { MyStore, Mutate, Get } from '@/store';
 
 @Component({ components: { ObjectEditor } })
 export default class PlugButton extends Vue {
@@ -73,7 +55,7 @@ export default class PlugButton extends Vue {
   private id!: string;
   private api = new Api();
   private editorVisible = false;
-  private editableFields = ["name"];
+  private editableFields = ['name'];
   private fieldRules = {};
   private toggleFavoriteOnSubmit = false;
   get plugAddress() {
@@ -96,7 +78,7 @@ export default class PlugButton extends Vue {
     this.toggleFavoriteOnSubmit = !this.toggleFavoriteOnSubmit;
   }
   public async reset() {
-    this.$set(this.plug, "isBeingEdited", false);
+    this.$set(this.plug, 'isBeingEdited', false);
     await this.$store.dispatch(Mutate.refreshPlugs);
     await this.$store.dispatch(Mutate.refreshFavorites);
   }
@@ -112,12 +94,12 @@ export default class PlugButton extends Vue {
   }
   public getButtonColor() {
     if (this.plug.state.on) {
-      return "warning";
+      return 'warning';
     }
-    return "primary";
+    return 'primary';
   }
   public showEditor() {
-    this.$set(this.plug, "isBeingEdited", true);
+    this.$set(this.plug, 'isBeingEdited', true);
   }
 }
 </script>

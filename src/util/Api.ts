@@ -1,8 +1,7 @@
 import requestPromise from 'request-promise-native';
 import { ILight, ILightGroup } from 'node-hue-api';
 import cloneDeep from 'lodash.clonedeep';
-import { IPlug } from './Interfaces';
-import { Favorites } from './Interfaces';
+import { IPlug, Favorites } from './Interfaces';
 
 export default class Api {
   public async getLights() {
@@ -69,8 +68,12 @@ export default class Api {
     const favorites: Favorites = await this.getFavorites();
     const url = `http://localhost:1981/favorites/${item.deviceType}s/${item.id}`;
     const currentFavorites = favorites[`${item.deviceType}s`];
-    const method = currentFavorites.indexOf(item.id) > -1 ? 'delete' : 'put';
-    await requestPromise[method](url, { json: true });
+    // const method = currentFavorites.indexOf(item.id) > -1 ? 'delete' : 'put';
+    if (currentFavorites.indexOf(item.id) > -1) {
+      await requestPromise.delete(url, { json: true });
+    } else {
+      await requestPromise.put(url, { json: true });
+    }
     return this.getFavorites();
   }
 

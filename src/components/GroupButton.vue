@@ -1,40 +1,22 @@
 <template>
   <div class="groupbuttoncontainer">
-    <v-btn
-      large
-      :color="getButtonColor()"
-      class="groupbutton"
-      v-on:click="toggle()"
-    >
-      <div class="groupbuttontitle">
-        {{group.name}}
-      </div>
+    <v-btn large :color="getButtonColor()" class="groupbutton" v-on:click="toggle()">
+      <div class="groupbuttontitle">{{group.name}}</div>
     </v-btn>
-    <v-btn
-      fab
-      dark
-      color="cyan"
-      class="editbutton"
-      v-on:click="showEditor()"
-    >
+    <v-btn fab dark color="cyan" class="editbutton" v-on:click="showEditor()">
       <v-icon dark>edit</v-icon>
     </v-btn>
-    <v-dialog
-      v-model="group.isBeingEdited"
-      scrollable
-      max-width="600px"
-      persistent
-    >
+    <v-dialog v-model="group.isBeingEdited" scrollable max-width="600px" persistent>
       <v-card>
         <v-card-title>Edit Group</v-card-title>
         <v-divider></v-divider>
-          <v-card-text>
-            <ObjectEditor
-              :stateAddress="groupAddress"
-              :editableFields="editableFields"
-              :fieldRules="fieldRules"
-            ></ObjectEditor>
-          </v-card-text>
+        <v-card-text>
+          <ObjectEditor
+            :stateAddress="groupAddress"
+            :editableFields="editableFields"
+            :fieldRules="fieldRules"
+          ></ObjectEditor>
+        </v-card-text>
         <v-divider></v-divider>
         <v-card-actions>
           <v-btn color="red darken-1" flat @click.native="reset()">Close</v-btn>
@@ -60,15 +42,15 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
-import { ILightGroup } from "node-hue-api";
-import Api from "../util/Api";
-import { stringify } from "querystring";
-import { isObject } from "util";
-import ObjectEditor from "./ObjectEditor.vue";
-import cloneDeep from "lodash.clonedeep";
-import { MyStore, Mutate, Get } from "@/store";
-import { isEmptyOrBlank } from "@/util/Objects";
+import { Component, Prop, Vue } from 'vue-property-decorator';
+import { ILightGroup } from 'node-hue-api';
+import Api from '../util/Api';
+import { stringify } from 'querystring';
+import { isObject } from 'util';
+import ObjectEditor from './ObjectEditor.vue';
+import cloneDeep from 'lodash.clonedeep';
+import { MyStore, Mutate, Get } from '@/store';
+import { isEmptyOrBlank } from '@/util/Objects';
 
 @Component({ components: { ObjectEditor } })
 export default class GroupButton extends Vue {
@@ -79,7 +61,7 @@ export default class GroupButton extends Vue {
   private api = new Api();
   private editorVisible = false;
   private toggleFavoriteOnSubmit = false;
-  private editableFields = ["name", "lights", "bri"];
+  private editableFields = ['name', 'lights', 'bri'];
   private fieldRules = {};
   get groupAddress() {
     const address = `${this.stateAddress}.${this.id}`;
@@ -92,7 +74,7 @@ export default class GroupButton extends Vue {
     this.$set(this.$store.state.groups, this.id, group);
   }
   public async reset() {
-    this.$set(this.group, "isBeingEdited", false);
+    this.$set(this.group, 'isBeingEdited', false);
     await this.$store.dispatch(Mutate.refreshGroups);
     await this.$store.dispatch(Mutate.refreshFavorites);
   }
@@ -119,16 +101,16 @@ export default class GroupButton extends Vue {
   public getButtonColor() {
     try {
       if (this.group.action.on) {
-        return "warning";
+        return 'warning';
       }
-      return "primary";
+      return 'primary';
     } catch (error) {
       console.log(`Weird group found: ${JSON.stringify(this.group)}`);
-      return "primary";
+      return 'primary';
     }
   }
   public showEditor() {
-    this.$set(this.group, "isBeingEdited", true);
+    this.$set(this.group, 'isBeingEdited', true);
   }
 }
 </script>

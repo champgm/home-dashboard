@@ -1,9 +1,9 @@
 <template>
   <v-app>
     <div id="nav">
-      <router-link to="/">Favorites</router-link> |
-      <router-link to="/lights">Lights</router-link> |
-      <router-link to="/plugs">Plugs</router-link> |
+      <router-link to="/">Favorites</router-link>|
+      <router-link to="/lights">Lights</router-link>|
+      <router-link to="/plugs">Plugs</router-link>|
       <router-link to="/groups">Groups</router-link>
     </div>
     <router-view/>
@@ -15,7 +15,7 @@
   text-transform: none !important;
 }
 #app {
-  font-family: "Avenir", Helvetica, Arial, sans-serif;
+  font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;

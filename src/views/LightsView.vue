@@ -5,19 +5,19 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from "vue-property-decorator";
-import Lights from "@/components/Lights.vue"; // @ is an alias to /src
-import { Mutate } from "@/store";
-import { ILight } from "node-hue-api";
+import { Component, Vue } from 'vue-property-decorator';
+import Lights from '@/components/Lights.vue'; // @ is an alias to /src
+import { Mutate } from '@/store';
+import { ILight } from 'node-hue-api';
 
 @Component({
   components: {
-    Lights
-  }
+    Lights,
+  },
 })
 export default class LightsView extends Vue {
-  public mounted() {
-    this.$store.dispatch(Mutate.refreshLights);
+  public async mounted() {
+    await this.$store.dispatch(Mutate.refreshLights);
   }
 }
 </script>

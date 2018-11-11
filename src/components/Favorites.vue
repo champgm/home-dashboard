@@ -1,19 +1,12 @@
 <template>
-
   <div class="hello">
     <div v-if="this.favorites.lights.length < 1 && this.favorites.plugs.length < 1">
-      <div>
-        No favorites found...
-      </div>
-      <v-progress-circular
-        :size="50"
-        color="amber"
-        indeterminate
-      ></v-progress-circular>
+      <div>No favorites found...</div>
+      <v-progress-circular :size="50" color="amber" indeterminate></v-progress-circular>
     </div>
     <div v-else>
       <v-container class="iconcontainer">
-        <v-layout row justify-center wrap class="iconcontainer">
+        <v-layout row justify-center wrap="" class="iconcontainer">
           <v-flex
             v-if="favorites.plugs.length > 0"
             v-for="plug in favorites.plugs"
@@ -21,10 +14,7 @@
             :stateAddress="plugStateAddress"
             class="buttonflex"
           >
-            <PlugButton
-              :id="plug.id"
-              :stateAddress="plugStateAddress"
-            ></PlugButton>
+            <PlugButton :id="plug.id" :stateAddress="plugStateAddress"></PlugButton>
           </v-flex>
           <v-flex
             v-for="light in favorites.lights"
@@ -32,10 +22,7 @@
             v-bind:key="light.id"
             class="buttonflex"
           >
-            <LightButton
-              :id="light.id"
-              :stateAddress="lightStateAddress"
-            ></LightButton>
+            <LightButton :id="light.id" :stateAddress="lightStateAddress"></LightButton>
           </v-flex>
           <v-flex
             v-for="group in favorites.groups"
@@ -43,10 +30,7 @@
             v-bind:key="group.id"
             class="buttonflex"
           >
-            <GroupButton
-              :id="group.id"
-              :stateAddress="groupStateAddress"
-            ></GroupButton>
+            <GroupButton :id="group.id" :stateAddress="groupStateAddress"></GroupButton>
           </v-flex>
         </v-layout>
       </v-container>
@@ -55,31 +39,31 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
-import LightButton from "@/components/LightButton.vue";
-import GroupButton from "@/components/GroupButton.vue";
-import PlugButton from "@/components/PlugButton.vue";
-import { MyStore, Get } from "@/store";
-import { ILight } from "node-hue-api";
-import { byName } from "../util/Objects";
+import { Component, Prop, Vue } from 'vue-property-decorator';
+import LightButton from '@/components/LightButton.vue';
+import GroupButton from '@/components/GroupButton.vue';
+import PlugButton from '@/components/PlugButton.vue';
+import { MyStore, Get } from '@/store';
+import { ILight } from 'node-hue-api';
+import { byName } from '../util/Objects';
 
 @Component({
   components: {
     LightButton,
     GroupButton,
-    PlugButton
-  }
+    PlugButton,
+  },
 })
 export default class Favorites extends Vue {
-  private lightStateAddress = "lights";
-  private plugStateAddress = "plugs";
-  private groupStateAddress = "groups";
+  private lightStateAddress = 'lights';
+  private plugStateAddress = 'plugs';
+  private groupStateAddress = 'groups';
   get favorites() {
     const favorites = this.$store.getters[Get.favorites];
     const sorted = {
       plugs: favorites.plugs,
       lights: favorites.lights,
-      groups: favorites.groups
+      groups: favorites.groups,
     };
     return sorted;
   }

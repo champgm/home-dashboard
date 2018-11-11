@@ -1,26 +1,18 @@
 <template>
-
   <div class="hello">
     <div v-if="plugs.length < 1">
-      <v-progress-circular
-        :size="50"
-        color="amber"
-        indeterminate
-      ></v-progress-circular>
+      <v-progress-circular :size="50" color="amber" indeterminate></v-progress-circular>
     </div>
     <div v-else>
       <v-container class="iconcontainer">
-        <v-layout row justify-center wrap class="iconcontainer">
+        <v-layout row justify-center wrap="" class="iconcontainer">
           <v-flex
             v-for="plug in plugs"
             v-bind:key="plug.id"
             :stateAddress="stateAddress"
             class="buttonflex"
           >
-            <PlugButton
-              :id="plug.id"
-              :stateAddress="stateAddress"
-            ></PlugButton>
+            <PlugButton :id="plug.id" :stateAddress="stateAddress"></PlugButton>
           </v-flex>
         </v-layout>
       </v-container>
@@ -29,15 +21,15 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
-import PlugButton from "@/components/PlugButton.vue";
-import { MyStore, Get } from "@/store";
-import { ILight } from "node-hue-api";
-import { byName } from "../util/Objects";
+import { Component, Prop, Vue } from 'vue-property-decorator';
+import PlugButton from '@/components/PlugButton.vue';
+import { MyStore, Get } from '@/store';
+import { ILight } from 'node-hue-api';
+import { byName } from '../util/Objects';
 
 @Component({ components: { PlugButton } })
 export default class Plugs extends Vue {
-  private stateAddress = "plugs";
+  private stateAddress = 'plugs';
   get plugs() {
     const plugs = this.$store.getters[Get.plugs];
     const sorted = Object.values(plugs).sort(byName);

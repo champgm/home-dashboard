@@ -1,7 +1,8 @@
 {
   "defaultSeverity": "warning",
   "extends": [
-    "tslint:recommended"
+    "tslint:recommended",
+    "tslint-config-standard"
   ],
   "linterOptions": {
     "exclude": [
@@ -9,9 +10,18 @@
     ]
   },
   "rules": {
+    "space-before-function-paren": [
+      "error",
+      {
+        "anonymous": "always",
+        "named": "never",
+        "asyncArrow": "always"
+      }
+    ],
     "quotemark": [
       true,
-      "single"
+      "single",
+      "avoid-escape"
     ],
     "indent": [
       true,
@@ -22,6 +32,23 @@
     "ordered-imports": false,
     "object-literal-sort-keys": false,
     "no-consecutive-blank-lines": false,
-    "no-console": false
+    "no-console": false,
+    "semicolon": [
+      true,
+      "always"
+    ],
+    "trailing-comma": [
+      true,
+      {
+        "esSpecCompliant": true
+      }
+    ],
+    "max-line-length": [
+      true,
+      120
+    ],
+    "await-promise": [
+      false
+    ]
   }
 }
