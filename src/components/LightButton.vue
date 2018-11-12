@@ -111,8 +111,8 @@ export default class LightButton extends Vue {
   }
   public async reset() {
     this.$set(this.light, 'isBeingEdited', false);
-    await this.$store.dispatch(Mutate.refreshLights);
-    await this.$store.dispatch(Mutate.refreshFavorites);
+    this.$store.dispatch(Mutate.refreshFavorites);
+    this.$store.dispatch(Mutate.refreshLights);
   }
   public isFavorite() {
     const favoriteIds: string[] = this.$store.getters[Get.favoriteIds].lights;

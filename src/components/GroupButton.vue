@@ -75,8 +75,8 @@ export default class GroupButton extends Vue {
   }
   public async reset() {
     this.$set(this.group, 'isBeingEdited', false);
-    await this.$store.dispatch(Mutate.refreshGroups);
-    await this.$store.dispatch(Mutate.refreshFavorites);
+    this.$store.dispatch(Mutate.refreshFavorites);
+    this.$store.dispatch(Mutate.refreshGroups);
   }
   public isFavorite() {
     const favoriteIds: string[] = this.$store.getters[Get.favoriteIds].groups;

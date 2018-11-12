@@ -40,9 +40,6 @@ export function asyncHandler(
       .catch((error) => {
         // Pass it on to the global handler
         next(error);
-      })
-      .then(() => {
-        console.log(`All done`);
       });
   };
 }

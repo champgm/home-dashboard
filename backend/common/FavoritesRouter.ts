@@ -31,6 +31,7 @@ export function routeFavoritesEndpoints(router: Router, logger: bunyan) {
   }));
 
   router.put('/favorites/lights/:id', asyncHandler(async (request, response) => {
+    console.log(`PUT FAVORITE LIGHT`);
     const id = request.params.id;
     putFavorite(id, 'lights');
     return { code: 200 };
@@ -49,6 +50,7 @@ export function routeFavoritesEndpoints(router: Router, logger: bunyan) {
   }));
 
   router.delete('/favorites/lights/:id', asyncHandler(async (request, response) => {
+    console.log(`DELETE FAVORITE LIGHT`);
     const id = request.params.id;
     removeFavorite(id, 'lights');
     return { code: 200 };

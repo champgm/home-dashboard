@@ -79,8 +79,8 @@ export default class PlugButton extends Vue {
   }
   public async reset() {
     this.$set(this.plug, 'isBeingEdited', false);
-    await this.$store.dispatch(Mutate.refreshPlugs);
-    await this.$store.dispatch(Mutate.refreshFavorites);
+    this.$store.dispatch(Mutate.refreshFavorites);
+    this.$store.dispatch(Mutate.refreshPlugs);
   }
   public async submit() {
     if (this.toggleFavoriteOnSubmit) {
