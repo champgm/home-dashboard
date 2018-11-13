@@ -99,7 +99,9 @@ async function updateFavorites(state, promise: Promise<Favorites>) {
     }
   });
   newFavoritePlugs.forEach((id) => {
-    currentFavoritePlugs.push(id);
+    if (currentFavoritePlugs.indexOf(id)) {
+      currentFavoritePlugs.push(id);
+    }
   });
 
   const currentFavoriteLights: string[] = state.favorites.lights;
@@ -111,7 +113,9 @@ async function updateFavorites(state, promise: Promise<Favorites>) {
     }
   });
   newFavoriteLights.forEach((id) => {
-    currentFavoriteLights.push(id);
+    if (currentFavoriteLights.indexOf(id)) {
+      currentFavoriteLights.push(id);
+    }
   });
 
   const currentFavoriteGroups: string[] = state.favorites.groups;
@@ -123,7 +127,9 @@ async function updateFavorites(state, promise: Promise<Favorites>) {
     }
   });
   newFavoriteGroups.forEach((id) => {
-    currentFavoriteGroups.push(id);
+    if (currentFavoriteGroups.indexOf(id)) {
+      currentFavoriteGroups.push(id);
+    }
   });
 }
 
@@ -136,37 +142,37 @@ const storeOptions: StoreOptions<RootState> = {
   },
   mutations: {
     [Mutate.refreshLights]: async (state) => {
-      await updateLights(state, api.getLights());
+      updateLights(state, api.getLights());
     },
     [Mutate.editLight]: async (state, payload: ILight) => {
-      await updateLights(state, api.editLight(payload));
+      updateLights(state, api.editLight(payload));
     },
     [Mutate.toggleLight]: async (state, payload: ILight) => {
-      await updateLights(state, api.toggleLight(payload));
+      updateLights(state, api.toggleLight(payload));
     },
     [Mutate.refreshGroups]: async (state) => {
-      await updateGroups(state, api.getGroups());
+      updateGroups(state, api.getGroups());
     },
     [Mutate.editGroup]: async (state, payload: ILightGroup) => {
-      await updateGroups(state, api.editGroup(payload));
+      updateGroups(state, api.editGroup(payload));
     },
     [Mutate.toggleGroup]: async (state, payload: ILightGroup) => {
-      await updateGroups(state, api.toggleGroup(payload));
+      updateGroups(state, api.toggleGroup(payload));
     },
     [Mutate.refreshPlugs]: async (state) => {
-      await updatePlugs(state, api.getPlugs());
+      updatePlugs(state, api.getPlugs());
     },
     [Mutate.editPlug]: async (state, payload: IPlug) => {
-      await updatePlugs(state, api.editPlug(payload));
+      updatePlugs(state, api.editPlug(payload));
     },
     [Mutate.togglePlug]: async (state, payload: IPlug) => {
-      await updatePlugs(state, api.togglePlug(payload));
+      updatePlugs(state, api.togglePlug(payload));
     },
     [Mutate.refreshFavorites]: async (state) => {
-      await updateFavorites(state, api.getFavorites());
+      updateFavorites(state, api.getFavorites());
     },
     [Mutate.toggleFavorite]: async (state, payload) => {
-      await updateFavorites(state, api.toggleFavorite(payload));
+      updateFavorites(state, api.toggleFavorite(payload));
     },
   },
   actions: {

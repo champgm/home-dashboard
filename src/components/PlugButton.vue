@@ -84,13 +84,13 @@ export default class PlugButton extends Vue {
   }
   public async submit() {
     if (this.toggleFavoriteOnSubmit) {
-      await this.$store.dispatch(Mutate.toggleFavorite, this.plug);
+      this.$store.dispatch(Mutate.toggleFavorite, this.plug);
       this.toggleFavoriteOnSubmit = false;
     }
-    await this.$store.dispatch(Mutate.editPlug, this.plug);
+    this.$store.dispatch(Mutate.editPlug, this.plug);
   }
   public async toggle() {
-    await this.$store.dispatch(Mutate.togglePlug, this.plug);
+    this.$store.dispatch(Mutate.togglePlug, this.plug);
   }
   public getButtonColor() {
     if (this.plug.state.on) {

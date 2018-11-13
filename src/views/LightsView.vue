@@ -17,7 +17,7 @@ import { ILight } from 'node-hue-api';
 })
 export default class LightsView extends Vue {
   public async mounted() {
-    await this.$store.dispatch(Mutate.refreshLights);
+    this.$store.dispatch(Mutate.refreshLights);
   }
 }
 </script>

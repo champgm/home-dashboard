@@ -60,7 +60,9 @@ export default class Api {
   }
 
   public async getFavorites() {
-    const response = await requestPromise.get('http://localhost:1981/favorites', { json: true });
+    const response = await requestPromise.get(
+      'http://localhost:1981/favorites',
+      { json: true });
     return response.payload;
   }
 

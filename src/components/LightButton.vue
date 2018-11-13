@@ -126,13 +126,13 @@ export default class LightButton extends Vue {
   }
   public async submit() {
     if (this.toggleFavoriteOnSubmit) {
-      await this.$store.dispatch(Mutate.toggleFavorite, this.light);
+      this.$store.dispatch(Mutate.toggleFavorite, this.light);
       this.toggleFavoriteOnSubmit = false;
     }
-    await this.$store.dispatch(Mutate.editLight, this.light);
+    this.$store.dispatch(Mutate.editLight, this.light);
   }
   public async toggle() {
-    await this.$store.dispatch(Mutate.toggleLight, this.light);
+    this.$store.dispatch(Mutate.toggleLight, this.light);
   }
   public getButtonColor() {
     if (this.light.state.on) {

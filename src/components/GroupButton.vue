@@ -90,13 +90,13 @@ export default class GroupButton extends Vue {
   }
   public async submit() {
     if (this.toggleFavoriteOnSubmit) {
-      await this.$store.dispatch(Mutate.toggleFavorite, this.group);
+       this.$store.dispatch(Mutate.toggleFavorite, this.group);
       this.toggleFavoriteOnSubmit = false;
     }
-    await this.$store.dispatch(Mutate.editGroup, this.group);
+     this.$store.dispatch(Mutate.editGroup, this.group);
   }
   public async toggle() {
-    await this.$store.dispatch(Mutate.toggleGroup, this.group);
+     this.$store.dispatch(Mutate.toggleGroup, this.group);
   }
   public getButtonColor() {
     try {

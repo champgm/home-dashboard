@@ -17,7 +17,7 @@ import { ILight } from 'node-hue-api';
 })
 export default class GroupsView extends Vue {
   public async mounted() {
-    await this.$store.dispatch(Mutate.refreshGroups);
+    this.$store.dispatch(Mutate.refreshGroups);
   }
 }
 </script>

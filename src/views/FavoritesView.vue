@@ -17,14 +17,10 @@ import { ILight } from 'node-hue-api';
 })
 export default class FavoritesView extends Vue {
   public async mounted() {
-    const refreshLightsPromise = this.$store.dispatch(Mutate.refreshLights);
-    const refreshPlugsPromise = this.$store.dispatch(Mutate.refreshPlugs);
-    const refreshGroupsPromise = this.$store.dispatch(Mutate.refreshGroups);
-    const refreshFavoritesPromise = this.$store.dispatch(Mutate.refreshFavorites);
-    await refreshLightsPromise;
-    await refreshPlugsPromise;
-    await refreshGroupsPromise;
-    await refreshFavoritesPromise;
+    this.$store.dispatch(Mutate.refreshLights);
+    this.$store.dispatch(Mutate.refreshPlugs);
+    this.$store.dispatch(Mutate.refreshGroups);
+    this.$store.dispatch(Mutate.refreshFavorites);
   }
 }
 </script>
