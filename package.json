@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "sudo ts-node --project tsconfig.tsnode.json backend/server.ts",
+    "start": "ts-node --project tsconfig.tsnode.json backend/server.ts",
+    "sudo-start": "sudo ts-node --project tsconfig.tsnode.json backend/server.ts",
     "serve": "vue-cli-service serve",
     "build": "npm run lint && vue-cli-service build",
     "lint": "vue-cli-service lint",
