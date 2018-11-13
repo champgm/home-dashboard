@@ -49,6 +49,7 @@
     ],
     "await-promise": [
       false
-    ]
+    ],
+    "no-floating-promises": false
   }
 }
