@@ -1,5 +1,5 @@
 import { LoggerParent } from './logger';
-import { environment } from '../../.env';
+import { webConfiguration, networkConfiguration, dashButtonConfiguration, bridgeConfiguration } from '../../.env';
 import bunyan from 'bunyan';
 import path from 'path';
 const bunyanLogger: bunyan = LoggerParent.child({ fileName: `${path.basename(__filename)}` });
@@ -7,9 +7,9 @@ const bunyanLogger: bunyan = LoggerParent.child({ fileName: `${path.basename(__f
 
 export function getPort(): number {
   let internalPort: number;
-  if (environment.WEB_PORT) {
+  if (webConfiguration.WEB_PORT) {
     bunyanLogger.info('Internal Express port set.');
-    internalPort = environment.WEB_PORT;
+    internalPort = webConfiguration.WEB_PORT;
   } else {
     bunyanLogger.info('Internal Express port not set.');
     internalPort = 8888;
@@ -21,12 +21,12 @@ export function getPort(): number {
 
 export function getDashButtonMap(): {} {
   let dashButtonMap: {};
-  if (environment.DASH_BUTTON_MAC_MAP) {
+  if (dashButtonConfiguration.DASH_BUTTON_MAC_MAP) {
     bunyanLogger.info('Found dash button map.');
     try {
-      dashButtonMap = environment.DASH_BUTTON_MAC_MAP;
+      dashButtonMap = dashButtonConfiguration.DASH_BUTTON_MAC_MAP;
     } catch (exception) {
-      bunyanLogger.error({ dashButtonMap: environment.DASH_BUTTON_MAC_MAP },
+      bunyanLogger.error({ dashButtonMap: dashButtonConfiguration.DASH_BUTTON_MAC_MAP },
         'Could not parse configured dash button map!');
       throw exception;
     }
@@ -42,17 +42,17 @@ export function getDashButtonMap(): {} {
 
 export function getBridgeDetails() {
   // This is the IP on which the bridge resides
-  if (!environment.HUE_BRIDGE_IP) {
+  if (!bridgeConfiguration.HUE_BRIDGE_IP) {
     throw new Error('Bridge IP not set.');
   } else {
     bunyanLogger.info('Bridge IP set.');
   }
-  bunyanLogger.info({ bridgeIp: environment.HUE_BRIDGE_IP }, 'Bridge IP configured.');
+  bunyanLogger.info({ bridgeIp: bridgeConfiguration.HUE_BRIDGE_IP }, 'Bridge IP configured.');
 
   // This is the API key that will authenticate you to the bridge.
   // More info here: https://developers.meethue.com/documentation/getting-started
   // ctrl+f for "please create a new resource"
-  if (!environment.HUE_BRIDGE_TOKEN) {
+  if (!bridgeConfiguration.HUE_BRIDGE_TOKEN) {
     throw new Error('Bridge token not set.');
   } else {
     bunyanLogger.info('Bridge token configured.');
@@ -60,9 +60,9 @@ export function getBridgeDetails() {
 
   // This is the port on which the bridge listens
   let bridgePort: number;
-  if (environment.HUE_BRIDGE_PORT) {
+  if (bridgeConfiguration.HUE_BRIDGE_PORT) {
     bunyanLogger.info('Bridge port set.');
-    bridgePort = environment.HUE_BRIDGE_PORT;
+    bridgePort = bridgeConfiguration.HUE_BRIDGE_PORT;
   } else {
     bunyanLogger.info('Bridge port not set.');
     bridgePort = 80;
@@ -70,8 +70,8 @@ export function getBridgeDetails() {
   bunyanLogger.info({ bridgePort }, 'Bridge port configured.');
 
   return {
-    bridgeIp: environment.HUE_BRIDGE_IP,
-    bridgeToken: environment.HUE_BRIDGE_TOKEN,
+    bridgeIp: bridgeConfiguration.HUE_BRIDGE_IP,
+    bridgeToken: bridgeConfiguration.HUE_BRIDGE_TOKEN,
     bridgePort,
   };
 }
@@ -79,10 +79,10 @@ export function getBridgeDetails() {
 
 export function getBroadcastAddress(): string {
   // Just a logger to let you know if TP Link plugs are configured
-  if (!environment.BROADCAST_ADDRESS) {
+  if (!networkConfiguration.BROADCAST_ADDRESS) {
     bunyanLogger.error('No broadcast address configured.');
   } else {
-    bunyanLogger.info({ address: environment.BROADCAST_ADDRESS }, 'Found broadcast address.');
+    bunyanLogger.info({ address: networkConfiguration.BROADCAST_ADDRESS }, 'Found broadcast address.');
   }
-  return environment.BROADCAST_ADDRESS;
+  return networkConfiguration.BROADCAST_ADDRESS;
 }

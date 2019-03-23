@@ -17,3 +17,4 @@ yarn-error.log*
 *.sw*
 
 git-crypt-key
+.env.ts
