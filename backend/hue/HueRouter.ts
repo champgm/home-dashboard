@@ -1,14 +1,14 @@
 import core, { Router } from 'express';
 import { HueApi, ILightsApiResponse, ILight, ILightGroup } from 'node-hue-api';
-import { environment } from '../../.env';
+import { bridgeConfiguration } from '../../.env';
 import bunyan from 'bunyan';
 import { asyncHandler, notEmptyOrBlank } from '../common/Util';
 import fs from 'fs';
 const api = new HueApi(
-  environment.HUE_BRIDGE_IP,
-  environment.HUE_BRIDGE_TOKEN,
+  bridgeConfiguration.HUE_BRIDGE_IP,
+  bridgeConfiguration.HUE_BRIDGE_TOKEN,
   undefined,
-  environment.HUE_BRIDGE_PORT);
+  bridgeConfiguration.HUE_BRIDGE_PORT);
 
 function getByNameSorter(deviceType: string) {
   const byName = (a, b) => {

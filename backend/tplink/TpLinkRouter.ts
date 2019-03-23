@@ -1,5 +1,5 @@
 import { Client } from 'tplink-smarthome-api';
-import { environment } from '../../.env';
+import { networkConfiguration } from '../../.env';
 import { Router } from 'express';
 import { asyncHandler } from '../common/Util';
 import { IPlug } from '../../src/util/Interfaces';
@@ -7,12 +7,12 @@ import { IPlug } from '../../src/util/Interfaces';
 
 
 export default class TpLinkRouter {
-  private client: Client;
+  private client;//: Client;
   private knownPlugs: { [key: string]: any } = {};
   private knownPlugIps: string[];
   private broadcastAddress: string;
   constructor() {
-    this.broadcastAddress = environment.BROADCAST_ADDRESS;
+    this.broadcastAddress = networkConfiguration.BROADCAST_ADDRESS;
     this.knownPlugIps = [];
     this.knownPlugs = {};
     this.client = new Client();
