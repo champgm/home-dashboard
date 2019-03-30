@@ -24,7 +24,6 @@
     "lodash.set": "^4.3.2",
     "lodash.trim": "^4.5.1",
     "morgan": "^1.9.1",
-    "node-dash-button": "^0.6.1",
     "node-hue-api": "^2.4.4",
     "register-service-worker": "^1.0.0",
     "tplink-smarthome-api": "^0.23.0",

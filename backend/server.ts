@@ -1,4 +1,3 @@
-import DashButtonRouter from './dash/DashButtonRouter';
 import core from 'express';
 import path from 'path';
 import bunyan from 'bunyan';
@@ -32,7 +31,6 @@ expressApp.use((req, res, next) => {
 });
 
 
-new DashButtonRouter(bunyanLogger).watch();
 tpLinkRouter.watch().routeEndpoints(router);
 routeStaticEndpoints(expressApp);
 routeEndpoints(router, bunyanLogger);
