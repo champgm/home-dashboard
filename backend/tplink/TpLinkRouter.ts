@@ -7,7 +7,7 @@ import { IPlug } from '../../src/util/Interfaces';
 
 
 export default class TpLinkRouter {
-  private client;//: Client;
+  private client; // : Client;
   private knownPlugs: { [key: string]: any } = {};
   private knownPlugIps: string[];
   private broadcastAddress: string;
@@ -35,6 +35,12 @@ export default class TpLinkRouter {
       }
       this.knownPlugs[plug.id] = await this.get(plugChanges.id);
       return { code: 200, payload: this.knownPlugs };
+    }));
+    router.get('/plugs/:id', asyncHandler(async (request, response) => {
+      return { code: 200, payload: await this.get(request.params.id) };
+    }));
+    router.get('/plugs/:id/state', asyncHandler(async (request, response) => {
+      return { code: 200, payload: await this.getState(request.params.id) };
     }));
     router.put('/plugs/:id/state', asyncHandler(async (request, response) => {
       const id = request.params.id;
