@@ -20,6 +20,7 @@ export default class TpLinkRouter {
 
   public routeEndpoints(router: Router) {
     router.get('/plugs', asyncHandler(async (request, response) => {
+      this.client.sendDiscovery();
       return { code: 200, payload: await this.getAll() };
     }));
     router.put('/plugs', asyncHandler(async (request, response) => {
@@ -84,6 +85,7 @@ export default class TpLinkRouter {
   }
 
   public async getAll() {
+    this.client.sendDiscovery();
     const allPlugData = await Promise.all(this.knownPlugIps.map((ip) => {
       return this.get(ip);
     }));
