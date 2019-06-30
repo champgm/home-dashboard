@@ -38,6 +38,7 @@
     "importHelpers": true
   },
   "include": [
+    "backend/**/*.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
