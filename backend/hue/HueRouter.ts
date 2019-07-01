@@ -110,3 +110,21 @@ export function routeEndpoints(router: Router, logger: bunyan) {
     return { code: 200, payload: await getGroups() };
   }));
 }
+
+const fiveMinutes = 300000;
+function restartDiscoveryLoop() {
+  setTimeout(() => {
+    doDiscovery();
+  }, fiveMinutes);
+}
+
+async function doDiscovery() {
+  try {
+    await api.searchForNewLights();
+  } catch (error) {
+    console.log(`An error ocurred while searching for new lights: ${error}`);
+  }
+  restartDiscoveryLoop();
+}
+
+doDiscovery();
