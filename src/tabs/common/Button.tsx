@@ -12,22 +12,17 @@ import { LightsModal } from "../LightsModal";
 export interface Props {
   on?: boolean;
   title: string;
-  editModal: typeof Component;
 }
 
 interface State {
   on: boolean;
-  editModalVisible: boolean;
 }
 
 export class ItemButton extends React.Component<Props, State> {
-  editModal: JSX.Element;
   constructor(props: Props) {
     super(props);
-    this.editModal = <this.props.editModal visible={false} />;
     this.state = {
       on: this.props.on,
-      editModalVisible: false,
     };
   }
   render() {
@@ -46,7 +41,7 @@ export class ItemButton extends React.Component<Props, State> {
         maxHeight: buttonDimension,
         maxWidth: buttonDimension,
       }]}>
-        <this.props.editModal visible={false} />
+        {/* <this.props.editModalClass visible={false} /> */}
         <AwesomeButton
           paddingHorizontal={5}
           height={buttonDimension}
@@ -57,7 +52,6 @@ export class ItemButton extends React.Component<Props, State> {
         <AwesomeButton
           onPress={() => {
             console.log(`Setting modal visible`);
-            this.editModal.setState({ modalVisible: true });
           }}
           backgroundColor="#3399ff"
           backgroundDarker="#0000ff"

@@ -42,9 +42,14 @@ export class LightsComponent extends React.Component<Props, State> {
     const lightButtons = this.state.lights
       ? sortBy(Object.values(this.state.lights), "name")
         .map((light) => {
+          let modalVisible = false;
+          const toggleModalVisibility = () => {
+            modalVisible = !modalVisible;
+            console.log(`Modal visibility has been changed: ${modalVisible}`);
+            // this.setState(this.state);
+          };
           return (
             <ItemButton
-              editModal={LightsModal}
               key={v4()}
               title={light.name}
             />
