@@ -10,18 +10,18 @@ import {
 import { Route, SceneMap, TabView } from "react-native-tab-view";
 import v4 from "uuid/v4";
 import { ItemButton } from "../common/Button";
-import { Light, Lights } from "../models/Light";
+import { Group, Groups } from "../models/Group";
 
 export interface Props {
-  lights: Promise<Lights>;
+  groups: Promise<Groups>;
 }
 
 interface State {
-  lights?: Lights;
+  groups?: Groups;
 }
 
-export const key = "lights";
-export const title = "Lights";
+export const key = "groups";
+export const title = "Groups";
 export class Component extends React.Component<Props, State> {
   title: any;
 
@@ -32,20 +32,20 @@ export class Component extends React.Component<Props, State> {
   }
 
   componentWillMount() {
-    this.props.lights.then((lights) => {
-      this.setState({ lights });
+    this.props.groups.then((groups) => {
+      this.setState({ groups });
     });
   }
 
   render() {
-    const lightButtons = this.state.lights
-      ? this.sortByName(Object.values(this.state.lights))
-        .map((light) => {
-          console.log(`Attaching light: ${light.name}`);
+    const groupButtons = this.state.groups
+      ? this.sortByName(Object.values(this.state.groups))
+        .map((group) => {
+          console.log(`Attaching group: ${group.name}`);
           return (
             <ItemButton
               key={v4()}
-              title={light.name}
+              title={group.name}
             />
           );
         })
@@ -54,15 +54,15 @@ export class Component extends React.Component<Props, State> {
     const { height, width } = Dimensions.get("window");
     return (
       <View style={[styles.scene, { paddingTop: height * .02 }]} >
-        {lightButtons}
+        {groupButtons}
       </View>
     );
   }
 
-  sortByName(lights: Light[]): Light[] {
-    return lights.sort((lightA, lightB) => {
-      if (lightA.name < lightB.name) { return -1; }
-      if (lightA.name > lightB.name) { return 1; }
+  sortByName(groups: Group[]): Group[] {
+    return groups.sort((groupA, groupB) => {
+      if (groupA.name < groupB.name) { return -1; }
+      if (groupA.name > groupB.name) { return 1; }
       return 0;
     });
   }

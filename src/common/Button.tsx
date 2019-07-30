@@ -1,18 +1,15 @@
-import Constants from "expo-constants";
 import _ from "lodash";
 import React from "react";
 import {
-  Button,
   Dimensions,
-  StyleSheet, View,
+  Image,
+  StyleSheet,
+  View,
 } from "react-native";
 import AwesomeButton from "react-native-really-awesome-button";
-import { Route, SceneMap, TabView } from "react-native-tab-view";
-import v4 from "uuid/v4";
 
 export interface Props {
   title: string;
-
 }
 
 interface State {
@@ -22,49 +19,70 @@ interface State {
 export class ItemButton extends React.Component<Props, State> {
   render() {
     const { height, width } = Dimensions.get("window");
-    const padding = width * .01;
-    const buttonDimension = 90;
+    const margin = width * .01;
+    const buttonDimension = width * .2;
+    const editButtonDimension = buttonDimension / 3;
     return (
       <View style={[styles.buttonContainer, {
-        paddingBottom: padding,
-        paddingLeft: padding,
-        paddingRight: padding,
-        paddingTop: padding,
+        marginBottom: margin * 4,
+        marginLeft: margin,
+        marginRight: margin,
+        marginTop: margin * 4,
+        width: buttonDimension,
+        height: buttonDimension,
+        maxHeight: buttonDimension,
+        maxWidth: buttonDimension,
       }]}>
-        <View style={styles.button}>
-          <AwesomeButton
-            // key={v4()}
-            height={buttonDimension}
-            width={buttonDimension}
-            stretch={true}
-            onPress={() => console.log("Clicked")}>
-            {this.props.title}
-          </AwesomeButton>
-        </View>
+        <AwesomeButton
+          paddingHorizontal={5}
+          height={buttonDimension}
+          width={buttonDimension}
+          onPress={() => console.log("Clicked")}>
+          {this.props.title}
+        </AwesomeButton>
+        <AwesomeButton
+          backgroundColor="#3399ff"
+          backgroundDarker="#0000ff"
+          style={{
+            width: buttonDimension / 3,
+            height: buttonDimension / 3,
+            top: -(buttonDimension / 5.5),
+            left: buttonDimension * .75,
+          }}
+          height={editButtonDimension}
+          width={editButtonDimension}>
+          <Image
+            style={{
+              width: editButtonDimension * .8,
+              height: editButtonDimension * .8,
+            }}
+            source={require("../../assets/edit.png")} />
+        </AwesomeButton>
+        <AwesomeButton
+          backgroundColor="#ffcc66"
+          backgroundDarker="#ff9900"
+          style={{
+            width: buttonDimension / 3,
+            height: buttonDimension / 3,
+            top: -(editButtonDimension + buttonDimension / 5.5),
+            left: -(buttonDimension * .06),
+          }}
+          height={editButtonDimension}
+          width={editButtonDimension}>
+          <Image
+            style={{
+              width: editButtonDimension * .8,
+              height: editButtonDimension * .8,
+            }}
+            source={require("../../assets/favorite.png")} />
+        </AwesomeButton>
       </View>
     );
   }
 }
 
-const buttonSideLength = 90;
 const styles = StyleSheet.create({
-  buttonContainer: {
-    // flex: 1,
-    // paddingBottom: 100,
-    maxWidth: 133,
-  },
-  button: {
-    width: buttonSideLength,
-    height: buttonSideLength,
-    maxHeight: buttonSideLength,
-    maxWidth: buttonSideLength,
-  },
-  editButton: {
-    width: 33,
-    height: 33,
-    top: -40,
-    left: 35,
-  },
+  buttonContainer: {},
   favoriteButton: {
     bottom: 70,
   },

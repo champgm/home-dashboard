@@ -7,9 +7,11 @@ import {
   View,
 } from "react-native";
 import { Route, SceneMap, TabView } from "react-native-tab-view";
+import * as Groups from "./tabs/Groups";
 import * as Lights from "./tabs/Lights";
 
 import bridgeConfiguration from "./configuration/Hue.json";
+import { GroupsApi } from "./hue/GroupsApi";
 import { LightsApi } from "./hue/LightsApi";
 
 export interface Props { }
@@ -42,12 +44,14 @@ export class App extends React.Component<Props, State> {
 
   render() {
     const lightsApi = new LightsApi();
+    const groupsApi = new GroupsApi();
     return (
       <View style={styles.root}>
         <TabView
           navigationState={this.state}
           renderScene={SceneMap({
             [Lights.key]: () => (<Lights.Component lights={lightsApi.getAll()} />),
+            [Groups.key]: () => (<Groups.Component groups={groupsApi.getAll()} />),
             first: FirstRoute,
             second: SecondRoute,
           })}
