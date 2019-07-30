@@ -40,8 +40,8 @@ export class App extends React.Component<Props, State> {
     this.state = {
       index: 0,
       routes: [
-        { ...Groups },
         { ...Lights },
+        { ...Groups },
       ],
     };
   }

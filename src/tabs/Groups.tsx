@@ -10,8 +10,8 @@ import {
 import { Route, SceneMap, TabView } from "react-native-tab-view";
 import v4 from "uuid/v4";
 import { sortBy } from "../common";
-import { ItemButton } from "../common/Button";
 import { Group, Groups } from "../models/Group";
+import { ItemButton } from "./common/Button";
 
 export interface Props {
   groups: Promise<Groups>;
@@ -44,6 +44,7 @@ export class GroupsComponent extends React.Component<Props, State> {
         .map((group) => {
           return (
             <ItemButton
+              editModal={undefined}
               key={v4()}
               title={group.name}
             />

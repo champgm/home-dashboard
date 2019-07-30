@@ -1,5 +1,5 @@
 import _ from "lodash";
-import React from "react";
+import React, { Component } from "react";
 import {
   Dimensions,
   Image,
@@ -7,18 +7,31 @@ import {
   View,
 } from "react-native";
 import AwesomeButton from "react-native-really-awesome-button";
+import { LightsModal } from "../LightsModal";
 
 export interface Props {
+  on?: boolean;
   title: string;
+  editModal: typeof Component;
 }
 
 interface State {
   on: boolean;
+  editModalVisible: boolean;
 }
 
 export class ItemButton extends React.Component<Props, State> {
+  editModal: JSX.Element;
+  constructor(props: Props) {
+    super(props);
+    this.editModal = <this.props.editModal visible={false} />;
+    this.state = {
+      on: this.props.on,
+      editModalVisible: false,
+    };
+  }
   render() {
-    const { height, width } = Dimensions.get("window");
+    const { width } = Dimensions.get("window");
     const margin = width * .01;
     const buttonDimension = width * .2;
     const editButtonDimension = buttonDimension / 3;
@@ -33,6 +46,7 @@ export class ItemButton extends React.Component<Props, State> {
         maxHeight: buttonDimension,
         maxWidth: buttonDimension,
       }]}>
+        <this.props.editModal visible={false} />
         <AwesomeButton
           paddingHorizontal={5}
           height={buttonDimension}
@@ -41,6 +55,10 @@ export class ItemButton extends React.Component<Props, State> {
           {this.props.title}
         </AwesomeButton>
         <AwesomeButton
+          onPress={() => {
+            console.log(`Setting modal visible`);
+            this.editModal.setState({ modalVisible: true });
+          }}
           backgroundColor="#3399ff"
           backgroundDarker="#0000ff"
           style={{
@@ -56,7 +74,7 @@ export class ItemButton extends React.Component<Props, State> {
               width: editButtonDimension * .8,
               height: editButtonDimension * .8,
             }}
-            source={require("../../assets/edit.png")} />
+            source={require("../../../assets/edit.png")} />
         </AwesomeButton>
         <AwesomeButton
           backgroundColor="#ffcc66"
@@ -74,7 +92,7 @@ export class ItemButton extends React.Component<Props, State> {
               width: editButtonDimension * .8,
               height: editButtonDimension * .8,
             }}
-            source={require("../../assets/favorite.png")} />
+            source={require("../../../assets/favorite.png")} />
         </AwesomeButton>
       </View>
     );
