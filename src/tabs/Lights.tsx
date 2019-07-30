@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Route, SceneMap, TabView } from "react-native-tab-view";
 import v4 from "uuid/v4";
+import { sortBy } from "../common";
 import { ItemButton } from "../common/Button";
 import { Light, Lights } from "../models/Light";
 
@@ -22,16 +23,14 @@ interface State {
 
 export const key = "lights";
 export const title = "Lights";
-export class Component extends React.Component<Props, State> {
-  title: any;
+export class LightsComponent extends React.Component<Props, State> {
 
   constructor(props: Props) {
     super(props);
-    this.title = v4();
     this.state = {};
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.props.lights.then((lights) => {
       this.setState({ lights });
     });
@@ -39,9 +38,8 @@ export class Component extends React.Component<Props, State> {
 
   render() {
     const lightButtons = this.state.lights
-      ? this.sortByName(Object.values(this.state.lights))
+      ? sortBy(Object.values(this.state.lights), "name")
         .map((light) => {
-          console.log(`Attaching light: ${light.name}`);
           return (
             <ItemButton
               key={v4()}
@@ -59,13 +57,13 @@ export class Component extends React.Component<Props, State> {
     );
   }
 
-  sortByName(lights: Light[]): Light[] {
-    return lights.sort((lightA, lightB) => {
-      if (lightA.name < lightB.name) { return -1; }
-      if (lightA.name > lightB.name) { return 1; }
-      return 0;
-    });
-  }
+  // sortByName(lights: Light[]): Light[] {
+  //   return lights.sort((lightA, lightB) => {
+  //     if (lightA.name < lightB.name) { return -1; }
+  //     if (lightA.name > lightB.name) { return 1; }
+  //     return 0;
+  //   });
+  // }
 }
 
 const styles = StyleSheet.create({

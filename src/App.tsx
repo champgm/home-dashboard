@@ -8,7 +8,9 @@ import {
 } from "react-native";
 import { Route, SceneMap, TabView } from "react-native-tab-view";
 import * as Groups from "./tabs/Groups";
+import { GroupsComponent } from "./tabs/Groups";
 import * as Lights from "./tabs/Lights";
+import { LightsComponent } from "./tabs/Lights";
 
 import bridgeConfiguration from "./configuration/Hue.json";
 import { GroupsApi } from "./hue/GroupsApi";
@@ -28,6 +30,9 @@ const FirstRoute = () => (
 const SecondRoute = () => (
   <View style={[styles.scene, { backgroundColor: "#673ab7" }]} />
 );
+const ThirdRoute = () => (
+  <View style={[styles.scene, { backgroundColor: "#673117" }]} />
+);
 
 export class App extends React.Component<Props, State> {
   constructor(props: Props) {
@@ -35,9 +40,8 @@ export class App extends React.Component<Props, State> {
     this.state = {
       index: 0,
       routes: [
+        { ...Groups },
         { ...Lights },
-        { key: "first", title: "First" },
-        { key: "second", title: "Second" },
       ],
     };
   }
@@ -50,10 +54,8 @@ export class App extends React.Component<Props, State> {
         <TabView
           navigationState={this.state}
           renderScene={SceneMap({
-            [Lights.key]: () => (<Lights.Component lights={lightsApi.getAll()} />),
-            [Groups.key]: () => (<Groups.Component groups={groupsApi.getAll()} />),
-            first: FirstRoute,
-            second: SecondRoute,
+            [Lights.key]: () => (<LightsComponent lights={lightsApi.getAll()} />),
+            [Groups.key]: () => (<GroupsComponent groups={groupsApi.getAll()} />),
           })}
           onIndexChange={(index) => this.setState({ index })}
           initialLayout={{ width: Dimensions.get("window").width }}

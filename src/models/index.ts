@@ -56,7 +56,7 @@ export function createArray<T>(
   return value.map((arrayItem) => create(arrayItem));
 }
 
-export function printLeftoverKeys(first: any, second: any) {
+export function printLeftoverKeys(modelType: string, first: any, second: any) {
   const firstKeys = Object.keys(first);
   const secondKeys = Object.keys(second);
 
@@ -66,6 +66,6 @@ export function printLeftoverKeys(first: any, second: any) {
     .filter((key) => !(first[key] === undefined && second[key] === undefined));
 
   if (!(difference.length === 0)) {
-    console.log(`Key difference detected: ${JSON.stringify(difference, null, 2)}`);
+    console.log(`Key difference in model, '${modelType}' detected: ${JSON.stringify(difference, null, 2)}`);
   }
 }

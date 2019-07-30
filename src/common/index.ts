@@ -1,3 +1,5 @@
+import _ from "lodash";
+
 export function revealAllProperties(object: any): any {
   const objectReferences: any[] = [];
 
@@ -14,4 +16,12 @@ export function revealAllProperties(object: any): any {
   }
 
   return enumeratedObject;
+}
+
+export function sortBy<T>(objects: T[], fieldName: string): T[] {
+  return objects.sort((a, b) => {
+    if (a[fieldName] < b[fieldName]) { return -1; }
+    if (a[fieldName] > b[fieldName]) { return 1; }
+    return 0;
+  });
 }

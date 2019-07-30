@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Route, SceneMap, TabView } from "react-native-tab-view";
 import v4 from "uuid/v4";
+import { sortBy } from "../common";
 import { ItemButton } from "../common/Button";
 import { Group, Groups } from "../models/Group";
 
@@ -22,7 +23,7 @@ interface State {
 
 export const key = "groups";
 export const title = "Groups";
-export class Component extends React.Component<Props, State> {
+export class GroupsComponent extends React.Component<Props, State> {
   title: any;
 
   constructor(props: Props) {
@@ -31,7 +32,7 @@ export class Component extends React.Component<Props, State> {
     this.state = {};
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.props.groups.then((groups) => {
       this.setState({ groups });
     });
@@ -39,9 +40,8 @@ export class Component extends React.Component<Props, State> {
 
   render() {
     const groupButtons = this.state.groups
-      ? this.sortByName(Object.values(this.state.groups))
+      ? sortBy(Object.values(this.state.groups), "name")
         .map((group) => {
-          console.log(`Attaching group: ${group.name}`);
           return (
             <ItemButton
               key={v4()}
@@ -57,14 +57,6 @@ export class Component extends React.Component<Props, State> {
         {groupButtons}
       </View>
     );
-  }
-
-  sortByName(groups: Group[]): Group[] {
-    return groups.sort((groupA, groupB) => {
-      if (groupA.name < groupB.name) { return -1; }
-      if (groupA.name > groupB.name) { return 1; }
-      return 0;
-    });
   }
 }
 

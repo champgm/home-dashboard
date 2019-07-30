@@ -6,7 +6,6 @@ export class GroupsApi {
   async getAll(): Promise<Groups> {
     const uri = `${bridgeUri}/groups/`;
     let groups = await (await fetch(uri, get)).json();
-    console.log(`groups:${JSON.stringify(groups, null, 2)}`);
     groups = this.attachId(groups);
     return groups;
   }

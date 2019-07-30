@@ -32,7 +32,7 @@ export namespace Light {
       swconfigid: verifyType(payload.swconfigid, "swconfigid", "string", false),
       productid: verifyType(payload.productid, "productid", "string", false),
     };
-    printLeftoverKeys(payload, light);
+    printLeftoverKeys("Light", payload, light);
     return light;
   }
 }
