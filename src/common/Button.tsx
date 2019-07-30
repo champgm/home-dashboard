@@ -6,6 +6,7 @@ import {
   Dimensions,
   StyleSheet, View,
 } from "react-native";
+import AwesomeButton from "react-native-really-awesome-button";
 import { Route, SceneMap, TabView } from "react-native-tab-view";
 import v4 from "uuid/v4";
 
@@ -20,31 +21,43 @@ interface State {
 
 export class ItemButton extends React.Component<Props, State> {
   render() {
+    const { height, width } = Dimensions.get("window");
+    const padding = width * .01;
+    const buttonDimension = 90;
     return (
-      <View style={styles.buttonContainer}>
-        <Button
-          key={v4()}
-          onPress={() => console.log("Clicked")}
-          title={this.props.title}
-          color={"#bababa"}
-          accessibilityLabel={this.props.title}
-        />
+      <View style={[styles.buttonContainer, {
+        paddingBottom: padding,
+        paddingLeft: padding,
+        paddingRight: padding,
+        paddingTop: padding,
+      }]}>
+        <View style={styles.button}>
+          <AwesomeButton
+            // key={v4()}
+            height={buttonDimension}
+            width={buttonDimension}
+            stretch={true}
+            onPress={() => console.log("Clicked")}>
+            {this.props.title}
+          </AwesomeButton>
+        </View>
       </View>
     );
   }
 }
 
+const buttonSideLength = 90;
 const styles = StyleSheet.create({
   buttonContainer: {
-    flex: 1,
-    paddingBottom: 10,
+    // flex: 1,
+    // paddingBottom: 100,
     maxWidth: 133,
   },
   button: {
-    width: 88,
-    height: 88,
-    maxHeight: 88,
-    maxWidth: 88,
+    width: buttonSideLength,
+    height: buttonSideLength,
+    maxHeight: buttonSideLength,
+    maxWidth: buttonSideLength,
   },
   editButton: {
     width: 33,
