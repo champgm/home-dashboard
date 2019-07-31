@@ -12,6 +12,7 @@ import v4 from "uuid/v4";
 import { sortBy } from "../common";
 import { Group, Groups } from "../models/Group";
 import { ItemButton } from "./common/Button";
+import { GroupModal } from "./GroupsModal";
 
 export interface Props {
   groups: Promise<Groups>;
@@ -19,6 +20,8 @@ export interface Props {
 
 interface State {
   groups?: Groups;
+  modalVisible: boolean;
+  groupBeingEdited: string;
 }
 
 export const key = "groups";
@@ -29,12 +32,46 @@ export class GroupsComponent extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.title = v4();
-    this.state = {};
+    this.state = {
+      modalVisible: false,
+      groupBeingEdited: "-1",
+    };
   }
 
   componentDidMount() {
     this.props.groups.then((groups) => {
       this.setState({ groups });
+    });
+  }
+
+  onClick(id: string) {
+
+  }
+
+  onEditClick(id: string) {
+    // console.log(`Calling edit`);
+    this.setState({
+      modalVisible: true,
+      groupBeingEdited: id,
+    });
+  }
+
+  onFavoriteClick(id: string) {
+
+  }
+
+  onEditCancel() {
+    this.setState({
+      modalVisible: false,
+      groupBeingEdited: "-1",
+    });
+  }
+
+  async onEditSubmit(id: string) {
+    // Do something here first
+    this.setState({
+      modalVisible: false,
+      groupBeingEdited: "-1",
     });
   }
 
@@ -44,8 +81,11 @@ export class GroupsComponent extends React.Component<Props, State> {
         .map((group) => {
           return (
             <ItemButton
-              editModal={undefined}
+              id={group.id}
               key={v4()}
+              onClick={this.onClick.bind(this)}
+              onEditClick={this.onEditClick.bind(this)}
+              onFavoriteClick={this.onFavoriteClick.bind(this)}
               title={group.name}
             />
           );
@@ -56,6 +96,12 @@ export class GroupsComponent extends React.Component<Props, State> {
     return (
       <View style={[styles.scene, { paddingTop: height * .02 }]} >
         {groupButtons}
+        <GroupModal
+          visible={this.state.modalVisible}
+          key={this.state.groupBeingEdited}
+          onEditCancel={this.onEditCancel.bind(this)}
+          onEditSubmit={this.onEditSubmit.bind(this)}
+        />
       </View>
     );
   }

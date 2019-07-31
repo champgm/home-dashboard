@@ -38,7 +38,7 @@ export class App extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      index: 0,
+      index: 1,
       routes: [
         { ...Lights },
         { ...Groups },

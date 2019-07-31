@@ -7,11 +7,15 @@ import {
   View,
 } from "react-native";
 import AwesomeButton from "react-native-really-awesome-button";
-import { LightsModal } from "../LightsModal";
+import { LightModal } from "../LightsModal";
 
 export interface Props {
+  id: string;
   on?: boolean;
   title: string;
+  onFavoriteClick: (id: string) => void;
+  onEditClick: (id: string) => void;
+  onClick: (id: string) => void;
 }
 
 interface State {
@@ -46,13 +50,11 @@ export class ItemButton extends React.Component<Props, State> {
           paddingHorizontal={5}
           height={buttonDimension}
           width={buttonDimension}
-          onPress={() => console.log("Clicked")}>
+          onPress={() => this.props.onClick(this.props.id)}>
           {this.props.title}
         </AwesomeButton>
         <AwesomeButton
-          onPress={() => {
-            console.log(`Setting modal visible`);
-          }}
+          onPress={() => this.props.onEditClick(this.props.id)}
           backgroundColor="#3399ff"
           backgroundDarker="#0000ff"
           style={{
@@ -71,6 +73,7 @@ export class ItemButton extends React.Component<Props, State> {
             source={require("../../../assets/edit.png")} />
         </AwesomeButton>
         <AwesomeButton
+          onPress={() => this.props.onFavoriteClick(this.props.id)}
           backgroundColor="#ffcc66"
           backgroundDarker="#ff9900"
           style={{

@@ -12,7 +12,7 @@ import v4 from "uuid/v4";
 import { sortBy } from "../common";
 import { Light, Lights } from "../models/Light";
 import { ItemButton } from "./common/Button";
-import { LightsModal } from "./LightsModal";
+import { LightModal } from "./LightsModal";
 
 export interface Props {
   lights: Promise<Lights>;
@@ -20,6 +20,8 @@ export interface Props {
 
 interface State {
   lights?: Lights;
+  modalVisible: boolean;
+  lightBeingEdited: string;
 }
 
 export const key = "lights";
@@ -28,7 +30,10 @@ export class LightsComponent extends React.Component<Props, State> {
 
   constructor(props: Props) {
     super(props);
-    this.state = {};
+    this.state = {
+      modalVisible: false,
+      lightBeingEdited: "-1",
+    };
   }
 
   componentDidMount() {
@@ -37,20 +42,49 @@ export class LightsComponent extends React.Component<Props, State> {
     });
   }
 
+  onClick(id: string) {
+
+  }
+
+  onEditClick(id: string) {
+    // console.log(`Calling edit`);
+    this.setState({
+      modalVisible: true,
+      lightBeingEdited: id,
+    });
+  }
+
+  onFavoriteClick(id: string) {
+
+  }
+
+  onEditCancel() {
+    this.setState({
+      modalVisible: false,
+      lightBeingEdited: "0",
+    });
+  }
+
+  async onEditSubmit(id: string) {
+    // Do something here first
+    this.setState({
+      modalVisible: false,
+      lightBeingEdited: "0",
+    });
+  }
+
   render() {
 
     const lightButtons = this.state.lights
       ? sortBy(Object.values(this.state.lights), "name")
         .map((light) => {
-          let modalVisible = false;
-          const toggleModalVisibility = () => {
-            modalVisible = !modalVisible;
-            console.log(`Modal visibility has been changed: ${modalVisible}`);
-            // this.setState(this.state);
-          };
           return (
             <ItemButton
+              id={light.id}
               key={v4()}
+              onClick={this.onClick.bind(this)}
+              onEditClick={this.onEditClick.bind(this)}
+              onFavoriteClick={this.onFavoriteClick.bind(this)}
               title={light.name}
             />
           );
@@ -61,6 +95,12 @@ export class LightsComponent extends React.Component<Props, State> {
     return (
       <View style={[styles.scene]} >
         {lightButtons}
+        <LightModal
+          visible={this.state.modalVisible}
+          key={this.state.lightBeingEdited}
+          onEditCancel={this.onEditCancel.bind(this)}
+          onEditSubmit={this.onEditSubmit.bind(this)}
+        />
       </View>
     );
   }

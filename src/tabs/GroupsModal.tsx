@@ -11,7 +11,7 @@ interface State {
   visible: boolean;
 }
 
-export class LightModal extends React.Component<Props, State> {
+export class GroupModal extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = { visible: this.props.visible };
