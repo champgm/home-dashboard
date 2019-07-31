@@ -25,3 +25,7 @@ export function sortBy<T>(objects: T[], fieldName: string): T[] {
     return 0;
   });
 }
+
+export const style = {
+  backgroundColor: "#002b36",
+};

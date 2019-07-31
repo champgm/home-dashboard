@@ -23,17 +23,6 @@ interface State {
   routes: Route[];
 }
 
-const FirstRoute = () => (
-  <View style={[styles.scene, { backgroundColor: "#ff4081" }]} />
-);
-
-const SecondRoute = () => (
-  <View style={[styles.scene, { backgroundColor: "#673ab7" }]} />
-);
-const ThirdRoute = () => (
-  <View style={[styles.scene, { backgroundColor: "#673117" }]} />
-);
-
 export class App extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
@@ -59,7 +48,8 @@ export class App extends React.Component<Props, State> {
             ),
             [Groups.key]: () => (
               <GroupsComponent
-                api={new GroupsApi()} />
+                groupsApi={new GroupsApi()}
+                lightsApi={new LightsApi()} />
             ),
           })}
           onIndexChange={(index) => this.setState({ index })}
@@ -71,9 +61,16 @@ export class App extends React.Component<Props, State> {
 }
 
 const styles = StyleSheet.create({
+  title: {
+    paddingHorizontal: 16,
+    color: "#657b83",
+    fontSize: 20,
+    fontWeight: "bold",
+  },
   root: {
     paddingTop: Constants.statusBarHeight,
     flex: 1,
+    backgroundColor: "#002b36",
   },
   scene: {
     flex: 1,

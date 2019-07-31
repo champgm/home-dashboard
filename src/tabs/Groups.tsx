@@ -10,12 +10,14 @@ import {
 import v4 from "uuid/v4";
 import { sortBy } from "../common";
 import { GroupsApi } from "../hue/GroupsApi";
+import { LightsApi } from "../hue/LightsApi";
 import { Group, Groups } from "../models/Group";
 import { ItemButton } from "./common/Button";
-import { GroupModal } from "./GroupsModal";
+import { GroupModal } from "./GroupModal";
 
 export interface Props {
-  api: GroupsApi;
+  groupsApi: GroupsApi;
+  lightsApi: LightsApi;
 }
 
 interface State {
@@ -39,7 +41,7 @@ export class GroupsComponent extends React.Component<Props, State> {
   }
 
   async componentDidMount() {
-    const groups = await this.props.api.getAll();
+    const groups = await this.props.groupsApi.getAll();
     this.setState({ groups });
   }
 
@@ -53,6 +55,18 @@ export class GroupsComponent extends React.Component<Props, State> {
       modalVisible: true,
       groupBeingEdited: id,
     });
+
+    // TODO: remove
+    setTimeout(() => {
+      this.closeModal();
+    }, 4000);
+  }
+
+  closeModal() {
+    this.onEditCancel();
+    setTimeout(() => {
+      this.closeModal();
+    }, 4000);
   }
 
   onFavoriteClick(id: string) {
@@ -96,7 +110,8 @@ export class GroupsComponent extends React.Component<Props, State> {
       <View style={[styles.scene, { paddingTop: height * .02 }]} >
         {groupButtons}
         <GroupModal
-          api={this.props.api}
+          groupsApi={this.props.groupsApi}
+          lightsApi={this.props.lightsApi}
           visible={this.state.modalVisible}
           key={this.state.groupBeingEdited}
           id={this.state.groupBeingEdited}
@@ -113,7 +128,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     flexDirection: "row",
     justifyContent: "space-around",
-    backgroundColor: "#000000",
+    backgroundColor: "#002b36",
     flex: 1,
   },
 });

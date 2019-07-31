@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Alert, Modal, Text, TouchableHighlight, View } from "react-native";
+import { Alert, Dimensions, Modal, Text, TouchableHighlight, View } from "react-native";
 
 export interface Props {
   id: string;
@@ -19,8 +19,9 @@ export class LightModal extends React.Component<Props, State> {
   }
 
   render() {
+    const { height, width } = Dimensions.get("window");
     return (
-      <View style={{ marginTop: 22 }}>
+      <View >
         <Modal
           animationType="slide"
           transparent={false}
@@ -28,18 +29,16 @@ export class LightModal extends React.Component<Props, State> {
           onRequestClose={() => {
             Alert.alert("Modal has been closed.");
           }}>
-          <View style={{ marginTop: 22 }}>
-            <View>
-              <Text>Hello World!</Text>
-              <Text>.</Text>
-              <Text>.</Text>
-              <Text>.</Text>
-              <Text>.</Text>
-              <TouchableHighlight
-                onPress={() => { this.props.onEditCancel(); }}>
-                <Text>Hide Modal</Text>
-              </TouchableHighlight>
-            </View>
+          <View style={{ marginTop: height * .1 }}>
+            <Text>Hello World!</Text>
+            <Text>.</Text>
+            <Text>.</Text>
+            <Text>.</Text>
+            <Text>.</Text>
+            <TouchableHighlight
+              onPress={() => { this.props.onEditCancel(); }}>
+              <Text>Hide Modal</Text>
+            </TouchableHighlight>
           </View>
         </Modal>
       </View>

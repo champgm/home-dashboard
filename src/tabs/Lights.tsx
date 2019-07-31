@@ -12,7 +12,7 @@ import v4 from "uuid/v4";
 import { sortBy } from "../common";
 import { Light, Lights } from "../models/Light";
 import { ItemButton } from "./common/Button";
-import { LightModal } from "./LightsModal";
+import { LightModal } from "./LightModal";
 
 export interface Props {
   lights: Promise<Lights>;
@@ -91,11 +91,11 @@ export class LightsComponent extends React.Component<Props, State> {
         })
       : <ActivityIndicator size="large" color="#0000ff" />;
 
-    const { height, width } = Dimensions.get("window");
     return (
       <View style={[styles.scene]} >
         {lightButtons}
         <LightModal
+          id={this.state.lightBeingEdited}
           visible={this.state.modalVisible}
           key={this.state.lightBeingEdited}
           onEditCancel={this.onEditCancel.bind(this)}
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     flexDirection: "row",
     justifyContent: "space-around",
-    backgroundColor: "#000000",
+    backgroundColor: "#002b36",
     flex: 1,
   },
 });

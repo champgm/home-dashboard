@@ -7,7 +7,7 @@ import {
   View,
 } from "react-native";
 import AwesomeButton from "react-native-really-awesome-button";
-import { LightModal } from "../LightsModal";
+import { LightModal } from "../LightModal";
 
 export interface Props {
   id: string;
