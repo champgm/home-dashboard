@@ -1,7 +1,11 @@
 import React, { Component } from "react";
 import { Alert, Modal, Text, TouchableHighlight, View } from "react-native";
+import { GroupsApi } from "../hue/GroupsApi";
+import { Group } from "../models/Group";
 
 export interface Props {
+  id: string;
+  api: GroupsApi;
   visible: boolean;
   onEditSubmit: (id: string) => {};
   onEditCancel: () => {};
@@ -9,12 +13,17 @@ export interface Props {
 
 interface State {
   visible: boolean;
+  group?: Group;
 }
 
 export class GroupModal extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = { visible: this.props.visible };
+  }
+
+  async componentDidMount() {
+    this.setState({ group: await this.props.api.get(this.props.id) });
   }
 
   render() {

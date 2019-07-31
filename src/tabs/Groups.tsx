@@ -7,15 +7,15 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import { Route, SceneMap, TabView } from "react-native-tab-view";
 import v4 from "uuid/v4";
 import { sortBy } from "../common";
+import { GroupsApi } from "../hue/GroupsApi";
 import { Group, Groups } from "../models/Group";
 import { ItemButton } from "./common/Button";
 import { GroupModal } from "./GroupsModal";
 
 export interface Props {
-  groups: Promise<Groups>;
+  api: GroupsApi;
 }
 
 interface State {
@@ -38,10 +38,9 @@ export class GroupsComponent extends React.Component<Props, State> {
     };
   }
 
-  componentDidMount() {
-    this.props.groups.then((groups) => {
-      this.setState({ groups });
-    });
+  async componentDidMount() {
+    const groups = await this.props.api.getAll();
+    this.setState({ groups });
   }
 
   onClick(id: string) {
@@ -97,8 +96,10 @@ export class GroupsComponent extends React.Component<Props, State> {
       <View style={[styles.scene, { paddingTop: height * .02 }]} >
         {groupButtons}
         <GroupModal
+          api={this.props.api}
           visible={this.state.modalVisible}
           key={this.state.groupBeingEdited}
+          id={this.state.groupBeingEdited}
           onEditCancel={this.onEditCancel.bind(this)}
           onEditSubmit={this.onEditSubmit.bind(this)}
         />

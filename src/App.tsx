@@ -48,14 +48,19 @@ export class App extends React.Component<Props, State> {
 
   render() {
     const lightsApi = new LightsApi();
-    const groupsApi = new GroupsApi();
     return (
       <View style={styles.root}>
         <TabView
           navigationState={this.state}
           renderScene={SceneMap({
-            [Lights.key]: () => (<LightsComponent lights={lightsApi.getAll()} />),
-            [Groups.key]: () => (<GroupsComponent groups={groupsApi.getAll()} />),
+            [Lights.key]: () => (
+              <LightsComponent
+                lights={lightsApi.getAll()} />
+            ),
+            [Groups.key]: () => (
+              <GroupsComponent
+                api={new GroupsApi()} />
+            ),
           })}
           onIndexChange={(index) => this.setState({ index })}
           initialLayout={{ width: Dimensions.get("window").width }}

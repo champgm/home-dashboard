@@ -10,11 +10,18 @@ export class GroupsApi {
     return groups;
   }
 
-  attachId(lightsMap: Groups): Groups {
-    for (const lightId of Object.keys(lightsMap)) {
-      lightsMap[lightId].id = lightId;
-      lightsMap[lightId] = Group.create(lightsMap[lightId]);
+  async get(id: string): Promise<Group> {
+    const uri = `${bridgeUri}/groups/${id}`;
+    const group = await (await fetch(uri, get)).json();
+    group.id = id;
+    return Group.create(group);
+  }
+
+  attachId(map: Groups): Groups {
+    for (const id of Object.keys(map)) {
+      map[id].id = id;
+      map[id] = Group.create(map[id]);
     }
-    return lightsMap;
+    return map;
   }
 }

@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { Alert, Modal, Text, TouchableHighlight, View } from "react-native";
 
 export interface Props {
+  id: string;
   visible: boolean;
   onEditSubmit: (id: string) => {};
   onEditCancel: () => {};

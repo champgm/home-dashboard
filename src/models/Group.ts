@@ -17,7 +17,8 @@ export interface Groups {
 export namespace Group {
   export function create(payload: Group): Group {
     if (!payload) { throw new Error("Group not found"); }
-    const light = {
+    console.log(`creating group ${JSON.stringify(payload, null, 2)}`);
+    const group = {
       action: GroupAction.create(payload.action),
       id: verifyType(payload.id, "id", "string"),
       lights: verifyArray(payload.lights, "lights", "string"),
@@ -26,7 +27,7 @@ export namespace Group {
       state: GroupState.create(payload.state),
       type: verifyType(payload.type, "type", "string"),
     };
-    printLeftoverKeys("Group", payload, light);
-    return light;
+    printLeftoverKeys("Group", payload, group);
+    return group;
   }
 }
