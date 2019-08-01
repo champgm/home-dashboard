@@ -1,3 +1,4 @@
+import _ from "lodash";
 import React, { Component } from "react";
 import {
   ActivityIndicator,
@@ -11,12 +12,13 @@ import {
   View,
   ViewStyle,
 } from "react-native";
-import { getNameRow2, getStringInputRow } from ".";
+import { getLabelOnlyRow, getMultiSelectRow, getStringInputRow, getToggleRow } from ".";
 // import Modal from "react-native-modal";
 import { style } from "../../common";
 import { GroupsApi } from "../../hue/GroupsApi";
 import { LightsApi } from "../../hue/LightsApi";
 import { Group } from "../../models/Group";
+import { Light, Lights } from "../../models/Light";
 import { getStyles } from "../common/Style";
 
 export interface Props {
@@ -30,6 +32,7 @@ export interface Props {
 
 interface State {
   group?: Group;
+  allLights?: Lights;
   originalGroup?: Group;
   hasGroup: boolean;
   visible: boolean;
@@ -46,8 +49,12 @@ export class GroupModal extends React.Component<Props, State> {
 
   async componentDidMount() {
     if (this.props.id !== "-1") {
-      const group = await this.props.groupsApi.get(this.props.id);
+      const groupPromise = this.props.groupsApi.get(this.props.id);
+      const lightPromise = this.props.lightsApi.getAll();
+      const group = await groupPromise;
+      const allLights = await lightPromise;
       this.setState({
+        allLights,
         group,
         hasGroup: true,
         originalGroup: group,
@@ -56,29 +63,38 @@ export class GroupModal extends React.Component<Props, State> {
   }
 
   changeField(value: any, fieldName: string) {
-    this.state.group[fieldName] = value;
+    _.set(this.state.group, fieldName, value);
+    // this.state.group[fieldName] = value;
     this.setState({ group: this.state.group });
+  }
+
+  changeLights(lights: Light[], fieldName: string) {
+    const lightIds = lights.map((light) => light.id);
+    _.set(this.state.group, fieldName, lightIds);
+    // this.state.group[fieldName] = value;
+    this.setState({ group: this.state.group });
+  }
+
+  getSelectedLights(): Light[] {
+    return Object.values(this.state.allLights)
+      .filter((light) => this.state.group.lights.includes(light.id));
   }
 
   render() {
     const styles = getStyles();
-    const getNameRow = () => (
-      <View style={[styles.fieldRow]}>
-        <Text style={[styles.label]}>Name:</Text>
-        <TextInput
-          value={this.state.group.name}
-          style={[styles.input]}
-          onChangeText={(text) => this.changeField(text, "name")}
-        />
-      </View>);
-
     const modalView = () =>
       this.state.group
         ? <View style={[styles.fieldRowContainer]}>
-          {/* {getNameRow()} */}
           {getStringInputRow("ID", "id", this.state.group.id, false)}
+          {getStringInputRow("Type", "type", this.state.group.type, false)}
+          {getLabelOnlyRow("State")}
+          <View style={[styles.fieldRowSubContainer]}>
+            {getToggleRow("All On", "state.all_on", this.state.group.state.all_on, false)}
+            {getToggleRow("Any On", "state.any_on", this.state.group.state.any_on, false)}
+          </View>
           {getStringInputRow("Name", "name", this.state.group.name, true, this.changeField.bind(this))}
-          {getStringInputRow("Type", "type", this.state.group.name, false)}
+          {getToggleRow("Recycle", "recycle", this.state.group.recycle, true, this.changeField.bind(this))}
+          {getMultiSelectRow("Lights", "lights", this.getSelectedLights(), Object.values(this.state.allLights))}
           <TouchableHighlight
             onPress={() => {
               this.props.onEditCancel();
@@ -101,27 +117,3 @@ export class GroupModal extends React.Component<Props, State> {
     );
   }
 }
-
-// const styles = StyleSheet.create({
-//   fieldRow: {
-//     // flexDirection: "row",
-//     // height: 40,
-//     // justifyContent: "space-around",
-//     // height: 40,
-//   },
-//   fieldRowContainer: {
-//     // flex: 1,
-//     // flexDirection: "column",
-//     // justifyContent: "center",
-//   },
-//   label: {
-//     // textAlignVertical: "center",
-//   },
-//   input: {
-//     // textAlignVertical: "center",
-//     // borderColor: "#000000",
-//     // borderRadius: 5,
-//     // borderWidth: 2,
-//     // flex: 1,
-//   },
-// });

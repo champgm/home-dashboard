@@ -56,16 +56,8 @@ export class GroupsComponent extends React.Component<Props, State> {
       groupBeingEdited: id,
     });
 
-    // TODO: remove
     setTimeout(() => {
-      this.closeModal();
-    }, 4000);
-  }
-
-  closeModal() {
-    this.onEditCancel();
-    setTimeout(() => {
-      this.closeModal();
+      this.onEditCancel();
     }, 4000);
   }
 
