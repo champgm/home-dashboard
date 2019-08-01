@@ -11,6 +11,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
+import { getStringInputRow, getNameRow2 } from ".";
 // import Modal from "react-native-modal";
 import { style } from "../../common";
 import { GroupsApi } from "../../hue/GroupsApi";
@@ -60,46 +61,41 @@ export class GroupModal extends React.Component<Props, State> {
   }
 
   render() {
-    const {
-      fieldRowContainerStyle,
-      fieldRowStyle,
-      inputStyle,
-      labelStyle,
-      lockedInputStyle,
-    } = getStyles();
+    const styles = getStyles();
     const getNameRow = () => (
       <View style={[styles.fieldRow]}>
-        <Text style={[styles.label, labelStyle]}>Name:</Text>
+        <Text style={[styles.label]}>Name:</Text>
         <TextInput
           value={this.state.group.name}
-          style={[styles.input, inputStyle]}
+          style={[styles.input]}
           onChangeText={(text) => this.changeField(text, "name")}
         />
       </View>);
-    const getIdRow = () => (
-      <View style={[styles.fieldRow, fieldRowStyle]}>
-        <Text style={[styles.label, labelStyle]}>ID:</Text>
-        <TextInput
-          value={this.state.group.id}
-          editable={false}
-          style={[styles.input, lockedInputStyle]}
-        />
-      </View>);
-    const getTypeRow = () => (
-      <View style={[styles.fieldRow, fieldRowStyle]}>
-        <Text style={[styles.label, labelStyle]}>Type:</Text>
-        <TextInput
-          value={this.state.group.type}
-          editable={false}
-          style={[styles.input, lockedInputStyle]}
-        />
-      </View>);
+    // const getIdRow = () => (
+    //   <View style={[fieldRow]}>
+    //     <Text style={[label]}>ID:</Text>
+    //     <TextInput
+    //       value={this.state.group.id}
+    //       editable={false}
+    //       style={[lockedInput]}
+    //     />
+    //   </View>);
+    // const getTypeRow = () => (
+    //   <View style={[fieldRow]}>
+    //     <Text style={[label]}>Type:</Text>
+    //     <TextInput
+    //       value={this.state.group.type}
+    //       editable={false}
+    //       style={[lockedInput]}
+    //     />
+    // </View >;)
 
     const modalView = this.state.group
-      ? <View style={[styles.fieldRowContainer, fieldRowContainerStyle]}>
-        {getIdRow()}
+      ? <View style={[styles.fieldRowContainer]}>
         {getNameRow()}
-        {getTypeRow()}
+        {/* {getStringInputRow("ID", "id", this.state.group.id, false)} */}
+        {/* {getStringInputRow("Name", "name", this.state.group.name, true, this.changeField.bind(this))} */}
+        {/* {getStringInputRow("Type", "type", this.state.group.name, false)} */}
         <TouchableHighlight
           onPress={() => {
             this.props.onEditCancel();
@@ -123,30 +119,26 @@ export class GroupModal extends React.Component<Props, State> {
   }
 }
 
-const styles = StyleSheet.create({
-  fieldRow: {
-    // flexDirection: "row",
-    // height: 40,
-    // justifyContent: "space-around",
-    // height: 40,
-  },
-  fieldRowContainer: {
-    // flex: 1,
-    // flexDirection: "column",
-    // justifyContent: "center",
-  },
-  // fieldMember: {
-  //   margin:
-  // }
-  label: {
-    textAlignVertical: "center",
-    // flex: 1,
-  },
-  input: {
-    textAlignVertical: "center",
-    borderColor: "#000000",
-    borderRadius: 5,
-    borderWidth: 2,
-    flex: 1,
-  },
-});
+// const styles = StyleSheet.create({
+//   fieldRow: {
+//     // flexDirection: "row",
+//     // height: 40,
+//     // justifyContent: "space-around",
+//     // height: 40,
+//   },
+//   fieldRowContainer: {
+//     // flex: 1,
+//     // flexDirection: "column",
+//     // justifyContent: "center",
+//   },
+//   label: {
+//     // textAlignVertical: "center",
+//   },
+//   input: {
+//     // textAlignVertical: "center",
+//     // borderColor: "#000000",
+//     // borderRadius: 5,
+//     // borderWidth: 2,
+//     // flex: 1,
+//   },
+// });

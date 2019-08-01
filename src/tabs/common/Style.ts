@@ -1,35 +1,44 @@
-import { Dimensions, ViewStyle } from "react-native";
+import { Dimensions, TextStyle, ViewStyle } from "react-native";
 
 export function getStyles() {
   const { height, width } = Dimensions.get("window");
   const widthMargin = width * .1;
   const heightMargin = height * .0125;
 
-  const fieldRowContainerStyle: ViewStyle = {
+  const fieldRowContainer: ViewStyle = {
+    flex: 1,
+    flexDirection: "column",
+    justifyContent: "center",
     marginLeft: widthMargin,
     marginRight: widthMargin,
   };
-  const fieldRowStyle: ViewStyle = {
+  const fieldRow: ViewStyle = {
     marginBottom: heightMargin,
     flexDirection: "row",
     height: 40,
   };
-  const labelStyle: ViewStyle = {
+  const label: TextStyle = {
     marginRight: widthMargin / 2,
+    textAlignVertical: "center",
   };
-  const inputStyle: ViewStyle = {
+  const input: TextStyle = {
     paddingLeft: widthMargin / 4,
+    textAlignVertical: "center",
+    borderColor: "#000000",
+    borderRadius: 5,
+    borderWidth: 2,
+    flex: 1,
   };
-  const lockedInputStyle: ViewStyle = {
+  const lockedInput: ViewStyle = {
     paddingLeft: widthMargin / 4,
     backgroundColor: "#d8d8d8",
   };
 
   return {
-    fieldRowContainerStyle,
-    fieldRowStyle,
-    inputStyle,
-    labelStyle,
-    lockedInputStyle,
+    fieldRowContainer,
+    fieldRow,
+    input,
+    label,
+    lockedInput,
   };
 }
