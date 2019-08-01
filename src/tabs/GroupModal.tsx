@@ -51,14 +51,22 @@ export class GroupModal extends React.Component<Props, State> {
   render() {
     const { height, width } = Dimensions.get("window");
     const inputRowHeight = 40;
+    const margin = width * .1;
     const fieldMemberStyle = {
-      // margin: 20,
+      // marginBottom: margin * 4,
+      // marginLeft: margin,
+      // marginRight: margin,
+      // marginTop: margin * 4,
     };
     const modalView = this.state.group
-      ? <View style={[styles.fieldRow, { marginTop: height * .1 }]}>
+      ? <View style={[styles.fieldRows, {
+        marginLeft: margin,
+        marginRight: margin,
+      }]}>
         <View style={[styles.inputRow, { height: inputRowHeight }]}>
           <Text style={[styles.label, fieldMemberStyle]}>Name:</Text>
-          <TextInput style={[styles.input, fieldMemberStyle]}
+          <TextInput
+            style={[styles.input]}
             onChangeText={(text) => {
               const group = this.state.group;
               group.name = text;
@@ -82,7 +90,6 @@ export class GroupModal extends React.Component<Props, State> {
           animationType="slide"
           transparent={false}
           visible={this.state.visible}
-        // onRequestClose={() => {          Alert.alert("Modal has been closed.");        }}
         >
           {modalView}
         </Modal>
@@ -94,13 +101,13 @@ export class GroupModal extends React.Component<Props, State> {
 const styles = StyleSheet.create({
   inputRow: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    // justifyContent: "space-around",
     // height: 40,
   },
-  fieldRow: {
+  fieldRows: {
     flex: 1,
     flexDirection: "column",
-    justifyContent: "space-around",
+    justifyContent:"center",
   },
   // fieldMember: {
   //   margin:
@@ -110,6 +117,7 @@ const styles = StyleSheet.create({
     // flex: 1,
   },
   input: {
+    textAlignVertical: "center",
     borderColor: "#000000",
     borderRadius: 5,
     borderWidth: 2,

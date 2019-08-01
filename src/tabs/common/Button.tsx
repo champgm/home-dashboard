@@ -47,6 +47,7 @@ export class ItemButton extends React.Component<Props, State> {
       }]}>
         {/* <this.props.editModalClass visible={false} /> */}
         <AwesomeButton
+          // Main button
           paddingHorizontal={5}
           height={buttonDimension}
           width={buttonDimension}
@@ -54,6 +55,7 @@ export class ItemButton extends React.Component<Props, State> {
           {this.props.title}
         </AwesomeButton>
         <AwesomeButton
+          // Edit button
           onPress={() => this.props.onEditClick(this.props.id)}
           backgroundColor="#3399ff"
           backgroundDarker="#0000ff"
@@ -73,6 +75,7 @@ export class ItemButton extends React.Component<Props, State> {
             source={require("../../../assets/edit.png")} />
         </AwesomeButton>
         <AwesomeButton
+          // Favorite button
           onPress={() => this.props.onFavoriteClick(this.props.id)}
           backgroundColor="#ffcc66"
           backgroundDarker="#ff9900"
