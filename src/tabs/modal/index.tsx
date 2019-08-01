@@ -61,33 +61,29 @@ export function getMultiSelectRow(
 ) {
   const styles = getStyles();
   return (
-    <View style={[styles.fieldRow]}>
-      <Text style={[styles.label]}>{label}:</Text>
-      <MultiSelect
-        hideTags
-        items={allItems}
-        uniqueKey="id"
-        ref={(component) => { this.multiSelect = component; }}
-        onSelectedItemsChange={(selectedItems) => changeFieldCallback(selectedItems, fieldName)}
-        selectedItems={initiallySelectedItems}
-        selectText="Pick Items"
-        searchInputPlaceholderText="Selected Lights..."
-        onChangeInput={(text) => console.log(text)}
-        altFontFamily="ProximaNova-Light"
-        tagRemoveIconColor="#CCC"
-        tagBorderColor="#CCC"
-        tagTextColor="#CCC"
-        selectedItemTextColor="#CCC"
-        selectedItemIconColor="#CCC"
-        itemTextColor="#000"
-        displayKey="name"
-        searchInputStyle={{ color: "#CCC" }}
-        submitButtonColor="#CCC"
-        submitButtonText="Submit"
-      />
-      {/* <View>
-        {this.multiSelect.getSelectedItemsExt(initiallySelectedItems)}
-      </View> */}
-    </View>
+    // <View style={[styles.fieldRow]}>
+    //   <Text style={[styles.label]}>{label}:</Text>
+    <MultiSelect
+      hideTags
+      items={allItems}
+      uniqueKey="id"
+      ref={(component) => { this.multiSelect = component; }}
+      onSelectedItemsChange={(selectedItems) => changeFieldCallback(selectedItems, fieldName)}
+      selectedItems={initiallySelectedItems}
+      selectText="Pick Items"
+      searchInputPlaceholderText="Selected Lights..."
+      onChangeInput={(text) => console.log(text)}
+      altFontFamily="ProximaNova-Light"
+      tagRemoveIconColor="#CCC"
+      tagBorderColor="#CCC"
+      tagTextColor="#CCC"
+      selectedItemTextColor="#CCC"
+      selectedItemIconColor="#CCC"
+      itemTextColor="#000"
+      displayKey="name"
+      searchInputStyle={{ color: "#CCC" }}
+      submitButtonColor="#CCC"
+      submitButtonText="Submit"
+    />
   );
 }

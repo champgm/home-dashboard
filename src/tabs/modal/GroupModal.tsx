@@ -5,6 +5,7 @@ import {
   Alert,
   Dimensions,
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -84,7 +85,7 @@ export class GroupModal extends React.Component<Props, State> {
     const styles = getStyles();
     const modalView = () =>
       this.state.group
-        ? <View style={[styles.fieldRowContainer]}>
+        ? <ScrollView >
           {getStringInputRow("ID", "id", this.state.group.id, false)}
           {getStringInputRow("Type", "type", this.state.group.type, false)}
           {getLabelOnlyRow("State")}
@@ -102,7 +103,7 @@ export class GroupModal extends React.Component<Props, State> {
             }}>
             <Text>Hide Modal</Text>
           </TouchableHighlight>
-        </View>
+        </ScrollView>
         : <ActivityIndicator size="large" color="#0000ff" />;
     return (
       <View >
