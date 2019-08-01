@@ -13,7 +13,7 @@ import { GroupsApi } from "../hue/GroupsApi";
 import { LightsApi } from "../hue/LightsApi";
 import { Group, Groups } from "../models/Group";
 import { ItemButton } from "./common/Button";
-import { GroupModal } from "./GroupModal";
+import { GroupModal } from "./modal/GroupModal";
 
 export interface Props {
   groupsApi: GroupsApi;
