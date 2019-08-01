@@ -57,33 +57,43 @@ export function getMultiSelectRow(
   fieldName: string,
   initiallySelectedItems: Array<{ id: string, name: string }>,
   allItems: Array<{ id: string, name: string }>,
-  changeFieldCallback?: (items: any[], fieldName: string) => void,
+  changeFieldCallback: (items: any[], fieldName: string) => void,
 ) {
   const styles = getStyles();
+  let multiSelectRef: MultiSelect;
+  const multiSelect = (<MultiSelect
+    hideTags
+    items={allItems}
+    uniqueKey="id"
+    ref={(component) => {
+      console.log(`ref called ???`);
+      multiSelectRef = component;
+    }}
+    onSelectedItemsChange={(selectedItems) => changeFieldCallback(selectedItems, fieldName)}
+    selectedItems={initiallySelectedItems}
+    selectText="Pick Items"
+    searchInputPlaceholderText="Selected Lights..."
+    onChangeInput={(text) => console.log(text)}
+    altFontFamily="ProximaNova-Light"
+    tagRemoveIconColor="#CCC"
+    tagBorderColor="#CCC"
+    tagTextColor="#CCC"
+    selectedItemTextColor="#CCC"
+    selectedItemIconColor="#CCC"
+    itemTextColor="#000"
+    displayKey="name"
+    searchInputStyle={{ color: "#CCC" }}
+    submitButtonColor="#CCC"
+    submitButtonText="Submit"
+    textInputProps={{ editable: false }}
+  />);
+  console.log(`multiSelectRef${JSON.stringify(multiSelectRef, null, 2)}`);
   return (
     // <View style={[styles.fieldRow]}>
     //   <Text style={[styles.label]}>{label}:</Text>
-    <MultiSelect
-      hideTags
-      items={allItems}
-      uniqueKey="id"
-      ref={(component) => { this.multiSelect = component; }}
-      onSelectedItemsChange={(selectedItems) => changeFieldCallback(selectedItems, fieldName)}
-      selectedItems={initiallySelectedItems}
-      selectText="Pick Items"
-      searchInputPlaceholderText="Selected Lights..."
-      onChangeInput={(text) => console.log(text)}
-      altFontFamily="ProximaNova-Light"
-      tagRemoveIconColor="#CCC"
-      tagBorderColor="#CCC"
-      tagTextColor="#CCC"
-      selectedItemTextColor="#CCC"
-      selectedItemIconColor="#CCC"
-      itemTextColor="#000"
-      displayKey="name"
-      searchInputStyle={{ color: "#CCC" }}
-      submitButtonColor="#CCC"
-      submitButtonText="Submit"
-    />
+    <View>
+      {multiSelect}
+    </View>
+    // TODO: try to add chips view thing here, but check to see if ref is undefined
   );
 }

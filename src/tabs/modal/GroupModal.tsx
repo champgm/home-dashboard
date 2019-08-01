@@ -95,7 +95,7 @@ export class GroupModal extends React.Component<Props, State> {
           </View>
           {getStringInputRow("Name", "name", this.state.group.name, true, this.changeField.bind(this))}
           {getToggleRow("Recycle", "recycle", this.state.group.recycle, true, this.changeField.bind(this))}
-          {getMultiSelectRow("Lights", "lights", this.getSelectedLights(), Object.values(this.state.allLights))}
+          {getMultiSelectRow("Lights", "lights", this.getSelectedLights(), Object.values(this.state.allLights), this.changeLights.bind(this))}
           <TouchableHighlight
             onPress={() => {
               this.props.onEditCancel();
