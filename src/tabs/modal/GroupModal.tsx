@@ -11,7 +11,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
-import { getStringInputRow, getNameRow2 } from ".";
+import { getNameRow2, getStringInputRow } from ".";
 // import Modal from "react-native-modal";
 import { style } from "../../common";
 import { GroupsApi } from "../../hue/GroupsApi";
@@ -71,40 +71,23 @@ export class GroupModal extends React.Component<Props, State> {
           onChangeText={(text) => this.changeField(text, "name")}
         />
       </View>);
-    // const getIdRow = () => (
-    //   <View style={[fieldRow]}>
-    //     <Text style={[label]}>ID:</Text>
-    //     <TextInput
-    //       value={this.state.group.id}
-    //       editable={false}
-    //       style={[lockedInput]}
-    //     />
-    //   </View>);
-    // const getTypeRow = () => (
-    //   <View style={[fieldRow]}>
-    //     <Text style={[label]}>Type:</Text>
-    //     <TextInput
-    //       value={this.state.group.type}
-    //       editable={false}
-    //       style={[lockedInput]}
-    //     />
-    // </View >;)
 
-    const modalView = this.state.group
-      ? <View style={[styles.fieldRowContainer]}>
-        {getNameRow()}
-        {/* {getStringInputRow("ID", "id", this.state.group.id, false)} */}
-        {/* {getStringInputRow("Name", "name", this.state.group.name, true, this.changeField.bind(this))} */}
-        {/* {getStringInputRow("Type", "type", this.state.group.name, false)} */}
-        <TouchableHighlight
-          onPress={() => {
-            this.props.onEditCancel();
-            this.setState({ visible: false });
-          }}>
-          <Text>Hide Modal</Text>
-        </TouchableHighlight>
-      </View>
-      : <ActivityIndicator size="large" color="#0000ff" />;
+    const modalView = () =>
+      this.state.group
+        ? <View style={[styles.fieldRowContainer]}>
+          {/* {getNameRow()} */}
+          {getStringInputRow("ID", "id", this.state.group.id, false)}
+          {getStringInputRow("Name", "name", this.state.group.name, true, this.changeField.bind(this))}
+          {getStringInputRow("Type", "type", this.state.group.name, false)}
+          <TouchableHighlight
+            onPress={() => {
+              this.props.onEditCancel();
+              this.setState({ visible: false });
+            }}>
+            <Text>Hide Modal</Text>
+          </TouchableHighlight>
+        </View>
+        : <ActivityIndicator size="large" color="#0000ff" />;
     return (
       <View >
         <Modal
@@ -112,7 +95,7 @@ export class GroupModal extends React.Component<Props, State> {
           transparent={false}
           visible={this.state.visible}
         >
-          {modalView}
+          {modalView()}
         </Modal>
       </View>
     );
