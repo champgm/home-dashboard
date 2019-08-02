@@ -47,7 +47,6 @@ export function getStyles() {
     paddingLeft: widthMargin / 4,
     textAlignVertical: "center",
   };
-
   const toggle: TextStyle = {
     paddingLeft: widthMargin / 4,
     textAlignVertical: "center",
@@ -56,7 +55,6 @@ export function getStyles() {
     borderWidth: 2,
     flex: 1,
   };
-
   const lockedToggle: TextStyle = {
     paddingLeft: widthMargin / 4,
     textAlignVertical: "center",
@@ -65,7 +63,6 @@ export function getStyles() {
     borderWidth: 2,
     flex: 1,
   };
-
   return {
     fieldRowContainer,
     fieldRowSubContainer,

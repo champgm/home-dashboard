@@ -87,7 +87,12 @@ export class GroupModal extends React.Component<Props, State> {
     const modalView = () =>
       this.state.group
         ? <View style={{ flex: 1 }}>
-          <ScrollView contentContainerStyle={{ flex: 1 }}>
+          <ScrollView contentContainerStyle={{
+            flex: 1,
+            borderColor: "#000000",
+            borderRadius: 5,
+            borderWidth: 2,
+          }}>
             {getStringInputRow("ID", "id", this.state.group.id, false)}
             {getStringInputRow("Type", "type", this.state.group.type, false)}
             {getLabelOnlyRow("State")}

@@ -58,7 +58,7 @@ export class GroupsComponent extends React.Component<Props, State> {
 
     setTimeout(() => {
       this.onEditCancel();
-    }, 10000);
+    }, 12000);
   }
 
   onFavoriteClick(id: string) {

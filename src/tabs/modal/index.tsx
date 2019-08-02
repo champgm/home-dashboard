@@ -59,14 +59,15 @@ export function getMultiSelectRow(
   changeFieldCallback: (items: any[]) => void,
 ) {
   const styles = getStyles();
-  console.log(`allItems: ${JSON.stringify(allItems)}`);
-
-  const multiSelect = (<View style={{ flex: 1, flexBasis: 100 }}>
+  const multiSelect = (<View style={{ flex: 1,flexBasis:100 }}>
     <MultiSelect
       hideTags
       items={allItems}
       uniqueKey="id"
-      onSelectedItemsChange={(newlySelectedItems) => changeFieldCallback(newlySelectedItems)}
+      onSelectedItemsChange={(newlySelectedItems) => {
+        console.log(`Item was selected, now: ${newlySelectedItems}`);
+        changeFieldCallback(newlySelectedItems);
+      }}
       selectedItems={initiallySelectedItems}
       selectText="Pick Lights"
       // onChangeInput={(text) => console.log(text)}
@@ -82,6 +83,8 @@ export function getMultiSelectRow(
       submitButtonColor="#CCC"
       submitButtonText="Submit"
       textInputProps={{ editable: false }}
+      // hideSubmitButton={true}
+      fixedHeight={true}
     />
   </View>);
   return (
