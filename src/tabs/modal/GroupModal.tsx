@@ -82,20 +82,23 @@ export class GroupModal extends React.Component<Props, State> {
   // }
 
   render() {
+    const { height } = Dimensions.get("window");
     const styles = getStyles();
     const modalView = () =>
       this.state.group
-        ? <ScrollView >
-          {getStringInputRow("ID", "id", this.state.group.id, false)}
-          {getStringInputRow("Type", "type", this.state.group.type, false)}
-          {getLabelOnlyRow("State")}
-          <View style={[styles.fieldRowSubContainer]}>
-            {getToggleRow("All On", "state.all_on", this.state.group.state.all_on, false)}
-            {getToggleRow("Any On", "state.any_on", this.state.group.state.any_on, false)}
-          </View>
-          {getStringInputRow("Name", "name", this.state.group.name, true, this.changeField.bind(this))}
-          {getToggleRow("Recycle", "recycle", this.state.group.recycle, true, this.changeField.bind(this))}
-          {getMultiSelectRow("Lights", this.state.group.lights, Object.values(this.state.allLights), this.changeLights.bind(this))}
+        ? <View style={{ flex: 1 }}>
+          <ScrollView contentContainerStyle={{ flex: 1 }}>
+            {getStringInputRow("ID", "id", this.state.group.id, false)}
+            {getStringInputRow("Type", "type", this.state.group.type, false)}
+            {getLabelOnlyRow("State")}
+            <View style={[styles.fieldRowSubContainer]}>
+              {getToggleRow("All On", "state.all_on", this.state.group.state.all_on, false)}
+              {getToggleRow("Any On", "state.any_on", this.state.group.state.any_on, false)}
+            </View>
+            {getStringInputRow("Name", "name", this.state.group.name, true, this.changeField.bind(this))}
+            {getToggleRow("Recycle", "recycle", this.state.group.recycle, true, this.changeField.bind(this))}
+            {getMultiSelectRow("Lights", this.state.group.lights, Object.values(this.state.allLights), this.changeLights.bind(this))}
+          </ScrollView>
           <TouchableHighlight
             onPress={() => {
               this.props.onEditCancel();
@@ -103,10 +106,10 @@ export class GroupModal extends React.Component<Props, State> {
             }}>
             <Text>Hide Modal</Text>
           </TouchableHighlight>
-        </ScrollView>
+        </View>
         : <ActivityIndicator size="large" color="#0000ff" />;
     return (
-      <View >
+      <View>
         <Modal
           animationType="slide"
           transparent={false}

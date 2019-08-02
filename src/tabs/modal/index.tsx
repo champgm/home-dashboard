@@ -59,42 +59,35 @@ export function getMultiSelectRow(
   changeFieldCallback: (items: any[]) => void,
 ) {
   const styles = getStyles();
-  console.log(`initiallySelectedItems: ${JSON.stringify(initiallySelectedItems)}`);
-  let multiSelectRef: MultiSelect;
-  const multiSelect = (<MultiSelect
-    hideTags
-    items={allItems}
-    uniqueKey="id"
-    ref={(component) => {
-      // console.log(`ref called ???`);
-      multiSelectRef = component;
-    }}
-    onSelectedItemsChange={(newlySelectedItems) => changeFieldCallback(newlySelectedItems)}
-    selectedItems={initiallySelectedItems}
-    selectText="Pick Lights"
-    // onChangeInput={(text) => console.log(text)}
-    altFontFamily="ProximaNova-Light"
-    tagRemoveIconColor="#CCC"
-    tagBorderColor="#CCC"
-    tagTextColor="#CCC"
-    selectedItemTextColor="#CCC"
-    selectedItemIconColor="#CCC"
-    itemTextColor="#000"
-    displayKey="name"
-    searchInputStyle={{ color: "#CCC" }}
-    submitButtonColor="#CCC"
-    submitButtonText="Submit"
-    textInputProps={{ editable: false }}
-  />);
-  const selectedItems = multiSelectRef
-    ? <View>{multiSelectRef.getSelectedItemsExt(initiallySelectedItems)}</View>
-    : <View></View>;
+  console.log(`allItems: ${JSON.stringify(allItems)}`);
+
+  const multiSelect = (<View style={{ flex: 1, flexBasis: 100 }}>
+    <MultiSelect
+      hideTags
+      items={allItems}
+      uniqueKey="id"
+      onSelectedItemsChange={(newlySelectedItems) => changeFieldCallback(newlySelectedItems)}
+      selectedItems={initiallySelectedItems}
+      selectText="Pick Lights"
+      // onChangeInput={(text) => console.log(text)}
+      altFontFamily="ProximaNova-Light"
+      tagRemoveIconColor="#CCC"
+      tagBorderColor="#CCC"
+      tagTextColor="#CCC"
+      selectedItemTextColor="#CCC"
+      selectedItemIconColor="#CCC"
+      itemTextColor="#000"
+      displayKey="name"
+      searchInputStyle={{ color: "#CCC" }}
+      submitButtonColor="#CCC"
+      submitButtonText="Submit"
+      textInputProps={{ editable: false }}
+    />
+  </View>);
   return (
-    // <View style={[styles.fieldRow]}>
-    //   <Text style={[styles.label]}>{label}:</Text>
-    <View>
+    <View style={[styles.fieldRow]}>
+      <Text style={[styles.label]}>{label}:</Text>
       {multiSelect}
-      {selectedItems}
     </View>
   );
 }
