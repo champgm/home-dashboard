@@ -54,26 +54,25 @@ export function getToggleRow(
 
 export function getMultiSelectRow(
   label: string,
-  fieldName: string,
-  initiallySelectedItems: Array<{ id: string, name: string }>,
+  initiallySelectedItems: string[],
   allItems: Array<{ id: string, name: string }>,
-  changeFieldCallback: (items: any[], fieldName: string) => void,
+  changeFieldCallback: (items: any[]) => void,
 ) {
   const styles = getStyles();
+  console.log(`initiallySelectedItems: ${JSON.stringify(initiallySelectedItems)}`);
   let multiSelectRef: MultiSelect;
   const multiSelect = (<MultiSelect
     hideTags
     items={allItems}
     uniqueKey="id"
     ref={(component) => {
-      console.log(`ref called ???`);
+      // console.log(`ref called ???`);
       multiSelectRef = component;
     }}
-    onSelectedItemsChange={(selectedItems) => changeFieldCallback(selectedItems, fieldName)}
+    onSelectedItemsChange={(newlySelectedItems) => changeFieldCallback(newlySelectedItems)}
     selectedItems={initiallySelectedItems}
-    selectText="Pick Items"
-    searchInputPlaceholderText="Selected Lights..."
-    onChangeInput={(text) => console.log(text)}
+    selectText="Pick Lights"
+    // onChangeInput={(text) => console.log(text)}
     altFontFamily="ProximaNova-Light"
     tagRemoveIconColor="#CCC"
     tagBorderColor="#CCC"
@@ -87,13 +86,15 @@ export function getMultiSelectRow(
     submitButtonText="Submit"
     textInputProps={{ editable: false }}
   />);
-  console.log(`multiSelectRef${JSON.stringify(multiSelectRef, null, 2)}`);
+  const selectedItems = multiSelectRef
+    ? <View>{multiSelectRef.getSelectedItemsExt(initiallySelectedItems)}</View>
+    : <View></View>;
   return (
     // <View style={[styles.fieldRow]}>
     //   <Text style={[styles.label]}>{label}:</Text>
     <View>
       {multiSelect}
+      {selectedItems}
     </View>
-    // TODO: try to add chips view thing here, but check to see if ref is undefined
   );
 }

@@ -69,17 +69,17 @@ export class GroupModal extends React.Component<Props, State> {
     this.setState({ group: this.state.group });
   }
 
-  changeLights(lights: Light[], fieldName: string) {
-    const lightIds = lights.map((light) => light.id);
-    _.set(this.state.group, fieldName, lightIds);
-    // this.state.group[fieldName] = value;
+  changeLights(lights: string[]) {
+    console.log(`setting group.lights`);
+    console.log(`to: ${lights}`);
+    this.state.group.lights = lights;
     this.setState({ group: this.state.group });
   }
 
-  getSelectedLights(): Light[] {
-    return Object.values(this.state.allLights)
-      .filter((light) => this.state.group.lights.includes(light.id));
-  }
+  // getSelectedLights(): Light[] {
+  //   return Object.values(this.state.allLights)
+  //     .filter((light) => this.state.group.lights.includes(light.id));
+  // }
 
   render() {
     const styles = getStyles();
@@ -95,7 +95,7 @@ export class GroupModal extends React.Component<Props, State> {
           </View>
           {getStringInputRow("Name", "name", this.state.group.name, true, this.changeField.bind(this))}
           {getToggleRow("Recycle", "recycle", this.state.group.recycle, true, this.changeField.bind(this))}
-          {getMultiSelectRow("Lights", "lights", this.getSelectedLights(), Object.values(this.state.allLights), this.changeLights.bind(this))}
+          {getMultiSelectRow("Lights", this.state.group.lights, Object.values(this.state.allLights), this.changeLights.bind(this))}
           <TouchableHighlight
             onPress={() => {
               this.props.onEditCancel();
