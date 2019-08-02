@@ -5,8 +5,8 @@ export interface GroupState {
   any_on: boolean;
 }
 
-export namespace GroupState {
-  export function create(payload: GroupState): GroupState {
+// export namespace GroupState {
+export function create(payload: GroupState): GroupState {
     if (!payload) { throw new Error("GroupState not found"); }
     const action = {
       all_on: verifyType(payload.all_on, "all_on", "boolean"),
@@ -15,4 +15,4 @@ export namespace GroupState {
     printLeftoverKeys("GroupState", payload, action);
     return action;
   }
-}
+// }

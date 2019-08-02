@@ -1,6 +1,6 @@
 import { get } from "../common/Parameters";
 import { bridgeUri } from "../configuration/Hue.json";
-import { Light, Lights } from "../models/Light";
+import { create as LightCreate, Light, Lights } from "../models/Light";
 
 export class LightsApi {
 
@@ -11,7 +11,7 @@ export class LightsApi {
     return lightsMap;
   }
 
-  async getSome(ids: stringp[]): Promise<Lights> {
+  async getSome(ids: string[]): Promise<Lights> {
     const allLights = this.getAll();
     Object.keys(allLights).forEach((key) => {
       if (!ids.includes(key)) {
@@ -24,7 +24,7 @@ export class LightsApi {
   attachId(lightsMap: Lights): Lights {
     for (const lightId of Object.keys(lightsMap)) {
       lightsMap[lightId].id = lightId;
-      lightsMap[lightId] = Light.create(lightsMap[lightId]);
+      lightsMap[lightId] = LightCreate(lightsMap[lightId]);
     }
     return lightsMap;
   }

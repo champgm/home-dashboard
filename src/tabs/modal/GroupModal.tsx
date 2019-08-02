@@ -90,6 +90,7 @@ export class GroupModal extends React.Component<Props, State> {
           <ScrollView contentContainerStyle={{
             flex: 1,
             borderColor: "#000000",
+            backgroundColor: "#d8d8d8",
             borderRadius: 5,
             borderWidth: 2,
           }}>
@@ -116,6 +117,7 @@ export class GroupModal extends React.Component<Props, State> {
     return (
       <View>
         <Modal
+          // presentationStyle="formSheet"
           animationType="slide"
           transparent={false}
           visible={this.state.visible}

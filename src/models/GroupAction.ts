@@ -15,8 +15,8 @@ export interface GroupActions {
   [id: string]: GroupAction;
 }
 
-export namespace GroupAction {
-  export function create(payload: GroupAction): GroupAction {
+// export namespace GroupAction {
+export function create(payload: GroupAction): GroupAction {
     if (!payload) { throw new Error("GroupAction not found"); }
     const action = {
       alert: verifyType(payload.alert, "alert", "string"),
@@ -32,4 +32,4 @@ export namespace GroupAction {
     printLeftoverKeys("GroupAction", payload, action);
     return action;
   }
-}
+// }

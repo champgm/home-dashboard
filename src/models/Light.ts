@@ -1,6 +1,6 @@
 import { printLeftoverKeys, verifyType } from ".";
 import { Item } from "./Item";
-import { State } from "./State";
+import { create as StateCreate, State } from "./State";
 
 export interface Light extends Item {
   state: State;
@@ -17,22 +17,22 @@ export interface Lights {
   [id: string]: Light;
 }
 
-export namespace Light {
-  export function create(payload: Light): Light {
-    if (!payload) { throw new Error("Light not found"); }
-    const light = {
-      id: verifyType(payload.id, "id", "string"),
-      name: verifyType(payload.name, "name", "string"),
-      state: State.create(payload.state),
-      type: verifyType(payload.type, "type", "string"),
-      modelid: verifyType(payload.modelid, "modelid", "string"),
-      manufacturername: verifyType(payload.manufacturername, "manufacturername", "string"),
-      uniqueid: verifyType(payload.uniqueid, "uniqueid", "string"),
-      swversion: verifyType(payload.swversion, "swversion", "string"),
-      swconfigid: verifyType(payload.swconfigid, "swconfigid", "string", false),
-      productid: verifyType(payload.productid, "productid", "string", false),
-    };
-    printLeftoverKeys("Light", payload, light);
-    return light;
-  }
+// export namespace Light {
+export function create(payload: Light): Light {
+  if (!payload) { throw new Error("Light not found"); }
+  const light = {
+    id: verifyType(payload.id, "id", "string"),
+    name: verifyType(payload.name, "name", "string"),
+    state: StateCreate(payload.state),
+    type: verifyType(payload.type, "type", "string"),
+    modelid: verifyType(payload.modelid, "modelid", "string"),
+    manufacturername: verifyType(payload.manufacturername, "manufacturername", "string"),
+    uniqueid: verifyType(payload.uniqueid, "uniqueid", "string"),
+    swversion: verifyType(payload.swversion, "swversion", "string"),
+    swconfigid: verifyType(payload.swconfigid, "swconfigid", "string", false),
+    productid: verifyType(payload.productid, "productid", "string", false),
+  };
+  printLeftoverKeys("Light", payload, light);
+  return light;
 }
+// }

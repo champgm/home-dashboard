@@ -59,33 +59,8 @@ export function getMultiSelectRow(
   changeFieldCallback: (items: any[]) => void,
 ) {
   const styles = getStyles();
-  const multiSelect = (<View style={{ flex: 1,flexBasis:100 }}>
-    <MultiSelect
-      hideTags
-      items={allItems}
-      uniqueKey="id"
-      onSelectedItemsChange={(newlySelectedItems) => {
-        console.log(`Item was selected, now: ${newlySelectedItems}`);
-        changeFieldCallback(newlySelectedItems);
-      }}
-      selectedItems={initiallySelectedItems}
-      selectText="Pick Lights"
-      // onChangeInput={(text) => console.log(text)}
-      altFontFamily="ProximaNova-Light"
-      tagRemoveIconColor="#CCC"
-      tagBorderColor="#CCC"
-      tagTextColor="#CCC"
-      selectedItemTextColor="#CCC"
-      selectedItemIconColor="#CCC"
-      itemTextColor="#000"
-      displayKey="name"
-      searchInputStyle={{ color: "#CCC" }}
-      submitButtonColor="#CCC"
-      submitButtonText="Submit"
-      textInputProps={{ editable: false }}
-      // hideSubmitButton={true}
-      fixedHeight={true}
-    />
+  const multiSelect = (<View style={{ flex: 1, flexBasis: 100 }}>
+
   </View>);
   return (
     <View style={[styles.fieldRow]}>
@@ -93,4 +68,37 @@ export function getMultiSelectRow(
       {multiSelect}
     </View>
   );
+}
+
+export function getMultiSelect(
+  initiallySelectedItems: string[],
+  allItems: Array<{ id: string, name: string }>,
+  changeFieldCallback: (items: any[]) => void,
+) {
+  return (<MultiSelect
+    hideTags
+    items={allItems}
+    uniqueKey="id"
+    onSelectedItemsChange={(newlySelectedItems) => {
+      console.log(`Item was selected, now: ${newlySelectedItems}`);
+      changeFieldCallback(newlySelectedItems);
+    }}
+    selectedItems={initiallySelectedItems}
+    selectText="Pick Lights"
+    // onChangeInput={(text) => console.log(text)}
+    altFontFamily="ProximaNova-Light"
+    tagRemoveIconColor="#CCC"
+    tagBorderColor="#CCC"
+    tagTextColor="#CCC"
+    selectedItemTextColor="#CCC"
+    selectedItemIconColor="#CCC"
+    itemTextColor="#000"
+    displayKey="name"
+    searchInputStyle={{ color: "#CCC" }}
+    submitButtonColor="#CCC"
+    submitButtonText="Submit"
+    textInputProps={{ editable: false }}
+    // hideSubmitButton={true}
+    fixedHeight={true}
+  />)
 }

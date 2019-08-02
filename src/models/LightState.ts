@@ -13,8 +13,8 @@ export interface State {
   xy?: number[];
 }
 
-export namespace State {
-  export function create(payload: State): State {
+// export namespace State {
+export function create(payload: State): State {
     if (!payload) { throw new Error("State not found"); }
     return {
       alert: verifyType(payload.alert, "alert", "string"),
@@ -29,4 +29,4 @@ export namespace State {
       xy: verifyArray(payload.xy, "xy", "number", false),
     };
   }
-}
+// }
