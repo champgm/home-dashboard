@@ -14,10 +14,10 @@ import {
   ViewStyle,
 } from "react-native";
 import { getLabelOnlyRow, getMultiSelectRow, getStringInputRow, getToggleRow } from ".";
-// import Modal from "react-native-modal";
 import { style } from "../../common";
 import { GroupsApi } from "../../hue/GroupsApi";
 import { LightsApi } from "../../hue/LightsApi";
+import { ColorMode, verify as verifyColorMode } from "../../models/ColorMode";
 import { Group } from "../../models/Group";
 import { Light, Lights } from "../../models/Light";
 import { getStyles } from "../common/Style";
@@ -76,32 +76,44 @@ export class GroupModal extends React.Component<Props, State> {
       : this.state.group.lights.concat(lightId);
     this.setState({ group: this.state.group });
   }
+  selectColorMode(colorMode: string) {
+    this.state.group.action.colormode = colorMode.toLocaleLowerCase() as ColorMode;
+    this.setState({ group: this.state.group });
+  }
 
   render() {
     const { height } = Dimensions.get("window");
     const styles = getStyles();
     const stateAsSelectables = () => Object.keys(this.state.group.state).map((stateKey) => ({ id: stateKey, name: stateKey }));
     const statesOn = () => Object.keys(this.state.group.state).filter((stateKey) => (this.state.group.state[stateKey]));
+    // const get
     const modalView = () =>
       this.state.group
         ? <View style={{ flex: 1 }}>
-          <ScrollView contentContainerStyle={{
-            flex: 1,
-            borderColor: "#000000",
-            backgroundColor: "#d8d8d8",
-            borderRadius: 5,
-            borderWidth: 2,
-          }}>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{
+              ...styles.showBorder,
+              flex: 1,
+              backgroundColor: "#d8d8d8",
+            }}>
             {getStringInputRow("ID", "id", this.state.group.id, false)}
             {getStringInputRow("Type", "type", this.state.group.type, false)}
-            {getLabelOnlyRow("State")}
-            <View style={[styles.fieldRowSubContainer]}>
-              {getToggleRow("All On", "state.all_on", this.state.group.state.all_on, false)}
-              {getToggleRow("Any On", "state.any_on", this.state.group.state.any_on, false)}
-            </View>
-            {getMultiSelectRow("State", statesOn(), stateAsSelectables(), () => { }, true)}
+            {getMultiSelectRow("State", statesOn(), stateAsSelectables(), () => { }, true, false)}
             {getStringInputRow("Name", "name", this.state.group.name, true, this.changeField.bind(this))}
             {getMultiSelectRow("Lights", this.state.group.lights, Object.values(this.state.allLights), this.toggleLightSelection.bind(this))}
+            {getLabelOnlyRow("Action")}
+            <View style={styles.fieldRowSubContainer}>
+              {getToggleRow("On", "action.on", this.state.group.action.on, true, this.changeField.bind(this))}
+              {getMultiSelectRow(
+                "Color Mode",
+                [this.state.group.action.colormode.toLocaleUpperCase()],
+                [{ id: "XY", name: "XY" }, { id: "HS", name: "HS" }, { id: "CT", name: "CT" }],
+                this.selectColorMode.bind(this),
+                false,
+                false,
+              )}
+            </View>
             {getToggleRow("Recycle", "recycle", this.state.group.recycle, true, this.changeField.bind(this))}
           </ScrollView>
           <TouchableHighlight

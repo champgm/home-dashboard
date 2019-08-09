@@ -68,9 +68,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   root: {
-    paddingTop: Constants.statusBarHeight,
-    flex: 1,
     backgroundColor: "#002b36",
+    flex: 1,
+    paddingTop: Constants.statusBarHeight,
   },
   scene: {
     flex: 1,

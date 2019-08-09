@@ -26,7 +26,7 @@ export function getStringInputRow(
       <TextInput
         value={initialValue}
         editable={editable}
-        style={[editable ? styles.input : styles.lockedInput]}
+        style={editable ? styles.input : styles.lockedInput}
         onChangeText={(value) => changeFieldCallback(value, fieldName)}
       />
     </View>);
@@ -56,14 +56,15 @@ export function getMultiSelectRow(
   label: string,
   initiallySelectedItems: string[],
   allItems: Array<{ id: string, name: string }>,
-  changeFieldCallback: (selectedItemId: string) => void ,
+  changeFieldCallback: (selectedItemId: string) => void,
   disabled: boolean = false,
+  applyPadding: boolean = true,
 ) {
   const styles = getStyles();
   console.log(`${allItems.length} items to display`);
   const lightSelectButtons = allItems.map((lightMeta) => {
     return (<AwesomeButton
-      style={{ marginBottom: 10 }}
+      style={applyPadding ? { marginBottom: 10 } : {}}
       key={lightMeta.id}
       onPress={() => changeFieldCallback(lightMeta.id)}
       accessibilityLabel={lightMeta.name}

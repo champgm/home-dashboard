@@ -48,33 +48,26 @@ export function getStyles() {
     textAlignVertical: "center",
   };
   const input: TextStyle = {
+    ...showBorder,
     paddingLeft: widthMargin / 4,
     textAlignVertical: "center",
-    borderColor: "#000000",
-    borderRadius: 5,
-    borderWidth: 2,
     flex: 1,
   };
   const lockedInput: TextStyle = {
+    ...showBorder,
     backgroundColor: "#d8d8d8",
-    borderColor: "#000000",
-    borderRadius: 5,
-    borderWidth: 2,
     flex: 1,
     paddingLeft: widthMargin / 4,
     textAlignVertical: "center",
   };
   const toggle: TextStyle = {
     ...showBorder,
-    paddingLeft: widthMargin / 4,
-    flex: 1,
   };
   const lockedToggle: TextStyle = {
     ...showBorder,
-    paddingLeft: widthMargin / 4,
-    flex: 1,
   };
   const multiSelect: ViewStyle = {
+    ...showBorder,
     flex: 1,
     flexDirection: "row",
     flexWrap: "wrap",
@@ -97,6 +90,8 @@ export function getStyles() {
     lockedToggle,
     multiSelect,
     multiSelectRow,
+
+    showBorder,
 
     solarized,
     red,
