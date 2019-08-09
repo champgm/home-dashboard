@@ -15,10 +15,10 @@
     "react-dom": "^16.8.6",
     "react-native": "https://github.com/expo/react-native/archive/sdk-33.0.0.tar.gz",
     "react-native-modal": "^11.3.1",
-    "react-native-multiple-select": "^0.5.3",
     "react-native-really-awesome-button": "^1.4.2",
     "react-native-tab-view": "^2.9.0",
     "react-native-web": "^0.11.4",
+    "solarizer": "^1.0.5",
     "uuid": "^3.3.2"
   },
   "devDependencies": {

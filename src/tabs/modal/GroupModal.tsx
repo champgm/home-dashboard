@@ -64,15 +64,16 @@ export class GroupModal extends React.Component<Props, State> {
   }
 
   changeField(value: any, fieldName: string) {
+    console.log(`${fieldName} changed: ${value}`);
     _.set(this.state.group, fieldName, value);
     // this.state.group[fieldName] = value;
     this.setState({ group: this.state.group });
   }
 
-  changeLights(lights: string[]) {
-    console.log(`setting group.lights`);
-    console.log(`to: ${lights}`);
-    this.state.group.lights = lights;
+  toggleLightSelection(lightId) {
+    this.state.group.lights = this.state.group.lights.includes(lightId)
+      ? this.state.group.lights.filter((selectedId) => selectedId !== lightId)
+      : this.state.group.lights.concat(lightId);
     this.setState({ group: this.state.group });
   }
 
@@ -103,7 +104,7 @@ export class GroupModal extends React.Component<Props, State> {
             </View>
             {getStringInputRow("Name", "name", this.state.group.name, true, this.changeField.bind(this))}
             {getToggleRow("Recycle", "recycle", this.state.group.recycle, true, this.changeField.bind(this))}
-            {getMultiSelectRow("Lights", this.state.group.lights, Object.values(this.state.allLights), this.changeLights.bind(this))}
+            {getMultiSelectRow("Lights", this.state.group.lights, Object.values(this.state.allLights), this.toggleLightSelection.bind(this))}
           </ScrollView>
           <TouchableHighlight
             onPress={() => {

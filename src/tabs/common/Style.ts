@@ -1,4 +1,10 @@
+
 import { Dimensions, TextStyle, ViewStyle } from "react-native";
+import { createBasesFromColor, rgb, rgbStrings as solarized } from "solarizer";
+
+const blue = createBasesFromColor(rgb.blue, "base01");
+const red = createBasesFromColor(rgb.red, "base01");
+const green = createBasesFromColor(rgb.green, "base01");
 
 export function getStyles() {
   const { height, width } = Dimensions.get("window");
@@ -72,5 +78,10 @@ export function getStyles() {
     lockedInput,
     toggle,
     lockedToggle,
+
+    solarized,
+    red,
+    blue,
+    green,
   };
 }

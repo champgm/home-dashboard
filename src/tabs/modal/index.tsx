@@ -2,6 +2,8 @@
 import React from "react";
 import ReactNative, { ListView, Switch, Text, TextInput, View } from "react-native";
 import MultiSelect from "react-native-multiple-select";
+import MultiSelectView from "react-native-multiselect-view";
+import AwesomeButton from "react-native-really-awesome-button";
 import { getStyles } from "../common/Style";
 
 export function getLabelOnlyRow(label: string) {
@@ -56,49 +58,39 @@ export function getMultiSelectRow(
   label: string,
   initiallySelectedItems: string[],
   allItems: Array<{ id: string, name: string }>,
-  changeFieldCallback: (items: any[]) => void,
+  changeFieldCallback: (selectedItemId: string) => void,
 ) {
   const styles = getStyles();
-  const multiSelect = (<View style={{ flex: 1, flexBasis: 100 }}>
-
-  </View>);
+  const lightSelectButtons = allItems.map((lightMeta) => {
+    return (<AwesomeButton
+      style={{ marginBottom: 10 }}
+      key={lightMeta.id}
+      onPress={() => changeFieldCallback(lightMeta.id)}
+      accessibilityLabel={lightMeta.name}
+      backgroundColor={initiallySelectedItems.includes(lightMeta.id) ? styles.green.base01 : styles.solarized.base01}
+      backgroundActive={initiallySelectedItems.includes(lightMeta.id) ? styles.green.base02 : styles.solarized.base02}
+      backgroundDarker={initiallySelectedItems.includes(lightMeta.id) ? styles.green.base03 : styles.solarized.base03}
+      textColor={initiallySelectedItems.includes(lightMeta.id) ? styles.green.base1 : styles.solarized.base1}
+      height={50}
+      textSize={12}
+      textLineHeight={15}
+    >
+      {` ${lightMeta.name} `}
+    </AwesomeButton>);
+  });
+  const multiSelect = (
+    <View style={{
+      flex: 1,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-around",
+    }}>
+      {lightSelectButtons}
+    </View>);
   return (
     <View style={[styles.fieldRow]}>
       <Text style={[styles.label]}>{label}:</Text>
       {multiSelect}
     </View>
   );
-}
-
-export function getMultiSelect(
-  initiallySelectedItems: string[],
-  allItems: Array<{ id: string, name: string }>,
-  changeFieldCallback: (items: any[]) => void,
-) {
-  return (<MultiSelect
-    hideTags
-    items={allItems}
-    uniqueKey="id"
-    onSelectedItemsChange={(newlySelectedItems) => {
-      console.log(`Item was selected, now: ${newlySelectedItems}`);
-      changeFieldCallback(newlySelectedItems);
-    }}
-    selectedItems={initiallySelectedItems}
-    selectText="Pick Lights"
-    // onChangeInput={(text) => console.log(text)}
-    altFontFamily="ProximaNova-Light"
-    tagRemoveIconColor="#CCC"
-    tagBorderColor="#CCC"
-    tagTextColor="#CCC"
-    selectedItemTextColor="#CCC"
-    selectedItemIconColor="#CCC"
-    itemTextColor="#000"
-    displayKey="name"
-    searchInputStyle={{ color: "#CCC" }}
-    submitButtonColor="#CCC"
-    submitButtonText="Submit"
-    textInputProps={{ editable: false }}
-    // hideSubmitButton={true}
-    fixedHeight={true}
-  />)
 }

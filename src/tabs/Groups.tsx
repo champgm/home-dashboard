@@ -14,7 +14,6 @@ import { LightsApi } from "../hue/LightsApi";
 import { Group, Groups } from "../models/Group";
 import { Lights } from "../models/Light";
 import { ItemButton } from "./common/Button";
-import { getMultiSelect, getMultiSelectRow } from "./modal";
 import { GroupModal } from "./modal/GroupModal";
 
 export interface Props {
@@ -50,6 +49,7 @@ export class GroupsComponent extends React.Component<Props, State> {
       groups,
       allLights,
     });
+    // this.onEditClick("1");
   }
 
   onClick(id: string) {
@@ -58,6 +58,7 @@ export class GroupsComponent extends React.Component<Props, State> {
 
   onEditClick(id: string) {
     // console.log(`Calling edit`);
+    console.log(`Edit clicked`);
     this.setState({
       modalVisible: true,
       groupBeingEdited: id,
@@ -69,7 +70,7 @@ export class GroupsComponent extends React.Component<Props, State> {
   }
 
   onFavoriteClick(id: string) {
-
+    console.log(`favorite clicked`);
   }
   changeLights(lights: string[]) {
     console.log(`setting group.lights`);
@@ -81,6 +82,7 @@ export class GroupsComponent extends React.Component<Props, State> {
   }
 
   onEditCancel() {
+    console.log(`edit canceled`);
     this.setState({
       modalVisible: false,
       groupBeingEdited: "-1",
@@ -88,6 +90,7 @@ export class GroupsComponent extends React.Component<Props, State> {
   }
 
   async onEditSubmit(id: string) {
+    console.log(`edit submitted`);
     // Do something here first
     this.setState({
       modalVisible: false,
@@ -114,31 +117,18 @@ export class GroupsComponent extends React.Component<Props, State> {
 
     const { height, width } = Dimensions.get("window");
 
-    const multiPicker = this.state.groups
-      ? getMultiSelect(this.state.groups["4"].lights, Object.values(this.state.allLights), this.changeLights.bind(this))
-      : <ActivityIndicator size="large" color="#0000ff" />;
-
-    // <View>
-    // {multiPicker}
-    //       </View>
-
     return (
-      <View>
-        <View style={[styles.scene, { paddingTop: height * .02 }]} >
-          {groupButtons}
-          <GroupModal
-            groupsApi={this.props.groupsApi}
-            lightsApi={this.props.lightsApi}
-            visible={this.state.modalVisible}
-            key={this.state.groupBeingEdited}
-            id={this.state.groupBeingEdited}
-            onEditCancel={this.onEditCancel.bind(this)}
-            onEditSubmit={this.onEditSubmit.bind(this)}
-          />
-        </View>
-        <View>
-          {multiPicker}
-        </View>
+      <View style={[styles.scene, { paddingTop: height * .02 }]} >
+        {groupButtons}
+        <GroupModal
+          groupsApi={this.props.groupsApi}
+          lightsApi={this.props.lightsApi}
+          visible={this.state.modalVisible}
+          key={this.state.groupBeingEdited}
+          id={this.state.groupBeingEdited}
+          onEditCancel={this.onEditCancel.bind(this)}
+          onEditSubmit={this.onEditSubmit.bind(this)}
+        />
       </View>
     );
   }
