@@ -77,14 +77,11 @@ export class GroupModal extends React.Component<Props, State> {
     this.setState({ group: this.state.group });
   }
 
-  // getSelectedLights(): Light[] {
-  //   return Object.values(this.state.allLights)
-  //     .filter((light) => this.state.group.lights.includes(light.id));
-  // }
-
   render() {
     const { height } = Dimensions.get("window");
     const styles = getStyles();
+    const stateAsSelectables = () => Object.keys(this.state.group.state).map((stateKey) => ({ id: stateKey, name: stateKey }));
+    const statesOn = () => Object.keys(this.state.group.state).filter((stateKey) => (this.state.group.state[stateKey]));
     const modalView = () =>
       this.state.group
         ? <View style={{ flex: 1 }}>
@@ -102,14 +99,15 @@ export class GroupModal extends React.Component<Props, State> {
               {getToggleRow("All On", "state.all_on", this.state.group.state.all_on, false)}
               {getToggleRow("Any On", "state.any_on", this.state.group.state.any_on, false)}
             </View>
+            {getMultiSelectRow("State", statesOn(), stateAsSelectables(), () => { }, true)}
             {getStringInputRow("Name", "name", this.state.group.name, true, this.changeField.bind(this))}
-            {getToggleRow("Recycle", "recycle", this.state.group.recycle, true, this.changeField.bind(this))}
             {getMultiSelectRow("Lights", this.state.group.lights, Object.values(this.state.allLights), this.toggleLightSelection.bind(this))}
+            {getToggleRow("Recycle", "recycle", this.state.group.recycle, true, this.changeField.bind(this))}
           </ScrollView>
           <TouchableHighlight
             onPress={() => {
-              this.props.onEditCancel();
               this.setState({ visible: false });
+              this.props.onEditCancel();
             }}>
             <Text>Hide Modal</Text>
           </TouchableHighlight>

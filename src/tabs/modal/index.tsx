@@ -1,8 +1,6 @@
 // Why is this Necessary...
 import React from "react";
 import ReactNative, { ListView, Switch, Text, TextInput, View } from "react-native";
-import MultiSelect from "react-native-multiple-select";
-import MultiSelectView from "react-native-multiselect-view";
 import AwesomeButton from "react-native-really-awesome-button";
 import { getStyles } from "../common/Style";
 
@@ -58,9 +56,11 @@ export function getMultiSelectRow(
   label: string,
   initiallySelectedItems: string[],
   allItems: Array<{ id: string, name: string }>,
-  changeFieldCallback: (selectedItemId: string) => void,
+  changeFieldCallback: (selectedItemId: string) => void ,
+  disabled: boolean = false,
 ) {
   const styles = getStyles();
+  console.log(`${allItems.length} items to display`);
   const lightSelectButtons = allItems.map((lightMeta) => {
     return (<AwesomeButton
       style={{ marginBottom: 10 }}
@@ -71,24 +71,20 @@ export function getMultiSelectRow(
       backgroundActive={initiallySelectedItems.includes(lightMeta.id) ? styles.green.base02 : styles.solarized.base02}
       backgroundDarker={initiallySelectedItems.includes(lightMeta.id) ? styles.green.base03 : styles.solarized.base03}
       textColor={initiallySelectedItems.includes(lightMeta.id) ? styles.green.base1 : styles.solarized.base1}
-      height={50}
+      height={40}
       textSize={12}
       textLineHeight={15}
+      disabled={disabled}
     >
       {` ${lightMeta.name} `}
     </AwesomeButton>);
   });
   const multiSelect = (
-    <View style={{
-      flex: 1,
-      flexDirection: "row",
-      flexWrap: "wrap",
-      justifyContent: "space-around",
-    }}>
+    <View style={styles.multiSelect}>
       {lightSelectButtons}
     </View>);
   return (
-    <View style={[styles.fieldRow]}>
+    <View style={[styles.multiSelectRow]}>
       <Text style={[styles.label]}>{label}:</Text>
       {multiSelect}
     </View>
