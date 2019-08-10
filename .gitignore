@@ -11,4 +11,4 @@ web-report/
 .DS_Store
 **/.google_token.json
 **/.recipients.json
-configuration/**/*
+**/configuration/**/*
