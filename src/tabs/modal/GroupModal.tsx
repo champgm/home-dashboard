@@ -10,9 +10,11 @@ import {
   Text,
   TextInput,
   TouchableHighlight,
+  TouchableOpacity,
   View,
   ViewStyle,
 } from "react-native";
+import { TouchableWithoutFeedback } from "react-native-gesture-handler";
 import { getLabelOnlyRow, getMultiSelectRow, getStringInputRow, getToggleRow } from ".";
 import { style } from "../../common";
 import { GroupsApi } from "../../hue/GroupsApi";
@@ -90,31 +92,38 @@ export class GroupModal extends React.Component<Props, State> {
     const modalView = () =>
       this.state.group
         ? <View style={{ flex: 1 }}>
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={{
-              ...styles.showBorder,
-              flex: 1,
-              backgroundColor: "#d8d8d8",
-            }}>
-            {getStringInputRow("ID", "id", this.state.group.id, false)}
-            {getStringInputRow("Type", "type", this.state.group.type, false)}
-            {getMultiSelectRow("State", statesOn(), stateAsSelectables(), () => { }, true, false)}
-            {getStringInputRow("Name", "name", this.state.group.name, true, this.changeField.bind(this))}
-            {getMultiSelectRow("Lights", this.state.group.lights, Object.values(this.state.allLights), this.toggleLightSelection.bind(this))}
-            {getLabelOnlyRow("Action")}
-            <View style={styles.fieldRowSubContainer}>
-              {getToggleRow("On", "action.on", this.state.group.action.on, true, this.changeField.bind(this))}
-              {getMultiSelectRow(
-                "Color Mode",
-                [this.state.group.action.colormode.toLocaleUpperCase()],
-                [{ id: "XY", name: "XY" }, { id: "HS", name: "HS" }, { id: "CT", name: "CT" }],
-                this.selectColorMode.bind(this),
-                false,
-                false,
-              )}
-            </View>
-            {getToggleRow("Recycle", "recycle", this.state.group.recycle, true, this.changeField.bind(this))}
+          <ScrollView>
+            <TouchableOpacity>
+              <TouchableHighlight>
+                <View>
+                  {getStringInputRow("ID", "id", this.state.group.id, false)}
+                  {getStringInputRow("Type", "type", this.state.group.type, false)}
+                  {getMultiSelectRow("State", statesOn(), stateAsSelectables(), () => { }, true, false)}
+                  {getStringInputRow("Name", "name", this.state.group.name, true, this.changeField.bind(this))}
+                  {getMultiSelectRow("Lights", this.state.group.lights, Object.values(this.state.allLights), this.toggleLightSelection.bind(this))}
+                  {getLabelOnlyRow("Action")}
+                  <View style={styles.fieldRowSubContainer}>
+                    {getToggleRow("On", "action.on", this.state.group.action.on, true, this.changeField.bind(this))}
+                    {getMultiSelectRow(
+                      "Color Mode",
+                      [this.state.group.action.colormode.toLocaleUpperCase()],
+                      [{ id: "XY", name: "XY" }, { id: "HS", name: "HS" }, { id: "CT", name: "CT" }],
+                      this.selectColorMode.bind(this),
+                      false,
+                      false,
+                    )}
+                  </View>
+                  {getToggleRow("Recycle", "recycle", this.state.group.recycle, true, this.changeField.bind(this))}
+                </View>
+              </TouchableHighlight>
+            </TouchableOpacity>
+            {/* <TouchableOpacity style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+            }} /> */}
           </ScrollView>
           <TouchableHighlight
             onPress={() => {
