@@ -1,27 +1,22 @@
 import _ from "lodash";
-import React, { Component } from "react";
+import React from "react";
+import ColorPicker from "react-colorizer";
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   Modal,
   ScrollView,
-  StyleSheet,
   Text,
-  TextInput,
   TouchableHighlight,
   TouchableOpacity,
   View,
-  ViewStyle,
 } from "react-native";
-import { TouchableWithoutFeedback } from "react-native-gesture-handler";
-import { getLabelOnlyRow, getMultiSelectRow, getStringInputRow, getToggleRow } from ".";
-import { style } from "../../common";
+import { getColorPicker, getLabelOnlyRow, getMultiSelectRow, getStringInputRow, getToggleRow } from ".";
 import { GroupsApi } from "../../hue/GroupsApi";
 import { LightsApi } from "../../hue/LightsApi";
 import { ColorMode, verify as verifyColorMode } from "../../models/ColorMode";
 import { Group } from "../../models/Group";
-import { Light, Lights } from "../../models/Light";
+import { Lights } from "../../models/Light";
 import { getStyles } from "../common/Style";
 
 export interface Props {
@@ -56,6 +51,11 @@ export class GroupModal extends React.Component<Props, State> {
       const lightPromise = this.props.lightsApi.getAll();
       const group = await groupPromise;
       const allLights = await lightPromise;
+      if (group.action.colormode) {
+        group.action.colormode = ColorMode.HS;
+        group.action.hue = group.action.hue ? group.action.hue : 0;
+        group.action.sat = group.action.sat ? group.action.sat : 0;
+      }
       this.setState({
         allLights,
         group,
@@ -78,8 +78,15 @@ export class GroupModal extends React.Component<Props, State> {
       : this.state.group.lights.concat(lightId);
     this.setState({ group: this.state.group });
   }
-  selectColorMode(colorMode: string) {
-    this.state.group.action.colormode = colorMode.toLocaleLowerCase() as ColorMode;
+  // selectColorMode(colorMode: string) {
+  //   this.state.group.action.colormode = colorMode.toLocaleLowerCase() as ColorMode;
+  //   this.setState({ group: this.state.group });
+  // }
+
+  setHsb(hsb: { hue: number, sat: number, bri: number }) {
+    this.state.group.action.bri = hsb.bri;
+    this.state.group.action.sat = hsb.sat;
+    this.state.group.action.hue = hsb.hue;
     this.setState({ group: this.state.group });
   }
 
@@ -104,26 +111,27 @@ export class GroupModal extends React.Component<Props, State> {
                   {getLabelOnlyRow("Action")}
                   <View style={styles.fieldRowSubContainer}>
                     {getToggleRow("On", "action.on", this.state.group.action.on, true, this.changeField.bind(this))}
-                    {getMultiSelectRow(
-                      "Color Mode",
-                      [this.state.group.action.colormode.toLocaleUpperCase()],
-                      [{ id: "XY", name: "XY" }, { id: "HS", name: "HS" }, { id: "CT", name: "CT" }],
-                      this.selectColorMode.bind(this),
-                      false,
-                      false,
+                    {/* {this.state.group.action.colormode
+                      ? getMultiSelectRow(
+                        "Color Mode",
+                        [this.state.group.action.colormode.toLocaleUpperCase()],
+                        [{ id: "XY", name: "XY" }, { id: "HS", name: "HS" }, { id: "CT", name: "CT" }],
+                        this.selectColorMode.bind(this),
+                        false,
+                        false)
+                      : undefined} */}
+                    {getColorPicker(
+                      this.state.group.action.hue,
+                      this.state.group.action.sat,
+                      this.state.group.action.bri,
+                      this.setHsb.bind(this),
+                      "GroupModalColorPicker",
                     )}
                   </View>
                   {getToggleRow("Recycle", "recycle", this.state.group.recycle, true, this.changeField.bind(this))}
                 </View>
               </TouchableHighlight>
             </TouchableOpacity>
-            {/* <TouchableOpacity style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-            }} /> */}
           </ScrollView>
           <TouchableHighlight
             onPress={() => {

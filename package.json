@@ -2,6 +2,7 @@
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start --tunnel",
+    "startlan": "expo start",
     "android": "expo start --android",
     "build": "expo build:android",
     "ios": "expo start --ios",
@@ -12,13 +13,17 @@
     "@types/node-hue-api": "^2.3.0",
     "expo": "^33.0.0",
     "react": "16.8.3",
+    "react-colorizer": "^1.1.1",
     "react-dom": "^16.8.6",
     "react-native": "https://github.com/expo/react-native/archive/sdk-33.0.0.tar.gz",
+    "react-native-color-picker": "^0.4.1",
     "react-native-modal": "^11.3.1",
     "react-native-really-awesome-button": "^1.4.2",
     "react-native-tab-view": "^2.9.0",
     "react-native-web": "^0.11.4",
     "solarizer": "^1.0.5",
+    "styled-components": "^4.3.2",
+    "svgs": "^4.1.0",
     "uuid": "^3.3.2"
   },
   "devDependencies": {

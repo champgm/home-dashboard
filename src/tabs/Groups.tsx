@@ -64,9 +64,9 @@ export class GroupsComponent extends React.Component<Props, State> {
       groupBeingEdited: id,
     });
 
-    setTimeout(() => {
-      this.onEditCancel();
-    }, 6000);
+    // setTimeout(() => {
+    //   this.onEditCancel();
+    // }, 6000);
   }
 
   onFavoriteClick(id: string) {
