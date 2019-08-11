@@ -105,7 +105,7 @@ export class GroupsComponent extends React.Component<Props, State> {
           return (
             <ItemButton
               id={group.id}
-              key={v4()}
+              key={`group-${group.id}`}
               onClick={this.onClick.bind(this)}
               onEditClick={this.onEditClick.bind(this)}
               onFavoriteClick={this.onFavoriteClick.bind(this)}

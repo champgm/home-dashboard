@@ -81,7 +81,7 @@ export class LightsComponent extends React.Component<Props, State> {
           return (
             <ItemButton
               id={light.id}
-              key={v4()}
+              key={`light-${light.id}`}
               onClick={this.onClick.bind(this)}
               onEditClick={this.onEditClick.bind(this)}
               onFavoriteClick={this.onFavoriteClick.bind(this)}
