@@ -21,6 +21,7 @@
     "react-native-really-awesome-button": "^1.4.2",
     "react-native-tab-view": "^2.9.0",
     "react-native-web": "^0.11.4",
+    "react-navigation": "^3.11.1",
     "solarizer": "^1.0.5",
     "styled-components": "^4.3.2",
     "svgs": "^4.1.0",

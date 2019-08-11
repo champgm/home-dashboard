@@ -7,14 +7,19 @@ import {
   View,
 } from "react-native";
 import { Route, SceneMap, TabView } from "react-native-tab-view";
-import * as Groups from "./tabs/Groups";
-import { GroupsComponent } from "./tabs/Groups";
-import * as Lights from "./tabs/Lights";
-import { LightsComponent } from "./tabs/Lights";
+import {
+  createAppContainer,
+  createBottomTabNavigator,
+  createStackNavigator,
+} from "react-navigation";
 
 import bridgeConfiguration from "./configuration/Hue.json";
 import { GroupsApi } from "./hue/GroupsApi";
 import { LightsApi } from "./hue/LightsApi";
+import * as Groups from "./tabs/Groups";
+import { GroupsComponent } from "./tabs/Groups";
+import * as Lights from "./tabs/Lights";
+import { LightsComponent } from "./tabs/Lights";
 
 export interface Props { }
 
