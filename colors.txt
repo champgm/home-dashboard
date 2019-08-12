@@ -1,0 +1,42 @@
+Phillips
+Hue: 0 - 254
+Saturation: 0 - 65535
+Brightness(?): 0 - 254
+
+Real HSL/V
+Hue: 0 - 360
+Saturation: 0 - 1
+Value: 0 - 1
+
+  "action": {
+    "alert": "none",
+    "bri": 158,
+    "colormode": "hs",
+    "ct": 370,
+    "effect": "none",
+    "hue": 8378,
+    "on": false,
+    "sat": 144,
+    "xy": [
+      0.46,
+      0.4106
+    ]
+  },
+
+PhillipsHue / 65535 = 0 - 1
+ that * 360 = RealHue
+
+PhillipsSat / 254 = 0 - 1
+ that * 100 = RealSat%
+
+PhillipsBrightness / 254 = 0 - 1
+ that * 100 = RealLightness%
+
+RealHue / 360 = 0 - 1
+ that * 65535 = PhillipsHue
+
+RealSat / 100 = 0 - 1
+ that * 254 = PhillipsSat
+
+RealLightness / 100 = 0 - 1
+ that * 254 - PhillipsBrightness
