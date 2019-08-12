@@ -1,2 +1,2 @@
-import { App } from "./src/App";
-export default App;
+import { AppContainerContainer } from "./src/App";
+export default AppContainerContainer;

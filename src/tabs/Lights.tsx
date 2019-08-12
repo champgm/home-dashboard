@@ -37,9 +37,9 @@ export class LightsComponent extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    this.props.lights.then((lights) => {
-      this.setState({ lights });
-    });
+    // this.props.lights.then((lights) => {
+    //   this.setState({ lights });
+    // });
   }
 
   onClick(id: string) {

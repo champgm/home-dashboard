@@ -7,6 +7,7 @@ import {
   StyleSheet,
   View,
 } from "react-native";
+import { NavigationContainerProps, NavigationNavigatorProps } from "react-navigation";
 import v4 from "uuid/v4";
 import { sortBy } from "../common";
 import { GroupsApi } from "../hue/GroupsApi";
@@ -14,42 +15,37 @@ import { LightsApi } from "../hue/LightsApi";
 import { Group, Groups } from "../models/Group";
 import { Lights } from "../models/Light";
 import { ItemButton } from "./common/Button";
-import { GroupModal } from "./modal/GroupModal";
-
-export interface Props {
-  groupsApi: GroupsApi;
-  lightsApi: LightsApi;
-}
+import { GroupEditor } from "./modal/GroupEditor";
 
 interface State {
   groups?: Groups;
   allLights?: Lights;
-  modalVisible: boolean;
-  groupBeingEdited: string;
 }
 
 export const key = "groups";
 export const title = "Groups";
-export class GroupsComponent extends React.Component<Props, State> {
+export class GroupsComponent extends React.Component<NavigationContainerProps & NavigationNavigatorProps<any>, State> {
   title: any;
+  lightsApi: LightsApi;
+  groupsApi: GroupsApi;
 
-  constructor(props: Props) {
+  constructor(props: NavigationContainerProps & NavigationNavigatorProps<any>) {
     super(props);
     this.title = v4();
-    this.state = {
-      modalVisible: false,
-      groupBeingEdited: "-1",
-    };
+    this.state = {};
+    this.groupsApi = new GroupsApi();
+    this.lightsApi = new LightsApi();
   }
 
   async componentDidMount() {
-    const groups = await this.props.groupsApi.getAll();
-    const allLights = await this.props.lightsApi.getAll();
-    this.setState({
-      groups,
-      allLights,
-    });
-    this.onEditClick("1");
+    console.log(`Getting groups and lights`);
+    const groupsPromise = this.groupsApi.getAll();
+    const allLightsPromise = this.lightsApi.getAll();
+    const groups = await groupsPromise;
+    console.log(`groups: ${JSON.stringify(groups, null, 2)}`);
+    const allLights = await allLightsPromise;
+    this.setState({ groups, allLights });
+    this.props.navigation.navigate("Editor", { id: "3" });
   }
 
   onClick(id: string) {
@@ -57,16 +53,8 @@ export class GroupsComponent extends React.Component<Props, State> {
   }
 
   onEditClick(id: string) {
-    // console.log(`Calling edit`);
     console.log(`Edit clicked`);
-    this.setState({
-      modalVisible: true,
-      groupBeingEdited: id,
-    });
-
-    // setTimeout(() => {
-    //   this.onEditCancel();
-    // }, 6000);
+    this.props.navigation.navigate("Editor", { id });
   }
 
   onFavoriteClick(id: string) {
@@ -75,27 +63,16 @@ export class GroupsComponent extends React.Component<Props, State> {
   changeLights(lights: string[]) {
     console.log(`setting group.lights`);
     console.log(`to: ${lights}`);
-    this.state.groups["4"].lights = lights;
-    this.setState({
-      groups: { ["4"]: this.state.groups["4"] },
-    });
+
   }
 
   onEditCancel() {
     console.log(`edit canceled`);
-    this.setState({
-      modalVisible: false,
-      groupBeingEdited: "-1",
-    });
   }
 
   async onEditSubmit(id: string) {
     console.log(`edit submitted`);
     // Do something here first
-    this.setState({
-      modalVisible: false,
-      groupBeingEdited: "-1",
-    });
   }
 
   render() {
@@ -118,9 +95,10 @@ export class GroupsComponent extends React.Component<Props, State> {
     const { height, width } = Dimensions.get("window");
 
     return (
-      <View style={[styles.scene, { paddingTop: height * .02 }]} >
+      // <View style={[styles.scene, { paddingTop: height * .02 }]} >
+      <View style={[styles.scene]} >
         {groupButtons}
-        <GroupModal
+        {/* <GroupModal
           groupsApi={this.props.groupsApi}
           lightsApi={this.props.lightsApi}
           visible={this.state.modalVisible}
@@ -128,7 +106,7 @@ export class GroupsComponent extends React.Component<Props, State> {
           id={this.state.groupBeingEdited}
           onEditCancel={this.onEditCancel.bind(this)}
           onEditSubmit={this.onEditSubmit.bind(this)}
-        />
+        /> */}
       </View>
     );
   }
