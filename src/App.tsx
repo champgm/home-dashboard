@@ -12,7 +12,7 @@ import {
 
 import { GroupsComponent } from "./tabs/Groups";
 import { LightsComponent } from "./tabs/Lights";
-import { GroupEditor } from "./tabs/modal/GroupEditor";
+import { GroupEditor } from "./tabs/editor/GroupEditor";
 
 export interface Props { }
 

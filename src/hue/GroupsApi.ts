@@ -5,7 +5,6 @@ import { create as GroupCreate, Group, Groups } from "../models/Group";
 export class GroupsApi {
   async getAll(): Promise<Groups> {
     const uri = `${bridgeUri}/groups/`;
-    console.log(`Get groups from uri: ${uri}`);
     let groups = await (await fetch(uri, get)).json();
     groups = this.attachId(groups);
     return groups;

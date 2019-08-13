@@ -3,8 +3,11 @@ import { Dimensions, TextStyle, ViewStyle } from "react-native";
 import { createBasesFromColor, rgb, rgbStrings as solarized } from "solarizer";
 
 const blue = createBasesFromColor(rgb.blue, "base01");
+console.log(`blue${JSON.stringify(blue, null, 2)}`);
 const red = createBasesFromColor(rgb.red, "base01");
+console.log(`red${JSON.stringify(red, null, 2)}`);
 const green = createBasesFromColor(rgb.green, "base01");
+console.log(`green${JSON.stringify(green, null, 2)}`);
 
 const showBorder = {
   borderColor: "#000000",
@@ -16,6 +19,10 @@ export function getStyles() {
   const { height, width } = Dimensions.get("window");
   const widthMargin = width * .1;
   const heightMargin = height * .0125;
+
+  const background: ViewStyle = {
+    backgroundColor: solarized.base03,
+  };
 
   const fieldRowContainer: ViewStyle = {
     ...showBorder,
@@ -41,6 +48,34 @@ export function getStyles() {
     justifyContent: "flex-start",
     height: 40,
   };
+
+  // Title
+  const titleRow: ViewStyle = {
+    marginBottom: heightMargin,
+    flexDirection: "column",
+    justifyContent: "center",
+    height: 80,
+  };
+  const titleLabel: TextStyle = {
+    fontWeight: "bold",
+    fontSize: 20,
+    color: solarized.base0,
+    textAlign: "center",
+  };
+  const titleInput: TextStyle = {
+    textAlign: "center",
+    color: solarized.base0,
+    flex: 1,
+    fontSize: 30,
+    marginLeft:widthMargin ,
+    marginRight:widthMargin ,
+    textAlignVertical: "center",
+    borderBottomColor: solarized.base02,
+    borderBottomWidth: 2,
+    borderBottomLeftRadius: 5,
+  };
+
+
   const label: TextStyle = {
     ...showBorder,
     paddingLeft: widthMargin / 4,
@@ -80,6 +115,7 @@ export function getStyles() {
     justifyContent: "flex-start",
   };
   return {
+    background,
     fieldRowContainer,
     fieldRowSubContainer,
     fieldRow,
@@ -90,7 +126,9 @@ export function getStyles() {
     lockedToggle,
     multiSelect,
     multiSelectRow,
-
+    titleRow,
+    titleLabel,
+    titleInput,
     showBorder,
 
     solarized,

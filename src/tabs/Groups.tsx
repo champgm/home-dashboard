@@ -15,7 +15,7 @@ import { LightsApi } from "../hue/LightsApi";
 import { Group, Groups } from "../models/Group";
 import { Lights } from "../models/Light";
 import { ItemButton } from "./common/Button";
-import { GroupEditor } from "./modal/GroupEditor";
+import { GroupEditor } from "./editor/GroupEditor";
 
 interface State {
   groups?: Groups;

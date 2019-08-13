@@ -12,7 +12,18 @@ import {
   View,
 } from "react-native";
 import { NavigationContainerProps, NavigationNavigatorProps } from "react-navigation";
-import { getColorPicker, getColorPicker2, getLabelOnlyRow, getMultiSelectRow, getStringInputRow, getToggleRow } from ".";
+import { createBasesFromColor, rgb, rgbStrings as solarized } from "solarizer";
+import {
+  getColorPicker,
+  getColorPicker2,
+  getLabelOnlyRow,
+  getMultiSelectRow,
+  getStatusToggleRow,
+  getStringInputRow,
+  getTitle,
+  getToggleRow,
+  Status,
+} from ".";
 import { GroupsApi } from "../../hue/GroupsApi";
 import { LightsApi } from "../../hue/LightsApi";
 import { ColorMode, verify as verifyColorMode } from "../../models/ColorMode";
@@ -54,7 +65,6 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
         group,
         originalGroup: group,
       });
-      console.log(`group: ${JSON.stringify(group, null, 2)}`);
     }
   }
 
@@ -76,7 +86,6 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
     this.state.group.action.sat = hsb.sat;
     this.state.group.action.hue = hsb.hue;
     this.setState({ group: this.state.group });
-    // this.setState({ hsb });
   }
 
   render() {
@@ -85,21 +94,35 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
     const stateAsSelectables = () => Object.keys(this.state.group.state).map((stateKey) => ({ id: stateKey, name: stateKey }));
     const statesOn = () => Object.keys(this.state.group.state).filter((stateKey) => (this.state.group.state[stateKey]));
     // const get
-    const modalView = () =>
+    const getView = () =>
       this.state.group
         ? <View style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={{ flex: 1 }}>
             <View style={{ flex: 1 }}>
-              {getStringInputRow("ID", "id", this.state.group.id, false)}
-              {getStringInputRow("Type", "type", this.state.group.type, false)}
+              {getTitle("Group", this.state.group.id, this.state.group.name, this.changeField.bind(this))}
               {/* {getMultiSelectRow("State", statesOn(), stateAsSelectables(), () => { }, true, false)} */}
-              {getStringInputRow("Name", "name", this.state.group.name, true, this.changeField.bind(this))}
               {/* {getMultiSelectRow("Lights", this.state.group.lights, Object.values(this.state.allLights), this.toggleLightSelection.bind(this))} */}
+              {getStatusToggleRow(
+                "Group Status Row",
+                {
+                  onText: "All On",
+                  offText: "All Off",
+                  indeterminateText: "Some On",
+                  onBaseColor: solarized.yellow,
+                  offBaseColor: solarized.base03,
+                  indeterminateBaseColor: solarized.orange,
+                },
+                () => {
+                  if (this.state.group.state.all_on) { return Status.ON; }
+                  if (this.state.group.state.any_on) { return Status.INDETERMINATE; }
+                  if (!this.state.group.state.any_on) { return Status.OFF; }
+                },
+              )}
               {getLabelOnlyRow("Action")}
               <View style={[styles.fieldRowSubContainer]}>
                 {getToggleRow("On", "action.on", this.state.group.action.on, true, this.changeField.bind(this))}
               </View>
-              <View style={[ { flex: 1 }]}>
+              <View style={[{ flex: 1 }]}>
                 {getColorPicker2(
                   // this.state.hsb,
                   this.state.group.action.hue,
@@ -121,11 +144,11 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
             }}>
             <Text>Hide Modal</Text>
           </TouchableHighlight> */}
-        </View>
+        </View >
         : <ActivityIndicator size="large" color="#0000ff" />;
     return (
-      <View style={{ flex: 1 }}>
-        {modalView()}
+      <View style={[{ flex: 1 }, styles.background]}>
+        {getView()}
       </View>
     );
   }

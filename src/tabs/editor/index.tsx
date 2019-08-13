@@ -4,6 +4,8 @@ import * as ColorPicker2 from "react-colorizer";
 import { Switch, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
 import { ColorPicker, TriangleColorPicker } from "react-native-color-picker";
 import AwesomeButton from "react-native-really-awesome-button";
+import { createBasesFromColor, rgb, rgbStrings as solarized } from "solarizer";
+import { RgbBaseStringMap } from "solarizer/tsc-out/RgbMaps";
 import { getStyles } from "../common/Style";
 
 export function getLabelOnlyRow(label: string) {
@@ -11,6 +13,24 @@ export function getLabelOnlyRow(label: string) {
   return (
     <View style={[styles.fieldRow]}>
       <Text style={[styles.label]}>{label}:</Text>
+    </View>);
+}
+export function getTitle(
+  itemType: string,
+  itemId: string,
+  name: string,
+  changeFieldCallback?: (text: string, fieldName: string) => void,
+) {
+  const styles = getStyles();
+  return (
+    <View style={[styles.titleRow]}>
+      <Text style={[styles.titleLabel]}>{`${itemType} ${itemId}`}</Text>
+      <TextInput
+        value={name}
+        editable={true}
+        style={styles.titleInput}
+        onChangeText={(value) => changeFieldCallback(value, "name")}
+      />
     </View>);
 }
 
@@ -54,6 +74,50 @@ export function getToggleRow(
     </View>);
 }
 
+export enum Status { ON, OFF, INDETERMINATE }
+export interface StatusToggleStatus {
+  onText: string; offText: string; indeterminateText: string;
+  onBaseColor: string; offBaseColor: string; indeterminateBaseColor: string;
+}
+export function getStatusToggleRow(
+  key: string,
+  statusToggleStatus: StatusToggleStatus,
+  statusFunction: () => Status,
+  toggleCallback?: (newValue: boolean, fieldName: string) => void,
+): JSX.Element {
+  const styles = getStyles();
+  let statusColors: RgbBaseStringMap;
+  switch (statusFunction()) {
+    case Status.ON:
+      statusColors = createBasesFromColor(statusToggleStatus.onBaseColor, "base01");
+      break;
+    case Status.OFF:
+      statusColors = createBasesFromColor(statusToggleStatus.offBaseColor, "base01");
+      break;
+    case Status.INDETERMINATE:
+      statusColors = createBasesFromColor(statusToggleStatus.indeterminateBaseColor, "base01");
+      break;
+    default:
+      break;
+  }
+  console.log(`statusColors${JSON.stringify(statusColors, null, 2)}`);
+  return (
+    <View style={[styles.fieldRow]}>
+      <AwesomeButton
+        key={key}
+        accessibilityLabel={key}
+        backgroundColor={statusColors.base01}
+        backgroundActive={statusColors.base02}
+        backgroundDarker={statusColors.base03}
+        textColor={statusColors.base1}
+        height={40}
+        textSize={12}
+        textLineHeight={15}
+        disabled={true}
+      ></AwesomeButton>
+    </View>);
+}
+
 export function getMultiSelectRow(
   label: string,
   initiallySelectedItems: string[],
@@ -63,7 +127,6 @@ export function getMultiSelectRow(
   applyPadding: boolean = true,
 ) {
   const styles = getStyles();
-  console.log(`${allItems.length} items to display`);
   const lightSelectButtons = allItems.map((lightMeta) => {
     return (<AwesomeButton
       style={applyPadding ? { marginBottom: 10 } : {}}
@@ -95,7 +158,6 @@ export function getMultiSelectRow(
 }
 
 export function hueHsbToHsl(phillipsHue: number, phillipsSaturation: number, brightness: number) {
-  console.log(`Phillips values: ${JSON.stringify({ phillipsHue, phillipsSaturation, brightness }, null, 2)}`);
   // Phillips hue is 0 - 65535, hsl is looking for 0-360
   const hue = (phillipsHue / 65535) * 360;
   // Phillips saturation is 0 - 254, hsl is looking for 0-100%
@@ -103,12 +165,10 @@ export function hueHsbToHsl(phillipsHue: number, phillipsSaturation: number, bri
   // Phillips brightness is 0 - 254, hsl is looking for 0-100%
   const lightness = (brightness / 254);
   const hslString = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-  console.log(`Calculated HSL string: ${hslString}`);
   return hslString;
 }
 
 export function hslToHueHsb(hslString: string) {
-  console.log(`HSL string: ${hslString}`);
   let cleanString = hslString.replace("hsl(", "");
   cleanString = cleanString.replace(")", "");
   let hslArray = cleanString.split(",");
@@ -116,11 +176,9 @@ export function hslToHueHsb(hslString: string) {
   const hue = (parseFloat(hslArray[0]) / 360) * 65535;
   const sat = (parseFloat(hslArray[1])) * 254;
   const bri = (parseFloat(hslArray[2])) * 254;
-  console.log(`calculated phillips HSL: ${JSON.stringify({ hue, sat, bri }, null, 2)}`);
   return { hue, sat, bri };
 }
 export function hueHsbToHsv(phillipsHue: number, phillipsSaturation: number, brightness: number) {
-  // console.log(`Phillips values: ${JSON.stringify({ phillipsHue, phillipsSaturation, brightness }, null, 2)}`);
   // Phillips hue is 0 - 65535, hsl is looking for 0-360
   const hue = (phillipsHue / 65535) * 360;
   // Phillips saturation is 0 - 254, hsl is looking for 0-100%
@@ -128,16 +186,13 @@ export function hueHsbToHsv(phillipsHue: number, phillipsSaturation: number, bri
   // Phillips brightness is 0 - 254, hsl is looking for 0-100%
   const value = (brightness / 254);
   const hsl = { h: hue, s: saturation, v: value };
-  // console.log(`Calculated HSL: ${JSON.stringify(hsl)}`);
   return hsl;
 }
 
 export function hsvToHueHsb(hsv: { h: number, s: number, v: number }) {
-  // console.log(`HSV: ${JSON.stringify(hsv)}`);
   const hue = (hsv.h / 360) * 65535;
   const sat = hsv.s * 254;
   const bri = hsv.v * 254;
-  // console.log(`calculated phillips HSL: ${JSON.stringify({ hue, sat, bri })}`);
   return { hue, sat, bri };
 }
 
