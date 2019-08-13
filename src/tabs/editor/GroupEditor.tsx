@@ -12,7 +12,7 @@ import {
   View,
 } from "react-native";
 import { NavigationContainerProps, NavigationNavigatorProps } from "react-navigation";
-import { createBasesFromColor, rgb, rgbStrings as solarized } from "solarizer";
+import { createBasesFromColor, rgb, rgbStrings, rgbStrings as solarized } from "solarizer";
 import {
   getColorPicker,
   getColorPicker2,
@@ -30,12 +30,16 @@ import { ColorMode, verify as verifyColorMode } from "../../models/ColorMode";
 import { Group } from "../../models/Group";
 import { Lights } from "../../models/Light";
 import { getStyles } from "../common/Style";
+import { getLightSelector } from "./LightSelector";
+import { getTabLike } from "./TabLike";
 
 interface State {
   group?: Group;
   allLights?: Lights;
   originalGroup?: Group;
   hsb?: any;
+  editingLights: boolean;
+  editingColor: boolean;
 }
 
 export class GroupEditor extends React.Component<NavigationContainerProps & NavigationNavigatorProps<any>, State> {
@@ -43,7 +47,10 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
   lightsApi: LightsApi;
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = {
+      editingColor: false,
+      editingLights: true,
+    };
     this.groupsApi = new GroupsApi();
     this.lightsApi = new LightsApi();
   }
@@ -81,6 +88,13 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
     this.setState({ group: this.state.group });
   }
 
+  toggleEditingLightsOrColors() {
+    this.setState({
+      editingLights: !this.state.editingLights,
+      editingColor: !this.state.editingColor,
+    });
+  }
+
   setHsb(hsb: { hue: number, sat: number, bri: number }) {
     this.state.group.action.bri = hsb.bri;
     this.state.group.action.sat = hsb.sat;
@@ -93,7 +107,7 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
     const styles = getStyles();
     const stateAsSelectables = () => Object.keys(this.state.group.state).map((stateKey) => ({ id: stateKey, name: stateKey }));
     const statesOn = () => Object.keys(this.state.group.state).filter((stateKey) => (this.state.group.state[stateKey]));
-    // const get
+
     const getView = () =>
       this.state.group
         ? <View style={{ flex: 1 }}>
@@ -101,37 +115,71 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
             <View style={{ flex: 1 }}>
               {getTitle("Group", this.state.group.id, this.state.group.name, this.changeField.bind(this))}
               {/* {getMultiSelectRow("State", statesOn(), stateAsSelectables(), () => { }, true, false)} */}
-              {/* {getMultiSelectRow("Lights", this.state.group.lights, Object.values(this.state.allLights), this.toggleLightSelection.bind(this))} */}
-              {getStatusToggleRow(
-                "Group Status Row",
-                {
-                  onText: "All On",
-                  offText: "All Off",
-                  indeterminateText: "Some On",
-                  onBaseColor: solarized.yellow,
-                  offBaseColor: solarized.base03,
-                  indeterminateBaseColor: solarized.orange,
-                },
-                () => {
-                  if (this.state.group.state.all_on) { return Status.ON; }
-                  if (this.state.group.state.any_on) { return Status.INDETERMINATE; }
-                  if (!this.state.group.state.any_on) { return Status.OFF; }
-                },
-              )}
-              {getLabelOnlyRow("Action")}
-              <View style={[styles.fieldRowSubContainer]}>
-                {getToggleRow("On", "action.on", this.state.group.action.on, true, this.changeField.bind(this))}
-              </View>
-              <View style={[{ flex: 1 }]}>
-                {getColorPicker2(
-                  // this.state.hsb,
-                  this.state.group.action.hue,
-                  this.state.group.action.sat,
-                  this.state.group.action.bri,
-                  this.setHsb.bind(this),
-                  "GroupModalColorPicker",
-                )}
-              </View>
+              {
+                this.state.editingColor
+                  ? getColorPicker2(
+                    // this.state.hsb,
+                    this.state.group.action.hue,
+                    this.state.group.action.sat,
+                    this.state.group.action.bri,
+                    this.setHsb.bind(this),
+                    "GroupModalColorPicker",
+                  )
+                  : null
+              }
+              {
+                this.state.editingLights
+                  ? getLightSelector(
+                    this.state.group.lights,
+                    Object.values(this.state.allLights),
+                    this.toggleLightSelection.bind(this),
+                  )
+                  : null
+              }
+              {
+                getTabLike([
+                  {
+                    label: "Select Lights",
+                    selected: this.state.editingLights,
+                    toggleCallback: this.toggleEditingLightsOrColors.bind(this),
+                    selectedColors: createBasesFromColor(rgb.green, "base01"),
+                    deSelectedColors: rgbStrings,
+                  },
+                  {
+                    label: "Change Colors",
+                    selected: this.state.editingColor,
+                    toggleCallback: this.toggleEditingLightsOrColors.bind(this),
+                    selectedColors: createBasesFromColor(rgb.green, "base01"),
+                    deSelectedColors: rgbStrings,
+                  },
+                ])
+              }
+              {
+                getStatusToggleRow(
+                  "Group Status Row",
+                  "action.on",
+                  {
+                    onText: "Currently: All On",
+                    offText: "Currently: All Off",
+                    indeterminateText: "Some On",
+                    onBaseColor: solarized.yellow,
+                    offBaseColor: solarized.base01,
+                    indeterminateBaseColor: solarized.orange,
+                  },
+                  {
+                    turnOnText: "Turn On",
+                    turnOffText: "Turn Off",
+                    turnOnBaseColor: solarized.yellow,
+                    turnOffBaseColor: solarized.base01,
+                  },
+                  () => {
+                    if (this.state.group.state.all_on) { return Status.ON; }
+                    if (this.state.group.state.any_on) { return Status.INDETERMINATE; }
+                    if (!this.state.group.state.any_on) { return Status.OFF; }
+                  },
+                  this.changeField.bind(this),
+                )
+              }
               {/* {getToggleRow("Recycle", "recycle", this.state.group.recycle, true, this.changeField.bind(this))} */}
             </View>
           </ScrollView>

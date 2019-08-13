@@ -79,30 +79,59 @@ export interface StatusToggleStatus {
   onText: string; offText: string; indeterminateText: string;
   onBaseColor: string; offBaseColor: string; indeterminateBaseColor: string;
 }
+export interface StatusToggleActions {
+  turnOnText: string; turnOffText: string;
+  turnOnBaseColor: string; turnOffBaseColor: string;
+}
 export function getStatusToggleRow(
   key: string,
+  fieldName: string,
   statusToggleStatus: StatusToggleStatus,
+  statusToggleActions: StatusToggleActions,
   statusFunction: () => Status,
-  toggleCallback?: (newValue: boolean, fieldName: string) => void,
+  toggleCallback: (newValue: boolean, fieldName: string) => void,
 ): JSX.Element {
   const styles = getStyles();
   let statusColors: RgbBaseStringMap;
+  let statusText: string;
+  let statusActionColors: RgbBaseStringMap;
+  let statusActionText: string;
+  let countsAsOn: boolean;
   switch (statusFunction()) {
     case Status.ON:
       statusColors = createBasesFromColor(statusToggleStatus.onBaseColor, "base01");
+      statusText = statusToggleStatus.onText;
+      statusActionColors = createBasesFromColor(statusToggleActions.turnOffBaseColor, "base01");
+      statusActionText = statusToggleActions.turnOffText;
+      countsAsOn = true;
       break;
     case Status.OFF:
       statusColors = createBasesFromColor(statusToggleStatus.offBaseColor, "base01");
+      statusText = statusToggleStatus.offText;
+      statusActionColors = createBasesFromColor(statusToggleActions.turnOnBaseColor, "base01");
+      statusActionText = statusToggleActions.turnOnText;
+      countsAsOn = false;
       break;
     case Status.INDETERMINATE:
       statusColors = createBasesFromColor(statusToggleStatus.indeterminateBaseColor, "base01");
+      statusText = statusToggleStatus.indeterminateText;
+      statusActionColors = createBasesFromColor(statusToggleActions.turnOnBaseColor, "base01");
+      statusActionText = statusToggleActions.turnOnText;
+      countsAsOn = false;
       break;
     default:
       break;
   }
-  console.log(`statusColors${JSON.stringify(statusColors, null, 2)}`);
   return (
-    <View style={[styles.fieldRow]}>
+    <View style={[{
+      // ...showBorder,
+      alignSelf: "flex-end",
+      marginBottom: styles.heightMargin,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      height: 50,
+      width: styles.width * .6,
+    }]}>
       <AwesomeButton
         key={key}
         accessibilityLabel={key}
@@ -110,26 +139,39 @@ export function getStatusToggleRow(
         backgroundActive={statusColors.base02}
         backgroundDarker={statusColors.base03}
         textColor={statusColors.base1}
-        height={40}
-        textSize={12}
-        textLineHeight={15}
+        height={50}
+        // textSize={12}
         disabled={true}
-      ></AwesomeButton>
+      >{` ${statusText} `}</AwesomeButton>
+      <AwesomeButton
+        key={`${key} toggle`}
+        accessibilityLabel={key}
+        backgroundColor={statusActionColors.base01}
+        backgroundActive={statusActionColors.base02}
+        backgroundDarker={statusActionColors.base03}
+        textColor={statusActionColors.base1}
+        height={50}
+        onPress={() => toggleCallback(!countsAsOn, fieldName)}
+        // textSize={12}
+        disabled={false}
+      >{` ${statusActionText} `}</AwesomeButton>
     </View>);
 }
 
 export function getMultiSelectRow(
-  label: string,
+  openMultiText: string,
+  closeMultiText: string,
+  fieldName: string,
   initiallySelectedItems: string[],
   allItems: Array<{ id: string, name: string }>,
+  currentlyOpen: boolean,
   changeFieldCallback: (selectedItemId: string) => void,
-  disabled: boolean = false,
-  applyPadding: boolean = true,
+  toggleCallback: () => void,
 ) {
   const styles = getStyles();
   const lightSelectButtons = allItems.map((lightMeta) => {
     return (<AwesomeButton
-      style={applyPadding ? { marginBottom: 10 } : {}}
+      style={{ marginBottom: 5 }}
       key={lightMeta.id}
       onPress={() => changeFieldCallback(lightMeta.id)}
       accessibilityLabel={lightMeta.name}
@@ -137,24 +179,55 @@ export function getMultiSelectRow(
       backgroundActive={initiallySelectedItems.includes(lightMeta.id) ? styles.green.base02 : styles.solarized.base02}
       backgroundDarker={initiallySelectedItems.includes(lightMeta.id) ? styles.green.base03 : styles.solarized.base03}
       textColor={initiallySelectedItems.includes(lightMeta.id) ? styles.green.base1 : styles.solarized.base1}
-      height={40}
+      height={70}
+      width={70}
       textSize={12}
       textLineHeight={15}
-      disabled={disabled}
     >
-      {` ${lightMeta.name} `}
+      {`${lightMeta.name}`}
     </AwesomeButton>);
   });
   const multiSelect = (
     <View style={styles.multiSelect}>
       {lightSelectButtons}
     </View>);
-  return (
-    <View style={[styles.multiSelectRow]}>
-      <Text style={[styles.label]}>{label}:</Text>
-      {multiSelect}
-    </View>
-  );
+
+  if (currentlyOpen) {
+    return (
+      <View style={[styles.multiSelectRow]}>
+        {multiSelect}
+        <AwesomeButton
+          key={`${openMultiText} toggle`}
+          accessibilityLabel={openMultiText}
+          backgroundColor={currentlyOpen ? styles.solarized.base01 : styles.green.base01}
+          backgroundActive={currentlyOpen ? styles.solarized.base02 : styles.green.base02}
+          backgroundDarker={currentlyOpen ? styles.solarized.base03 : styles.green.base03}
+          textColor={currentlyOpen ? styles.solarized.base1 : styles.green.base1}
+          height={50}
+          onPress={() => toggleCallback()}
+          // textSize={12}
+          disabled={false}
+        >{` ${closeMultiText} `}</AwesomeButton>
+      </View>
+    );
+  } else {
+    return (
+      <View style={[styles.multiSelectRow]}>
+        <AwesomeButton
+          key={`${openMultiText} toggle`}
+          accessibilityLabel={openMultiText}
+          backgroundColor={currentlyOpen ? styles.solarized.base01 : styles.green.base01}
+          backgroundActive={currentlyOpen ? styles.solarized.base02 : styles.green.base02}
+          backgroundDarker={currentlyOpen ? styles.solarized.base03 : styles.green.base03}
+          textColor={currentlyOpen ? styles.solarized.base1 : styles.green.base1}
+          height={50}
+          onPress={() => toggleCallback()}
+          // textSize={12}
+          disabled={false}
+        >{` ${openMultiText} `}</AwesomeButton>
+      </View>
+    );
+  }
 }
 
 export function hueHsbToHsl(phillipsHue: number, phillipsSaturation: number, brightness: number) {
@@ -197,7 +270,6 @@ export function hsvToHueHsb(hsv: { h: number, s: number, v: number }) {
 }
 
 export function getColorPicker(
-  // hsb: any,
   hue: number,
   saturation: number,
   brightness: number,
@@ -210,26 +282,18 @@ export function getColorPicker(
     <View style={{ flex: 1 }}>
       <ColorPicker
         color={(() => {
-          console.log(`Instantiating: ${JSON.stringify({ hue, saturation, brightness })}`);
           const hsv = hueHsbToHsv(hue, saturation, brightness);
-          console.log(`Instantiated HSV: ${JSON.stringify(hsv)}`);
-          const hsb = hsvToHueHsb(hsv);
-          console.log(`Instantiated back to HSB: ${JSON.stringify(hsb)}`);
           return hsv;
         })() as any}
         defaultColor={null}
         onColorSelected={(color) => alert(`Color selected: ${color}`)}
         onColorChange={(color) => {
-          console.log(`color changed ${JSON.stringify(color)}`);
           const hsb = hsvToHueHsb(color);
-          console.log(`Color to HSB: ${JSON.stringify(hsb)}`);
-          console.log(`Color back to HSV: ${JSON.stringify(hueHsbToHsv(hsb.hue, hsb.sat, hsb.bri))}`);
           setHsb(hsvToHueHsb(color));
         }}
         style={{
           width: 350,
           height: 350,
-          // ...styles.showBorder,
         }}
       />
     </View>

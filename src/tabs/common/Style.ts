@@ -67,14 +67,24 @@ export function getStyles() {
     color: solarized.base0,
     flex: 1,
     fontSize: 30,
-    marginLeft:widthMargin ,
-    marginRight:widthMargin ,
+    marginLeft: widthMargin,
+    marginRight: widthMargin,
     textAlignVertical: "center",
     borderBottomColor: solarized.base02,
     borderBottomWidth: 2,
     borderBottomLeftRadius: 5,
   };
 
+  // Status toggle
+  const statusToggleRow: ViewStyle = {
+    // ...showBorder,
+    alignSelf: "center",
+    marginBottom: heightMargin,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    height: 50,
+    width: width * .6,
+  };
 
   const label: TextStyle = {
     ...showBorder,
@@ -110,12 +120,17 @@ export function getStyles() {
   };
   const multiSelectRow: ViewStyle = {
     ...showBorder,
+    flex: 1,
     marginBottom: heightMargin,
-    flexDirection: "row",
+    flexDirection: "column",
     justifyContent: "flex-start",
   };
   return {
+    height,
+    width,
     background,
+    heightMargin,
+
     fieldRowContainer,
     fieldRowSubContainer,
     fieldRow,
@@ -130,10 +145,12 @@ export function getStyles() {
     titleLabel,
     titleInput,
     showBorder,
+    statusToggleRow,
 
     solarized,
     red,
     blue,
     green,
+
   };
 }
