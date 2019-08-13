@@ -11,6 +11,7 @@
     "eject": "expo eject"
   },
   "dependencies": {
+    "@react-navigation/core": "^3.4.2",
     "@types/node-hue-api": "^2.3.0",
     "expo": "^33.0.0",
     "react": "16.8.3",
