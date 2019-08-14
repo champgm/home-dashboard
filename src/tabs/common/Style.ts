@@ -49,32 +49,6 @@ export function getStyles() {
     height: 40,
   };
 
-  // Title
-  const titleRow: ViewStyle = {
-    marginBottom: heightMargin,
-    flexDirection: "column",
-    justifyContent: "center",
-    height: 80,
-  };
-  const titleLabel: TextStyle = {
-    fontWeight: "bold",
-    fontSize: 20,
-    color: solarized.base0,
-    textAlign: "center",
-  };
-  const titleInput: TextStyle = {
-    textAlign: "center",
-    color: solarized.base0,
-    flex: 1,
-    fontSize: 30,
-    marginLeft: widthMargin,
-    marginRight: widthMargin,
-    textAlignVertical: "center",
-    borderBottomColor: solarized.base02,
-    borderBottomWidth: 2,
-    borderBottomLeftRadius: 5,
-  };
-
   // Status toggle
   const statusToggleRow: ViewStyle = {
     // ...showBorder,
@@ -130,6 +104,7 @@ export function getStyles() {
     width,
     background,
     heightMargin,
+    widthMargin,
 
     fieldRowContainer,
     fieldRowSubContainer,
@@ -141,9 +116,6 @@ export function getStyles() {
     lockedToggle,
     multiSelect,
     multiSelectRow,
-    titleRow,
-    titleLabel,
-    titleInput,
     showBorder,
     statusToggleRow,
 

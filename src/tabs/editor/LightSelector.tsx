@@ -1,4 +1,3 @@
-
 import React from "react";
 import { View } from "react-native";
 import AwesomeButton from "react-native-really-awesome-button";
@@ -29,7 +28,15 @@ export function getLightSelector(
     </AwesomeButton>);
   });
   return (
-    <View style={styles.multiSelect}>
+    <View style={{
+      // ...styles.showBorder,
+      // alignSelf:"stretch",
+      flexGrow:1,
+      // flex: 1,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-around",
+    }}>
       {lightSelectButtons}
     </View>
   );

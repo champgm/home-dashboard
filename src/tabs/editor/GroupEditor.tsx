@@ -1,29 +1,13 @@
 import _ from "lodash";
 import React from "react";
-import ColorPicker from "react-colorizer";
 import {
   ActivityIndicator,
   Dimensions,
-  Modal,
   ScrollView,
-  Text,
-  TouchableHighlight,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { NavigationContainerProps, NavigationNavigatorProps } from "react-navigation";
 import { createBasesFromColor, rgb, rgbStrings, rgbStrings as solarized } from "solarizer";
-import {
-  getColorPicker,
-  getColorPicker2,
-  getLabelOnlyRow,
-  getMultiSelectRow,
-  getStatusToggleRow,
-  getStringInputRow,
-  getTitle,
-  getToggleRow,
-  Status,
-} from ".";
 import { GroupsApi } from "../../hue/GroupsApi";
 import { LightsApi } from "../../hue/LightsApi";
 import { ColorMode, verify as verifyColorMode } from "../../models/ColorMode";
@@ -32,6 +16,9 @@ import { Lights } from "../../models/Light";
 import { getStyles } from "../common/Style";
 import { getLightSelector } from "./LightSelector";
 import { getTabLike } from "./TabLike";
+import { getTitle } from "./Title";
+import { getColorPicker2 } from "./ColorPicker";
+import { Status, getStatusToggleRow } from "./StatusToggle";
 
 interface State {
   group?: Group;
@@ -114,7 +101,6 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
           <ScrollView contentContainerStyle={{ flex: 1 }}>
             <View style={{ flex: 1 }}>
               {getTitle("Group", this.state.group.id, this.state.group.name, this.changeField.bind(this))}
-              {/* {getMultiSelectRow("State", statesOn(), stateAsSelectables(), () => { }, true, false)} */}
               {
                 this.state.editingColor
                   ? getColorPicker2(
@@ -139,15 +125,15 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
               {
                 getTabLike([
                   {
-                    label: "Select Lights",
-                    selected: this.state.editingLights,
+                    label: "Change Colors",
+                    selected: this.state.editingColor,
                     toggleCallback: this.toggleEditingLightsOrColors.bind(this),
                     selectedColors: createBasesFromColor(rgb.green, "base01"),
                     deSelectedColors: rgbStrings,
                   },
                   {
-                    label: "Change Colors",
-                    selected: this.state.editingColor,
+                    label: "Select Lights",
+                    selected: this.state.editingLights,
                     toggleCallback: this.toggleEditingLightsOrColors.bind(this),
                     selectedColors: createBasesFromColor(rgb.green, "base01"),
                     deSelectedColors: rgbStrings,
