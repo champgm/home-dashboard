@@ -1,4 +1,5 @@
 import { printLeftoverKeys, verifyArray, verifyType } from ".";
+import { Status } from "../tabs/editor/components/StatusToggle";
 import { create as GroupActionCreate, GroupAction } from "./GroupAction";
 import { create as GroupStateCreate, GroupState } from "./GroupState";
 import { Item } from "./Item";
@@ -14,9 +15,11 @@ export interface Groups {
   [id: string]: Group;
 }
 
-// export namespace Group {
 export function create(payload: Group): Group {
-  if (!payload) { throw new Error("Group not found"); }
+  if (!payload) {
+    console.log(`${JSON.stringify(payload, null, 2)}`);
+    throw new Error("Group not found");
+  }
   const group = {
     action: GroupActionCreate(payload.action),
     id: verifyType(payload.id, "id", "string"),
@@ -29,4 +32,21 @@ export function create(payload: Group): Group {
   printLeftoverKeys("Group", payload, group);
   return group;
 }
-// }
+
+export function createSubmittable(payload: Group): Partial<Group> {
+  if (!payload) {
+    console.log(`${JSON.stringify(payload, null, 2)}`);
+    throw new Error("Group not found");
+  }
+  const group = {
+    lights: verifyArray(payload.lights, "lights", "string"),
+    name: verifyType(payload.name, "name", "string"),
+  };
+  return group;
+}
+
+export function getStatus(group: Group): Status {
+  if (!group.state.any_on) { return Status.OFF; }
+  if (group.state.all_on) { return Status.ON; }
+  if (group.state.any_on) { return Status.INDETERMINATE; }
+}

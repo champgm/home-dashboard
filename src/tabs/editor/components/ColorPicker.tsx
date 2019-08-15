@@ -1,9 +1,8 @@
 import React from "react";
 import * as ColorPicker2 from "react-colorizer";
 import { View } from "react-native";
-import { ColorPicker, } from "react-native-color-picker";
-import { getStyles } from "../common/Style";
-
+import { ColorPicker } from "react-native-color-picker";
+import { getStyles } from "../../common/Style";
 
 export function hueHsbToHsl(phillipsHue: number, phillipsSaturation: number, brightness: number) {
   // Phillips hue is 0 - 65535, hsl is looking for 0-360
@@ -84,7 +83,7 @@ export function getColorPicker2(
   return (
     <View style={{
       alignSelf: "center",
-      flexGrow: 1
+      flexGrow: 1,
     }}>
       <ColorPicker2.default
         id={id}

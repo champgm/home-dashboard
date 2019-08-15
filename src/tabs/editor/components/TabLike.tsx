@@ -3,7 +3,7 @@ import React from "react";
 import { View, ViewStyle } from "react-native";
 import AwesomeButton from "react-native-really-awesome-button";
 import { RgbBaseStringMap } from "solarizer/tsc-out/RgbMaps";
-import { getStyles } from "../common/Style";
+import { getStyles } from "../../common/Style";
 
 export interface TabLike {
   label: string;
@@ -30,7 +30,7 @@ export function getTabLike(tabs: TabLike[]) {
       onPress={() => tab.toggleCallback()}
       disabled={false}
     >{` ${tab.label} `}</AwesomeButton>);
-  };
+  }
 
   return (
 
@@ -40,6 +40,7 @@ export function getTabLike(tabs: TabLike[]) {
       marginBottom: styles.heightMargin,
       flexDirection: "row",
       justifyContent: "space-around",
+      paddingBottom: 20,
     }}>
       {tabJsx}
     </View >);

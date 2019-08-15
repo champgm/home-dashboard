@@ -4,13 +4,12 @@ import { View } from "react-native";
 import AwesomeButton from "react-native-really-awesome-button";
 import { createBasesFromColor } from "solarizer";
 import { RgbBaseStringMap } from "solarizer/tsc-out/RgbMaps";
-import { getStyles } from "../common/Style";
-
+import { getStyles } from "../../common/Style";
 
 export enum Status { ON, OFF, INDETERMINATE }
 export interface StatusToggleStatus {
-  onText: string; offText: string; indeterminateText: string;
-  onBaseColor: string; offBaseColor: string; indeterminateBaseColor: string;
+  onText: string; offText: string; indeterminateText?: string;
+  onBaseColor: string; offBaseColor: string; indeterminateBaseColor?: string;
 }
 export interface StatusToggleActions {
   turnOnText: string; turnOffText: string;

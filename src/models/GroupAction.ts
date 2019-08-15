@@ -20,7 +20,10 @@ export interface GroupActions {
 
 // export namespace GroupAction {
 export function create(payload: GroupAction): GroupAction {
-  if (!payload) { throw new Error("GroupAction not found"); }
+  if (!payload) {
+    console.log(`${JSON.stringify(payload, null, 2)}`);
+    throw new Error("GroupAction not found");
+  }
   const action = {
     alert: verifyAlert(payload.alert),
     bri: verifyType(payload.bri, "bri", "number"),

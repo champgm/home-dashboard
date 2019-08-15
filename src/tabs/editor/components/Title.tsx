@@ -1,6 +1,6 @@
 import React from "react";
 import { Text, TextInput, View } from "react-native";
-import { getStyles } from "../common/Style";
+import { getStyles } from "../../common/Style";
 
 export function getTitle(
   itemType: string,

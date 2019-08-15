@@ -1,13 +1,13 @@
+import { STATUS_CODES } from "http";
 import _ from "lodash";
 import React from "react";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { NavigationContainerProps, NavigationNavigatorProps } from "react-navigation";
 import { createBasesFromColor, rgb, rgbStrings, rgbStrings as solarized } from "solarizer";
-import { GroupsApi } from "../../hue/GroupsApi";
 import { LightsApi } from "../../hue/LightsApi";
 import { ColorMode } from "../../models/ColorMode";
-import { getStatus, Group } from "../../models/Group";
 import { Lights } from "../../models/Light";
+import { Light } from "../../models/Light";
 import { getStyles } from "../common/Style";
 import { getColorPicker2 } from "./components/ColorPicker";
 import { getLightSelector } from "./components/LightSelector";
@@ -17,110 +17,79 @@ import { getTabLike } from "./components/TabLike";
 import { getTitle } from "./components/Title";
 
 interface State {
-  group?: Group;
-  allLights?: Lights;
+  light?: Light;
   hsb?: any;
-  editingLights: boolean;
-  editingColor: boolean;
 }
 
-export class GroupEditor extends React.Component<NavigationContainerProps & NavigationNavigatorProps<any>, State> {
-  groupsApi: GroupsApi;
+export class LightEditor extends React.Component<NavigationContainerProps & NavigationNavigatorProps<any>, State> {
   lightsApi: LightsApi;
   constructor(props) {
     super(props);
     this.state = {
-      editingColor: false,
-      editingLights: true,
     };
-    this.groupsApi = new GroupsApi();
+    this.lightsApi = new LightsApi();
     this.lightsApi = new LightsApi();
   }
 
   async componentDidMount() {
     const id = this.props.navigation.getParam("id", "-1");
     if (id !== "-1") {
-      const groupPromise = this.groupsApi.get(id);
-      const lightPromise = this.lightsApi.getAll();
-      const group = await groupPromise;
+      const lightPromise = this.lightsApi.get(id);
+      const light = await lightPromise;
       const allLights = await lightPromise;
-      if (group.action.colormode) {
-        group.action.colormode = ColorMode.HS;
-        group.action.hue = group.action.hue ? group.action.hue : 0;
-        group.action.sat = group.action.sat ? group.action.sat : 0;
+      if (light.state.colormode) {
+        light.state.colormode = ColorMode.HS;
+        light.state.hue = light.state.hue ? light.state.hue : 0;
+        light.state.sat = light.state.sat ? light.state.sat : 0;
       }
-      this.setState({
-        allLights,
-        group,
-      });
+      this.setState({ light });
     }
   }
 
   changeField(value: any, fieldName: string) {
     console.log(`${fieldName} changed: ${value}`);
-    _.set(this.state.group, fieldName, value);
-    this.setState({ group: this.state.group });
-  }
-
-  toggleLightSelection(lightId) {
-    this.state.group.lights = this.state.group.lights.includes(lightId)
-      ? this.state.group.lights.filter((selectedId) => selectedId !== lightId)
-      : this.state.group.lights.concat(lightId);
-    this.setState({ group: this.state.group });
-  }
-
-  toggleEditingLightsOrColors() {
-    this.setState({
-      editingLights: !this.state.editingLights,
-      editingColor: !this.state.editingColor,
-    });
+    _.set(this.state.light, fieldName, value);
+    this.setState({ light: this.state.light });
   }
 
   async submitChanges() {
-    await this.groupsApi.put(this.state.group);
-    const group = await this.groupsApi.get(this.state.group.id);
-    this.setState({ group });
+    await this.lightsApi.put(this.state.light);
+    const light = await this.lightsApi.get(this.state.light.id);
+    this.setState({ light });
   }
 
   async resetChanges() {
-    this.setState({ group: await this.groupsApi.get(this.state.group.id) });
+    this.setState({ light: await this.lightsApi.get(this.state.light.id) });
   }
 
   async setHsb(hsb: { hue: number, sat: number, bri: number }) {
-    this.state.group.action.bri = hsb.bri;
-    this.state.group.action.sat = hsb.sat;
-    this.state.group.action.hue = hsb.hue;
-    await this.groupsApi.putAction(this.state.group.id, this.state.group.action);
-    this.setState({ group: await this.groupsApi.get(this.state.group.id) });
+    this.state.light.state.bri = hsb.bri;
+    this.state.light.state.sat = hsb.sat;
+    this.state.light.state.hue = hsb.hue;
+    this.setState({ light: this.state.light });
+    await this.lightsApi.putState(this.state.light.id, this.state.light.state);
+    this.setState({ light: await this.lightsApi.get(this.state.light.id) });
   }
 
   render() {
     const styles = getStyles();
     const getView = () =>
-      this.state.group
+      this.state.light
         ? <View style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={{ flex: 1 }}>
             <View style={{ flex: 1 }}>
-              {getTitle("Group", this.state.group.id, this.state.group.name, this.changeField.bind(this))}
-              {
+              {getTitle("Light", this.state.light.id, this.state.light.name, this.changeField.bind(this))}
+              {/* {
                 this.state.editingColor
                   ? getColorPicker2(
-                    this.state.group.action.hue,
-                    this.state.group.action.sat,
-                    this.state.group.action.bri,
+                    this.state.light.state.hue,
+                    this.state.light.state.sat,
+                    this.state.light.state.bri,
                     this.setHsb.bind(this),
-                    "GroupModalColorPicker",
+                    "LightModalColorPicker",
                   ) : null
-              }
-              {
-                this.state.editingLights
-                  ? getLightSelector(
-                    this.state.group.lights,
-                    Object.values(this.state.allLights),
-                    this.toggleLightSelection.bind(this),
-                  ) : null
-              }
-              {
+              } */}
+              {/* {
                 getTabLike([
                   {
                     label: "Change Colors",
@@ -137,18 +106,16 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
                     deSelectedColors: rgbStrings,
                   },
                 ])
-              }
+              } */}
               {
                 getStatusToggleRow(
-                  "Group Status Row",
+                  "Light Status Row",
                   "action.on",
                   {
                     onText: "Currently: All On",
                     offText: "Currently: All Off",
-                    indeterminateText: "Some On",
                     onBaseColor: solarized.yellow,
                     offBaseColor: solarized.base01,
-                    indeterminateBaseColor: solarized.orange,
                   },
                   {
                     turnOnText: "Turn On",
@@ -156,7 +123,7 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
                     turnOnBaseColor: solarized.yellow,
                     turnOffBaseColor: solarized.base01,
                   },
-                  () => getStatus(this.state.group),
+                  () => this.state.light.state.on ? Status.ON : Status.OFF,
                   this.changeField.bind(this),
                 )
               }

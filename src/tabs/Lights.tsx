@@ -1,45 +1,49 @@
-import Constants from "expo-constants";
 import _ from "lodash";
 import React from "react";
 import {
   ActivityIndicator,
-  Dimensions,
   StyleSheet,
   View,
 } from "react-native";
-import { Route, SceneMap, TabView } from "react-native-tab-view";
+import { NavigationContainerProps, NavigationNavigatorProps } from "react-navigation";
 import v4 from "uuid/v4";
 import { sortBy } from "../common";
-import { Light, Lights } from "../models/Light";
+import { LightsApi } from "../hue/LightsApi";
+import { Lights } from "../models/Light";
+import { register } from "./common/Alerter";
 import { ItemButton } from "./common/Button";
-import { LightModal } from "./LightModal";
-
-export interface Props {
-  lights: Promise<Lights>;
-}
+import { grey, yellow } from "./common/Style";
 
 interface State {
   lights?: Lights;
-  modalVisible: boolean;
-  lightBeingEdited: string;
 }
 
-export const key = "lights";
-export const title = "Lights";
-export class LightsComponent extends React.Component<Props, State> {
+export class LightsComponent extends React.Component<NavigationContainerProps & NavigationNavigatorProps<any>, State> {
+  title: any;
+  lightsApi: LightsApi;
 
-  constructor(props: Props) {
+  constructor(props: NavigationContainerProps & NavigationNavigatorProps<any>) {
     super(props);
-    this.state = {
-      modalVisible: false,
-      lightBeingEdited: "-1",
-    };
+    this.title = v4();
+    this.state = {};
+    this.lightsApi = new LightsApi();
+    this.lightsApi = new LightsApi();
   }
 
-  componentDidMount() {
-    // this.props.lights.then((lights) => {
-    //   this.setState({ lights });
-    // });
+  async componentDidMount() {
+    console.log(`Lights did mount`);
+    register(this.updateLights.bind(this));
+    await this.pollLights();
+  }
+  async pollLights() {
+    console.log(`Polling lights...`);
+    await this.updateLights();
+    setTimeout(() => {
+      this.pollLights();
+    }, 5000);
+  }
+  async updateLights() {
+    this.setState({ lights: await this.lightsApi.getAll() });
   }
 
   onClick(id: string) {
@@ -47,34 +51,27 @@ export class LightsComponent extends React.Component<Props, State> {
   }
 
   onEditClick(id: string) {
-    // console.log(`Calling edit`);
-    this.setState({
-      modalVisible: true,
-      lightBeingEdited: id,
-    });
+    console.log(`Edit clicked`);
+    this.props.navigation.navigate("LightEditor", { id });
   }
 
   onFavoriteClick(id: string) {
-
+    console.log(`favorite clicked`);
+  }
+  changeLights(lights: string[]) {
+    console.log(`setting light.lights`);
+    console.log(`to: ${lights}`);
   }
 
   onEditCancel() {
-    this.setState({
-      modalVisible: false,
-      lightBeingEdited: "0",
-    });
+    console.log(`edit canceled`);
   }
 
   async onEditSubmit(id: string) {
-    // Do something here first
-    this.setState({
-      modalVisible: false,
-      lightBeingEdited: "0",
-    });
+    console.log(`edit submitted`);
   }
 
   render() {
-
     const lightButtons = this.state.lights
       ? sortBy(Object.values(this.state.lights), "name")
         .map((light) => {
@@ -82,6 +79,7 @@ export class LightsComponent extends React.Component<Props, State> {
             <ItemButton
               id={light.id}
               key={`light-${light.id}`}
+              colorMap={light.state.on ? yellow : grey}
               onClick={this.onClick.bind(this)}
               onEditClick={this.onEditClick.bind(this)}
               onFavoriteClick={this.onFavoriteClick.bind(this)}
@@ -90,17 +88,9 @@ export class LightsComponent extends React.Component<Props, State> {
           );
         })
       : <ActivityIndicator size="large" color="#0000ff" />;
-
     return (
       <View style={[styles.scene]} >
         {lightButtons}
-        <LightModal
-          id={this.state.lightBeingEdited}
-          visible={this.state.modalVisible}
-          key={this.state.lightBeingEdited}
-          onEditCancel={this.onEditCancel.bind(this)}
-          onEditSubmit={this.onEditSubmit.bind(this)}
-        />
       </View>
     );
   }

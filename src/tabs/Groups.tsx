@@ -1,29 +1,22 @@
-import Constants from "expo-constants";
 import _ from "lodash";
 import React from "react";
-import {
-  ActivityIndicator,
-  Dimensions,
-  StyleSheet,
-  View,
-} from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { NavigationContainerProps, NavigationNavigatorProps } from "react-navigation";
+import { RgbBaseStringMap } from "solarizer/tsc-out/RgbMaps";
 import v4 from "uuid/v4";
 import { sortBy } from "../common";
 import { GroupsApi } from "../hue/GroupsApi";
 import { LightsApi } from "../hue/LightsApi";
-import { Group, Groups } from "../models/Group";
-import { Lights } from "../models/Light";
+import { getStatus, Groups } from "../models/Group";
+import { register } from "./common/Alerter";
 import { ItemButton } from "./common/Button";
-import { GroupEditor } from "./editor/GroupEditor";
+import { grey, orange, yellow } from "./common/Style";
+import { Status } from "./editor/components/StatusToggle";
 
 interface State {
   groups?: Groups;
-  allLights?: Lights;
 }
 
-export const key = "groups";
-export const title = "Groups";
 export class GroupsComponent extends React.Component<NavigationContainerProps & NavigationNavigatorProps<any>, State> {
   title: any;
   lightsApi: LightsApi;
@@ -38,50 +31,59 @@ export class GroupsComponent extends React.Component<NavigationContainerProps & 
   }
 
   async componentDidMount() {
-    console.log(`Getting groups and lights`);
-    const groupsPromise = this.groupsApi.getAll();
-    const allLightsPromise = this.lightsApi.getAll();
-    const groups = await groupsPromise;
-    console.log(`groups: ${JSON.stringify(groups, null, 2)}`);
-    const allLights = await allLightsPromise;
-    this.setState({ groups, allLights });
-    this.props.navigation.navigate("Editor", { id: "3" });
+    console.log(`Groups did mount`);
+    register(this.updateGroups.bind(this));
+    await this.pollGroups();
+  }
+  async pollGroups() {
+    console.log(`Polling groups...`);
+    await this.updateGroups();
+    setTimeout(() => {
+      this.pollGroups();
+    }, 5000);
+  }
+  async updateGroups() {
+    this.setState({ groups: await this.groupsApi.getAll() });
   }
 
-  onClick(id: string) {
-
+  async onClick(id: string) {
+    // console.log(`Group is currently `);
+    switch (getStatus(this.state.groups[id])) {
+      case Status.ON: await this.groupsApi.putAction(id, { on: false }); break;
+      case Status.OFF: await this.groupsApi.putAction(id, { on: true }); break;
+      case Status.INDETERMINATE: await this.groupsApi.putAction(id, { on: true }); break;
+      default:
+        console.log(`Invalid group state: ${JSON.stringify(this.state.groups[id], null, 2)}`);
+        break;
+    }
+    this.setState({ groups: await this.groupsApi.getAll() });
   }
 
   onEditClick(id: string) {
     console.log(`Edit clicked`);
-    this.props.navigation.navigate("Editor", { id });
+    this.props.navigation.navigate("GroupEditor", { id });
   }
 
   onFavoriteClick(id: string) {
     console.log(`favorite clicked`);
-  }
-  changeLights(lights: string[]) {
-    console.log(`setting group.lights`);
-    console.log(`to: ${lights}`);
-
-  }
-
-  onEditCancel() {
-    console.log(`edit canceled`);
-  }
-
-  async onEditSubmit(id: string) {
-    console.log(`edit submitted`);
-    // Do something here first
   }
 
   render() {
     const groupButtons = this.state.groups
       ? sortBy(Object.values(this.state.groups), "name")
         .map((group) => {
+          let colorMap: RgbBaseStringMap;
+          switch (getStatus(group)) {
+            case Status.ON: colorMap = yellow; break;
+            case Status.OFF: colorMap = grey; break;
+            case Status.INDETERMINATE: colorMap = orange; break;
+            default:
+              break;
+          }
           return (
             <ItemButton
               id={group.id}
+              colorMap={colorMap}
               key={`group-${group.id}`}
               onClick={this.onClick.bind(this)}
               onEditClick={this.onEditClick.bind(this)}
@@ -91,22 +93,9 @@ export class GroupsComponent extends React.Component<NavigationContainerProps & 
           );
         })
       : <ActivityIndicator size="large" color="#0000ff" />;
-
-    const { height, width } = Dimensions.get("window");
-
     return (
-      // <View style={[styles.scene, { paddingTop: height * .02 }]} >
       <View style={[styles.scene]} >
         {groupButtons}
-        {/* <GroupModal
-          groupsApi={this.props.groupsApi}
-          lightsApi={this.props.lightsApi}
-          visible={this.state.modalVisible}
-          key={this.state.groupBeingEdited}
-          id={this.state.groupBeingEdited}
-          onEditCancel={this.onEditCancel.bind(this)}
-          onEditSubmit={this.onEditSubmit.bind(this)}
-        /> */}
       </View>
     );
   }

@@ -7,12 +7,14 @@ import {
   View,
 } from "react-native";
 import AwesomeButton from "react-native-really-awesome-button";
-import { LightModal } from "../LightModal";
+import { RgbBaseMap, RgbBaseStringMap } from "solarizer/tsc-out/RgbMaps";
+import { blue, yellow } from "./Style";
 
 export interface Props {
   id: string;
   on?: boolean;
   title: string;
+  colorMap: RgbBaseStringMap;
   onFavoriteClick: (id: string) => void;
   onEditClick: (id: string) => void;
   onClick: (id: string) => void;
@@ -49,6 +51,10 @@ export class ItemButton extends React.Component<Props, State> {
         <AwesomeButton
           // Main button
           paddingHorizontal={5}
+          backgroundColor={this.props.colorMap.base01}
+          backgroundActive={this.props.colorMap.base02}
+          backgroundDarker={this.props.colorMap.base03}
+          textColor={this.props.colorMap.base1}
           height={buttonDimension}
           width={buttonDimension}
           onPress={() => this.props.onClick(this.props.id)}>
@@ -57,8 +63,10 @@ export class ItemButton extends React.Component<Props, State> {
         <AwesomeButton
           // Edit button
           onPress={() => this.props.onEditClick(this.props.id)}
-          backgroundColor="#3399ff"
-          backgroundDarker="#0000ff"
+          backgroundColor={blue.base01}
+          backgroundActive={blue.base02}
+          backgroundDarker={blue.base03}
+          textColor={blue.base1}
           style={{
             width: buttonDimension / 3,
             height: buttonDimension / 3,
@@ -77,8 +85,10 @@ export class ItemButton extends React.Component<Props, State> {
         <AwesomeButton
           // Favorite button
           onPress={() => this.props.onFavoriteClick(this.props.id)}
-          backgroundColor="#ffcc66"
-          backgroundDarker="#ff9900"
+          backgroundColor={yellow.base01}
+          backgroundActive={yellow.base02}
+          backgroundDarker={yellow.base03}
+          textColor={yellow.base1}
           style={{
             width: buttonDimension / 3,
             height: buttonDimension / 3,

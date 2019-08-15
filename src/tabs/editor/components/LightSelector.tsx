@@ -1,7 +1,7 @@
 import React from "react";
 import { View } from "react-native";
 import AwesomeButton from "react-native-really-awesome-button";
-import { getStyles } from "../common/Style";
+import { getStyles } from "../../common/Style";
 
 export function getLightSelector(
   initiallySelectedItems: string[],

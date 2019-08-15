@@ -2,12 +2,12 @@
 import { Dimensions, TextStyle, ViewStyle } from "react-native";
 import { createBasesFromColor, rgb, rgbStrings as solarized } from "solarizer";
 
-const blue = createBasesFromColor(rgb.blue, "base01");
-console.log(`blue${JSON.stringify(blue, null, 2)}`);
-const red = createBasesFromColor(rgb.red, "base01");
-console.log(`red${JSON.stringify(red, null, 2)}`);
-const green = createBasesFromColor(rgb.green, "base01");
-console.log(`green${JSON.stringify(green, null, 2)}`);
+export const grey = solarized;
+export const blue = createBasesFromColor(rgb.blue, "base01");
+export const red = createBasesFromColor(rgb.red, "base01");
+export const green = createBasesFromColor(rgb.green, "base01");
+export const orange = createBasesFromColor(rgb.orange, "base01");
+export const yellow = createBasesFromColor(rgb.yellow, "base01");
 
 const showBorder = {
   borderColor: "#000000",

@@ -17,9 +17,11 @@ export interface Lights {
   [id: string]: Light;
 }
 
-// export namespace Light {
 export function create(payload: Light): Light {
-  if (!payload) { throw new Error("Light not found"); }
+  if (!payload) {
+    console.log(`${JSON.stringify(payload, null, 2)}`);
+    throw new Error("Light not found");
+  }
   const light = {
     id: verifyType(payload.id, "id", "string"),
     name: verifyType(payload.name, "name", "string"),
@@ -35,4 +37,3 @@ export function create(payload: Light): Light {
   printLeftoverKeys("Light", payload, light);
   return light;
 }
-// }
