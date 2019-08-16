@@ -3,11 +3,13 @@ import _ from "lodash";
 import React from "react";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { NavigationContainerProps, NavigationNavigatorProps } from "react-navigation";
-import { createBasesFromColor, rgb, rgbStrings, rgbStrings as solarized } from "solarizer";
+import { rgbStrings as solarized } from "solarizer";
 import { LightsApi } from "../../hue/LightsApi";
+import { Alert } from "../../models/Alert";
 import { ColorMode } from "../../models/ColorMode";
-import { Lights } from "../../models/Light";
+import { getBlinking } from "../../models/Light";
 import { Light } from "../../models/Light";
+import { register } from "../common/Alerter";
 import { getStyles } from "../common/Style";
 import { getColorPicker2 } from "./components/ColorPicker";
 import { getLightSelector } from "./components/LightSelector";
@@ -36,38 +38,56 @@ export class LightEditor extends React.Component<NavigationContainerProps & Navi
     if (id !== "-1") {
       const lightPromise = this.lightsApi.get(id);
       const light = await lightPromise;
-      const allLights = await lightPromise;
-      if (light.state.colormode) {
+      console.log(`light${JSON.stringify(light, null, 2)}`);
+      if (light.state.colormode && (light.state.colormode !== ColorMode.HS)) {
         light.state.colormode = ColorMode.HS;
         light.state.hue = light.state.hue ? light.state.hue : 0;
-        light.state.sat = light.state.sat ? light.state.sat : 0;
+        light.state.sat = light.state.sat ? light.state.sat : 254;
+        this.lightsApi.putState(light.id, light.state);
       }
       this.setState({ light });
     }
+    register("LightEditor", this.componentDidMount.bind(this));
   }
 
-  changeField(value: any, fieldName: string) {
-    console.log(`${fieldName} changed: ${value}`);
-    _.set(this.state.light, fieldName, value);
-    this.setState({ light: this.state.light });
-  }
-
-  async submitChanges() {
-    await this.lightsApi.put(this.state.light);
-    const light = await this.lightsApi.get(this.state.light.id);
-    this.setState({ light });
-  }
-
-  async resetChanges() {
+  async toggleOn(on: boolean) {
+    this.state.light.state.on = on;
+    await this.lightsApi.putState(this.state.light.id, { on: this.state.light.state.on });
     this.setState({ light: await this.lightsApi.get(this.state.light.id) });
   }
 
-  async setHsb(hsb: { hue: number, sat: number, bri: number }) {
-    this.state.light.state.bri = hsb.bri;
-    this.state.light.state.sat = hsb.sat;
-    this.state.light.state.hue = hsb.hue;
-    this.setState({ light: this.state.light });
-    await this.lightsApi.putState(this.state.light.id, this.state.light.state);
+  async toggleAlert(alert: boolean) {
+    if (alert) {
+      this.state.light.state.alert = Alert.LSELECT;
+    } else {
+      this.state.light.state.alert = Alert.NONE;
+    }
+    await this.lightsApi.putState(this.state.light.id, { alert: this.state.light.state.alert });
+    this.setState({ light: await this.lightsApi.get(this.state.light.id) });
+  }
+
+  async setName(name: string) {
+    this.state.light.name = name;
+    this.lightsApi.put(this.state.light);
+    this.setState({ light: await this.lightsApi.get(this.state.light.id) });
+  }
+
+  async setHsb(hsb: { h: number, s: number, b: number }) {
+    if (!this.state.light.state.on) {
+      await this.lightsApi.putState(this.state.light.id, { on: true });
+      await this.setState({ light: await this.lightsApi.get(this.state.light.id) });
+    }
+    if (this.state.light.state.colormode) {
+      this.state.light.state.sat = hsb.s;
+      this.state.light.state.hue = hsb.h;
+    }
+    this.state.light.state.bri = hsb.b;
+    console.log(`Set HSB: ${JSON.stringify(hsb)}`);
+    await this.lightsApi.putState(this.state.light.id, {
+      hue: this.state.light.state.hue,
+      sat: this.state.light.state.sat,
+      bri: this.state.light.state.bri,
+    });
     this.setState({ light: await this.lightsApi.get(this.state.light.id) });
   }
 
@@ -78,42 +98,45 @@ export class LightEditor extends React.Component<NavigationContainerProps & Navi
         ? <View style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={{ flex: 1 }}>
             <View style={{ flex: 1 }}>
-              {getTitle("Light", this.state.light.id, this.state.light.name, this.changeField.bind(this))}
-              {/* {
-                this.state.editingColor
-                  ? getColorPicker2(
-                    this.state.light.state.hue,
-                    this.state.light.state.sat,
-                    this.state.light.state.bri,
-                    this.setHsb.bind(this),
-                    "LightModalColorPicker",
-                  ) : null
-              } */}
-              {/* {
-                getTabLike([
+              {getTitle("Light", this.state.light.id, this.state.light.name, this.setName.bind(this))}
+              {
+                getColorPicker2(
                   {
-                    label: "Change Colors",
-                    selected: this.state.editingColor,
-                    toggleCallback: this.toggleEditingLightsOrColors.bind(this),
-                    selectedColors: createBasesFromColor(rgb.green, "base01"),
-                    deSelectedColors: rgbStrings,
+                    h: this.state.light.state.hue ? this.state.light.state.hue : 0,
+                    s: this.state.light.state.sat ? this.state.light.state.sat : 0,
+                    b: this.state.light.state.bri,
+                  },
+                  this.setHsb.bind(this),
+                  "GroupModalColorPicker",
+                )
+              }
+              {
+                getStatusToggleRow(
+                  "Light Alert Row",
+                  "action.alert",
+                  {
+                    onText: "Currently: Blinking",
+                    offText: "Currently: Not Blinking",
+                    onBaseColor: solarized.yellow,
+                    offBaseColor: solarized.base01,
                   },
                   {
-                    label: "Select Lights",
-                    selected: this.state.editingLights,
-                    toggleCallback: this.toggleEditingLightsOrColors.bind(this),
-                    selectedColors: createBasesFromColor(rgb.green, "base01"),
-                    deSelectedColors: rgbStrings,
+                    turnOnText: "Start",
+                    turnOffText: "Stop",
+                    turnOnBaseColor: solarized.yellow,
+                    turnOffBaseColor: solarized.base01,
                   },
-                ])
-              } */}
+                  () => getBlinking(this.state.light),
+                  this.toggleAlert.bind(this),
+                )
+              }
               {
                 getStatusToggleRow(
                   "Light Status Row",
-                  "action.on",
+                  "state.on",
                   {
-                    onText: "Currently: All On",
-                    offText: "Currently: All Off",
+                    onText: "Currently: On",
+                    offText: "Currently: Off",
                     onBaseColor: solarized.yellow,
                     offBaseColor: solarized.base01,
                   },
@@ -124,17 +147,17 @@ export class LightEditor extends React.Component<NavigationContainerProps & Navi
                     turnOffBaseColor: solarized.base01,
                   },
                   () => this.state.light.state.on ? Status.ON : Status.OFF,
-                  this.changeField.bind(this),
+                  this.toggleOn.bind(this),
                 )
               }
-              {
+              {/* {
                 getSubmitCancel(
                   "Submit Changes",
                   "Reset Changes",
                   this.submitChanges.bind(this),
                   this.resetChanges.bind(this),
                 )
-              }
+              } */}
             </View>
           </ScrollView>
         </View >

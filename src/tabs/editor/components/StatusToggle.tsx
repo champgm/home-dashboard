@@ -21,7 +21,7 @@ export function getStatusToggleRow(
   statusToggleStatus: StatusToggleStatus,
   statusToggleActions: StatusToggleActions,
   statusFunction: () => Status,
-  toggleCallback: (newValue: boolean, fieldName: string) => void,
+  toggleCallback: (newValue: boolean) => void,
 ): JSX.Element {
   const styles = getStyles();
   let statusColors: RgbBaseStringMap;
@@ -71,7 +71,7 @@ export function getStatusToggleRow(
         backgroundActive={statusColors.base02}
         backgroundDarker={statusColors.base03}
         textColor={statusColors.base1}
-        height={50}
+        height={styles.buttonHeight}
         // textSize={12}
         disabled={true}
       >{` ${statusText} `}</AwesomeButton>
@@ -82,8 +82,8 @@ export function getStatusToggleRow(
         backgroundActive={statusActionColors.base02}
         backgroundDarker={statusActionColors.base03}
         textColor={statusActionColors.base1}
-        height={50}
-        onPress={() => toggleCallback(!countsAsOn, fieldName)}
+        height={styles.buttonHeight}
+        onPress={() => toggleCallback(!countsAsOn)}
         // textSize={12}
         disabled={false}
       >{` ${statusActionText} `}</AwesomeButton>

@@ -1,5 +1,6 @@
 import { printLeftoverKeys, verifyArray, verifyType } from ".";
 import { Status } from "../tabs/editor/components/StatusToggle";
+import { Alert, verify as verifyAlert } from "./Alert";
 import { create as GroupActionCreate, GroupAction } from "./GroupAction";
 import { create as GroupStateCreate, GroupState } from "./GroupState";
 import { Item } from "./Item";
@@ -39,8 +40,8 @@ export function createSubmittable(payload: Group): Partial<Group> {
     throw new Error("Group not found");
   }
   const group = {
-    lights: verifyArray(payload.lights, "lights", "string"),
-    name: verifyType(payload.name, "name", "string"),
+    lights: verifyArray(payload.lights, "lights", "string", false),
+    name: verifyType(payload.name, "name", "string", false),
   };
   return group;
 }
@@ -49,4 +50,9 @@ export function getStatus(group: Group): Status {
   if (!group.state.any_on) { return Status.OFF; }
   if (group.state.all_on) { return Status.ON; }
   if (group.state.any_on) { return Status.INDETERMINATE; }
+}
+
+export function getBlinking(group: Group): Status {
+  if (group.action.alert === Alert.NONE) { return Status.OFF; }
+  if (group.action.alert === Alert.LSELECT) { return Status.ON; }
 }

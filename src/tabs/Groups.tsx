@@ -32,9 +32,10 @@ export class GroupsComponent extends React.Component<NavigationContainerProps & 
 
   async componentDidMount() {
     console.log(`Groups did mount`);
-    register(this.updateGroups.bind(this));
+    register("Groups", this.updateGroups.bind(this));
     await this.pollGroups();
   }
+
   async pollGroups() {
     console.log(`Polling groups...`);
     await this.updateGroups();
@@ -42,12 +43,12 @@ export class GroupsComponent extends React.Component<NavigationContainerProps & 
       this.pollGroups();
     }, 5000);
   }
+
   async updateGroups() {
     this.setState({ groups: await this.groupsApi.getAll() });
   }
 
   async onClick(id: string) {
-    // console.log(`Group is currently `);
     switch (getStatus(this.state.groups[id])) {
       case Status.ON: await this.groupsApi.putAction(id, { on: false }); break;
       case Status.OFF: await this.groupsApi.putAction(id, { on: true }); break;

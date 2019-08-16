@@ -32,9 +32,10 @@ export class LightsComponent extends React.Component<NavigationContainerProps & 
 
   async componentDidMount() {
     console.log(`Lights did mount`);
-    register(this.updateLights.bind(this));
+    register("Lights", this.updateLights.bind(this));
     await this.pollLights();
   }
+
   async pollLights() {
     console.log(`Polling lights...`);
     await this.updateLights();
@@ -42,12 +43,14 @@ export class LightsComponent extends React.Component<NavigationContainerProps & 
       this.pollLights();
     }, 5000);
   }
+
   async updateLights() {
     this.setState({ lights: await this.lightsApi.getAll() });
   }
 
-  onClick(id: string) {
-
+  async onClick(id: string) {
+    await this.lightsApi.putState(id, { on: !this.state.lights[id].state.on });
+    this.updateLights();
   }
 
   onEditClick(id: string) {
@@ -57,18 +60,6 @@ export class LightsComponent extends React.Component<NavigationContainerProps & 
 
   onFavoriteClick(id: string) {
     console.log(`favorite clicked`);
-  }
-  changeLights(lights: string[]) {
-    console.log(`setting light.lights`);
-    console.log(`to: ${lights}`);
-  }
-
-  onEditCancel() {
-    console.log(`edit canceled`);
-  }
-
-  async onEditSubmit(id: string) {
-    console.log(`edit submitted`);
   }
 
   render() {

@@ -19,6 +19,7 @@ export function getStyles() {
   const { height, width } = Dimensions.get("window");
   const widthMargin = width * .1;
   const heightMargin = height * .0125;
+  const buttonHeight = 40;
 
   const background: ViewStyle = {
     backgroundColor: solarized.base03,
@@ -105,19 +106,20 @@ export function getStyles() {
     background,
     heightMargin,
     widthMargin,
+    buttonHeight,
 
-    fieldRowContainer,
-    fieldRowSubContainer,
-    fieldRow,
-    input,
-    label,
-    lockedInput,
-    toggle,
-    lockedToggle,
-    multiSelect,
-    multiSelectRow,
-    showBorder,
-    statusToggleRow,
+    // fieldRowContainer,
+    // fieldRowSubContainer,
+    // fieldRow,
+    // input,
+    // label,
+    // lockedInput,
+    // toggle,
+    // lockedToggle,
+    // multiSelect,
+    // multiSelectRow,
+    // showBorder,
+    // statusToggleRow,
 
     solarized,
     red,

@@ -26,7 +26,7 @@ export function getTabLike(tabs: TabLike[]) {
       backgroundActive={tab.selected ? tab.selectedColors.base02 : tab.deSelectedColors.base02}
       backgroundDarker={tab.selected ? tab.selectedColors.base03 : tab.deSelectedColors.base03}
       textColor={tab.selected ? tab.selectedColors.base1 : tab.deSelectedColors.base1}
-      height={50}
+      height={styles.buttonHeight}
       onPress={() => tab.toggleCallback()}
       disabled={false}
     >{` ${tab.label} `}</AwesomeButton>);

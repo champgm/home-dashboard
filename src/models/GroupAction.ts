@@ -5,20 +5,19 @@ import { Effect, verify as verifyEffect } from "./Effect";
 
 export interface GroupAction {
   alert: Alert;
-  bri: number;
+  bri: number; // Phillips brightness is 0 - 254, hsl is looking for 0-100%
   colormode?: ColorMode;
   ct?: number;
   effect?: Effect;
-  hue?: number;
+  hue?: number; // Phillips hue is 0 - 65535, hsl is looking for 0-360
   on: boolean;
-  sat?: number;
+  sat?: number; // Phillips saturation is 0 - 254, hsl is looking for 0-100%
   xy?: number[];
 }
 export interface GroupActions {
   [id: string]: GroupAction;
 }
 
-// export namespace GroupAction {
 export function create(payload: GroupAction): GroupAction {
   if (!payload) {
     console.log(`${JSON.stringify(payload, null, 2)}`);
@@ -42,4 +41,24 @@ export function create(payload: GroupAction): GroupAction {
   printLeftoverKeys("GroupAction", payload, action);
   return action;
 }
-// }
+
+export function createSubmittable(payload: Partial<GroupAction>): GroupAction {
+  if (!payload) {
+    console.log(`${JSON.stringify(payload, null, 2)}`);
+    throw new Error("GroupAction not found");
+  }
+  const action = {
+    alert: payload.alert ?
+      verifyAlert(payload.alert)
+      : undefined,
+    bri: verifyType(payload.bri, "bri", "number", false),
+    colormode: payload.colormode
+      ? verifyColorMode(payload.colormode)
+      : undefined,
+    hue: verifyType(payload.hue, "hue", "number", false),
+    on: verifyType(payload.on, "on", "boolean", false),
+    sat: verifyType(payload.sat, "sat", "number", false),
+  };
+  printLeftoverKeys("GroupAction", payload, action);
+  return action;
+}

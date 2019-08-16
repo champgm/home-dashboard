@@ -5,9 +5,11 @@ import { NavigationContainerProps, NavigationNavigatorProps } from "react-naviga
 import { createBasesFromColor, rgb, rgbStrings, rgbStrings as solarized } from "solarizer";
 import { GroupsApi } from "../../hue/GroupsApi";
 import { LightsApi } from "../../hue/LightsApi";
+import { Alert } from "../../models/Alert";
 import { ColorMode } from "../../models/ColorMode";
-import { getStatus, Group } from "../../models/Group";
+import { getBlinking, getStatus, Group } from "../../models/Group";
 import { Lights } from "../../models/Light";
+import { register } from "../common/Alerter";
 import { getStyles } from "../common/Style";
 import { getColorPicker2 } from "./components/ColorPicker";
 import { getLightSelector } from "./components/LightSelector";
@@ -54,19 +56,27 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
         group,
       });
     }
+    register("GroupEditor", this.componentDidMount.bind(this));
   }
 
-  changeField(value: any, fieldName: string) {
-    console.log(`${fieldName} changed: ${value}`);
-    _.set(this.state.group, fieldName, value);
-    this.setState({ group: this.state.group });
+  // changeField(value: any, fieldName: string) {
+  //   console.log(`${fieldName} changed: ${value}`);
+  //   _.set(this.state.group, fieldName, value);
+  //   this.setState({ group: this.state.group });
+  // }
+
+  async setName(name: string) {
+    this.state.group.name = name;
+    this.groupsApi.put(this.state.group);
+    this.setState({ group: await this.groupsApi.get(this.state.group.id) });
   }
 
-  toggleLightSelection(lightId) {
+  async toggleLightSelection(lightId) {
     this.state.group.lights = this.state.group.lights.includes(lightId)
       ? this.state.group.lights.filter((selectedId) => selectedId !== lightId)
       : this.state.group.lights.concat(lightId);
-    this.setState({ group: this.state.group });
+    this.groupsApi.put(this.state.group);
+    this.setState({ group: await this.groupsApi.get(this.state.group.id) });
   }
 
   toggleEditingLightsOrColors() {
@@ -76,20 +86,36 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
     });
   }
 
-  async submitChanges() {
-    await this.groupsApi.put(this.state.group);
-    const group = await this.groupsApi.get(this.state.group.id);
-    this.setState({ group });
-  }
-
-  async resetChanges() {
+  async toggleOn(on: boolean) {
+    this.state.group.action.on = on;
+    await this.groupsApi.putAction(this.state.group.id, { on: this.state.group.action.on });
     this.setState({ group: await this.groupsApi.get(this.state.group.id) });
   }
 
-  async setHsb(hsb: { hue: number, sat: number, bri: number }) {
-    this.state.group.action.bri = hsb.bri;
-    this.state.group.action.sat = hsb.sat;
-    this.state.group.action.hue = hsb.hue;
+  async toggleAlert(alert: boolean) {
+    if (alert) {
+      this.state.group.action.alert = Alert.LSELECT;
+    } else {
+      this.state.group.action.alert = Alert.NONE;
+    }
+    await this.groupsApi.putAction(this.state.group.id, { alert: this.state.group.action.alert });
+    this.setState({ group: await this.groupsApi.get(this.state.group.id) });
+  }
+
+  // async submitChanges() {
+  //   await this.groupsApi.put(this.state.group);
+  //   const group = await this.groupsApi.get(this.state.group.id);
+  //   this.setState({ group });
+  // }
+
+  // async resetChanges() {
+  //   this.setState({ group: await this.groupsApi.get(this.state.group.id) });
+  // }
+
+  async setHsb(hsb: { h: number, s: number, b: number }) {
+    this.state.group.action.bri = hsb.b;
+    this.state.group.action.sat = hsb.s;
+    this.state.group.action.hue = hsb.h;
     await this.groupsApi.putAction(this.state.group.id, this.state.group.action);
     this.setState({ group: await this.groupsApi.get(this.state.group.id) });
   }
@@ -101,15 +127,17 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
         ? <View style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={{ flex: 1 }}>
             <View style={{ flex: 1 }}>
-              {getTitle("Group", this.state.group.id, this.state.group.name, this.changeField.bind(this))}
+              {getTitle("Group", this.state.group.id, this.state.group.name, this.setName.bind(this))}
               {
                 this.state.editingColor
                   ? getColorPicker2(
-                    this.state.group.action.hue,
-                    this.state.group.action.sat,
-                    this.state.group.action.bri,
+                    {
+                      h: this.state.group.action.hue,
+                      s: this.state.group.action.sat,
+                      b: this.state.group.action.bri,
+                    },
                     this.setHsb.bind(this),
-                    "GroupModalColorPicker",
+                    "LightModalColorPicker",
                   ) : null
               }
               {
@@ -140,6 +168,26 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
               }
               {
                 getStatusToggleRow(
+                  "Group Alert Row",
+                  "action.alert",
+                  {
+                    onText: "Currently: Blinking",
+                    offText: "Currently: Not Blinking",
+                    onBaseColor: solarized.yellow,
+                    offBaseColor: solarized.base01,
+                  },
+                  {
+                    turnOnText: "Start",
+                    turnOffText: "Stop",
+                    turnOnBaseColor: solarized.yellow,
+                    turnOffBaseColor: solarized.base01,
+                  },
+                  () => getBlinking(this.state.group),
+                  this.toggleAlert.bind(this),
+                )
+              }
+              {
+                getStatusToggleRow(
                   "Group Status Row",
                   "action.on",
                   {
@@ -157,17 +205,17 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
                     turnOffBaseColor: solarized.base01,
                   },
                   () => getStatus(this.state.group),
-                  this.changeField.bind(this),
+                  this.toggleOn.bind(this),
                 )
               }
-              {
+              {/* {
                 getSubmitCancel(
                   "Submit Changes",
                   "Reset Changes",
                   this.submitChanges.bind(this),
                   this.resetChanges.bind(this),
                 )
-              }
+              } */}
             </View>
           </ScrollView>
         </View >

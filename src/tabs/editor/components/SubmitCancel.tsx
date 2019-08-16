@@ -29,7 +29,7 @@ export function getSubmitCancel(
         backgroundActive={styles.red.base02}
         backgroundDarker={styles.red.base03}
         textColor={styles.red.base1}
-        height={50}
+        height={styles.buttonHeight}
         onPress={() => cancelCallback()}
       >{` ${cancelLabel} `}</AwesomeButton>
       <AwesomeButton
@@ -39,7 +39,7 @@ export function getSubmitCancel(
         backgroundActive={styles.green.base02}
         backgroundDarker={styles.green.base03}
         textColor={styles.green.base1}
-        height={50}
+        height={styles.buttonHeight}
         onPress={() => submitCallback()}
       >{` ${submitLabel} `}</AwesomeButton>
     </View >);

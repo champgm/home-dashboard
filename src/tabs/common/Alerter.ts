@@ -1,10 +1,10 @@
 
-const updaters: [() => void] = [] as any;
+const updaters: { [key: string]: () => void } = {};
 
-export function register(update: () => void): void {
-  updaters.push(update);
+export function register(key: string, update: () => void): void {
+  updaters[key] = update;
 }
 
 export function triggerUpdate() {
-  updaters.forEach((update) => update());
+  Object.values(updaters).forEach((update) => update());
 }

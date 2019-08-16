@@ -1,4 +1,6 @@
 import { printLeftoverKeys, verifyType } from ".";
+import { Status } from "../tabs/editor/components/StatusToggle";
+import { Alert } from "./Alert";
 import { Item } from "./Item";
 import { create as StateCreate, State } from "./State";
 
@@ -36,4 +38,21 @@ export function create(payload: Light): Light {
   };
   printLeftoverKeys("Light", payload, light);
   return light;
+}
+
+export function createSubmittable(payload: Light): Partial<Light> {
+  if (!payload) {
+    console.log(`${JSON.stringify(payload, null, 2)}`);
+    throw new Error("Light not found");
+  }
+  const light = {
+    name: verifyType(payload.name, "name", "string", false),
+  };
+  printLeftoverKeys("Light", payload, light);
+  return light;
+}
+
+export function getBlinking(light: Light): Status {
+  if (light.state.alert === Alert.NONE) { return Status.OFF; }
+  if (light.state.alert === Alert.LSELECT) { return Status.ON; }
 }

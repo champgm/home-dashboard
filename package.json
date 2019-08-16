@@ -5,6 +5,7 @@
     "startlocal": "expo start --localhost",
     "startlan": "expo start",
     "android": "expo start --android",
+    "emulator": "emulator -netdelay none -netspeed full -no-snapshot-load -avd Pixel_2_API_28",
     "build": "expo build:android",
     "ios": "expo start --ios",
     "web": "expo start --web",

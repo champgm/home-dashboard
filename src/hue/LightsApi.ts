@@ -1,7 +1,7 @@
 import { get, put } from "../common/Parameters";
 import { bridgeUri } from "../configuration/Hue.json";
-import { create as LightCreate, Light, Lights } from "../models/Light";
-import { LightState } from "../models/LightState";
+import { create as LightCreate, createSubmittable as createSubmittableLight, Light, Lights } from "../models/Light";
+import { createSubmittable as createSubmittableLightState,LightState } from "../models/LightState";
 import { triggerUpdate } from "../tabs/common/Alerter";
 
 export class LightsApi {
@@ -32,22 +32,29 @@ export class LightsApi {
 
   async put(light: Light): Promise<void> {
     const uri = `${bridgeUri}/lights/${light.id}`;
-    const submittableLight = LightCreate(light);
+    if (light.state) {
+      await this.putState(light.id, light.state);
+    }
+    const submittableLight = createSubmittableLight(light);
     const parameters: RequestInit = {
       ...put,
       body: JSON.stringify(submittableLight),
     };
     const response = await (await fetch(uri, parameters)).json();
+    console.log(`put light response${JSON.stringify(response, null, 2)}`);
     triggerUpdate();
   }
 
   async putState(id: string, lightState: Partial<LightState>): Promise<void> {
     const uri = `${bridgeUri}/lights/${id}/state`;
+    const submittableLightState = createSubmittableLightState(lightState);
     const parameters: RequestInit = {
       ...put,
-      body: JSON.stringify(lightState),
+      body: JSON.stringify(submittableLightState),
     };
+    console.log(`putting light state${JSON.stringify(parameters, null, 2)}`);
     const response = await (await fetch(uri, parameters)).json();
+    console.log(`put light state response${JSON.stringify(response, null, 2)}`);
     triggerUpdate();
   }
 
