@@ -17,6 +17,8 @@ export function getTabLike(tabs: TabLike[]) {
 
   const styles = getStyles();
   const tabJsx = [];
+  // Hopefully I can make a button group for this one day, then index will be important
+  // tslint:disable-next-line:prefer-for-of
   for (let index = 0; index < tabs.length; index++) {
     const tab = tabs[index];
     tabJsx.push(<AwesomeButton

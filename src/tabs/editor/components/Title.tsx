@@ -6,7 +6,8 @@ export function getTitle(
   itemType: string,
   itemId: string,
   name: string,
-  changeNameCallback?: (text: string) => void,
+  endNameEdit: () => void,
+  changeNameCallback: (text: string) => void,
 ) {
   const styles = getStyles();
   return (
@@ -39,6 +40,7 @@ export function getTitle(
         }}
         value={name}
         editable={true}
+        onEndEditing={() => endNameEdit()}
         onChangeText={(value) => changeNameCallback(value)}
       />
     </View>);

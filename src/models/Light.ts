@@ -48,7 +48,6 @@ export function createSubmittable(payload: Light): Partial<Light> {
   const light = {
     name: verifyType(payload.name, "name", "string", false),
   };
-  printLeftoverKeys("Light", payload, light);
   return light;
 }
 

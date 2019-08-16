@@ -1,4 +1,3 @@
-import { STATUS_CODES } from "http";
 import _ from "lodash";
 import React from "react";
 import { ActivityIndicator, ScrollView, View } from "react-native";
@@ -9,13 +8,10 @@ import { Alert } from "../../models/Alert";
 import { ColorMode } from "../../models/ColorMode";
 import { getBlinking } from "../../models/Light";
 import { Light } from "../../models/Light";
-import { register } from "../common/Alerter";
+import { deregister, register } from "../common/Alerter";
 import { getStyles } from "../common/Style";
 import { getColorPicker2 } from "./components/ColorPicker";
-import { getLightSelector } from "./components/LightSelector";
 import { getStatusToggleRow, Status } from "./components/StatusToggle";
-import { getSubmitCancel } from "./components/SubmitCancel";
-import { getTabLike } from "./components/TabLike";
 import { getTitle } from "./components/Title";
 
 interface State {
@@ -50,6 +46,9 @@ export class LightEditor extends React.Component<NavigationContainerProps & Navi
     register("LightEditor", this.componentDidMount.bind(this));
   }
 
+  componentWillUnmount() {
+    deregister("LightEditor");
+  }
   async toggleOn(on: boolean) {
     this.state.light.state.on = on;
     await this.lightsApi.putState(this.state.light.id, { on: this.state.light.state.on });
@@ -66,12 +65,15 @@ export class LightEditor extends React.Component<NavigationContainerProps & Navi
     this.setState({ light: await this.lightsApi.get(this.state.light.id) });
   }
 
-  async setName(name: string) {
+  setName(name: string) {
     this.state.light.name = name;
-    this.lightsApi.put(this.state.light);
-    this.setState({ light: await this.lightsApi.get(this.state.light.id) });
+    this.setState({ light: this.state.light });
   }
 
+  async endNameEdit() {
+    await this.lightsApi.put(this.state.light);
+    this.setState({ light: await this.lightsApi.get(this.state.light.id) });
+  }
   async setHsb(hsb: { h: number, s: number, b: number }) {
     if (!this.state.light.state.on) {
       await this.lightsApi.putState(this.state.light.id, { on: true });
@@ -98,7 +100,13 @@ export class LightEditor extends React.Component<NavigationContainerProps & Navi
         ? <View style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={{ flex: 1 }}>
             <View style={{ flex: 1 }}>
-              {getTitle("Light", this.state.light.id, this.state.light.name, this.setName.bind(this))}
+              {getTitle(
+                "Light",
+                this.state.light.id,
+                this.state.light.name,
+                this.endNameEdit.bind(this),
+                this.setName.bind(this))
+              }
               {
                 getColorPicker2(
                   {

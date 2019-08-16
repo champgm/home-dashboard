@@ -15,12 +15,12 @@ export function getLightSelector(
       key={lightMeta.id}
       onPress={() => toggleLightSelection(lightMeta.id)}
       accessibilityLabel={lightMeta.name}
-      backgroundColor={initiallySelectedItems.includes(lightMeta.id) ? styles.green.base01 : styles.solarized.base01}
-      backgroundActive={initiallySelectedItems.includes(lightMeta.id) ? styles.green.base02 : styles.solarized.base02}
-      backgroundDarker={initiallySelectedItems.includes(lightMeta.id) ? styles.green.base03 : styles.solarized.base03}
-      textColor={initiallySelectedItems.includes(lightMeta.id) ? styles.green.base1 : styles.solarized.base1}
-      height={70}
-      width={70}
+      backgroundColor={initiallySelectedItems.includes(lightMeta.id) ? styles.blue.base01 : styles.solarized.base01}
+      backgroundActive={initiallySelectedItems.includes(lightMeta.id) ? styles.blue.base02 : styles.solarized.base02}
+      backgroundDarker={initiallySelectedItems.includes(lightMeta.id) ? styles.blue.base03 : styles.solarized.base03}
+      textColor={initiallySelectedItems.includes(lightMeta.id) ? styles.blue.base1 : styles.solarized.base1}
+      height={40}
+      width={80}
       textSize={12}
       textLineHeight={15}
     >
@@ -35,7 +35,7 @@ export function getLightSelector(
       // flex: 1,
       flexDirection: "row",
       flexWrap: "wrap",
-      justifyContent: "space-around",
+      justifyContent: "space-between",
     }}>
       {lightSelectButtons}
     </View>

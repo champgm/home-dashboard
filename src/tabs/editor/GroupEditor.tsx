@@ -9,12 +9,11 @@ import { Alert } from "../../models/Alert";
 import { ColorMode } from "../../models/ColorMode";
 import { getBlinking, getStatus, Group } from "../../models/Group";
 import { Lights } from "../../models/Light";
-import { register } from "../common/Alerter";
+import { deregister, register } from "../common/Alerter";
 import { getStyles } from "../common/Style";
 import { getColorPicker2 } from "./components/ColorPicker";
 import { getLightSelector } from "./components/LightSelector";
-import { getStatusToggleRow, Status } from "./components/StatusToggle";
-import { getSubmitCancel } from "./components/SubmitCancel";
+import { getStatusToggleRow } from "./components/StatusToggle";
 import { getTabLike } from "./components/TabLike";
 import { getTitle } from "./components/Title";
 
@@ -45,6 +44,7 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
       const groupPromise = this.groupsApi.get(id);
       const lightPromise = this.lightsApi.getAll();
       const group = await groupPromise;
+      console.log(`group${JSON.stringify(group, null, 2)}`);
       const allLights = await lightPromise;
       if (group.action.colormode) {
         group.action.colormode = ColorMode.HS;
@@ -59,15 +59,23 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
     register("GroupEditor", this.componentDidMount.bind(this));
   }
 
+  componentWillUnmount() {
+    deregister("GroupEditor");
+  }
+
   // changeField(value: any, fieldName: string) {
   //   console.log(`${fieldName} changed: ${value}`);
   //   _.set(this.state.group, fieldName, value);
   //   this.setState({ group: this.state.group });
   // }
 
-  async setName(name: string) {
+  setName(name: string) {
     this.state.group.name = name;
-    this.groupsApi.put(this.state.group);
+    this.setState({ group: this.state.group });
+  }
+
+  async endNameEdit() {
+    await this.groupsApi.put(this.state.group);
     this.setState({ group: await this.groupsApi.get(this.state.group.id) });
   }
 
@@ -113,9 +121,11 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
   // }
 
   async setHsb(hsb: { h: number, s: number, b: number }) {
+    if (this.state.group.action.colormode) {
+      this.state.group.action.sat = hsb.s;
+      this.state.group.action.hue = hsb.h;
+    }
     this.state.group.action.bri = hsb.b;
-    this.state.group.action.sat = hsb.s;
-    this.state.group.action.hue = hsb.h;
     await this.groupsApi.putAction(this.state.group.id, this.state.group.action);
     this.setState({ group: await this.groupsApi.get(this.state.group.id) });
   }
@@ -127,13 +137,18 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
         ? <View style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={{ flex: 1 }}>
             <View style={{ flex: 1 }}>
-              {getTitle("Group", this.state.group.id, this.state.group.name, this.setName.bind(this))}
+              {getTitle(
+                "Group",
+                this.state.group.id,
+                this.state.group.name,
+                this.endNameEdit.bind(this),
+                this.setName.bind(this))}
               {
                 this.state.editingColor
                   ? getColorPicker2(
                     {
-                      h: this.state.group.action.hue,
-                      s: this.state.group.action.sat,
+                      h: this.state.group.action.hue ? this.state.group.action.hue : 0,
+                      s: this.state.group.action.sat ? this.state.group.action.sat : 0,
                       b: this.state.group.action.bri,
                     },
                     this.setHsb.bind(this),

@@ -31,8 +31,8 @@ const lightStack = createStackNavigator({
 
 export const AppContainer: NavigationContainer = createAppContainer(createMaterialTopTabNavigator(
   {
-    Lights: lightStack,
     Groups: groupStack,
+    Lights: lightStack,
   },
   {
     /* Other configuration remains unchanged */

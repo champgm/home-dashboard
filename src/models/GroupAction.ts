@@ -59,6 +59,5 @@ export function createSubmittable(payload: Partial<GroupAction>): GroupAction {
     on: verifyType(payload.on, "on", "boolean", false),
     sat: verifyType(payload.sat, "sat", "number", false),
   };
-  printLeftoverKeys("GroupAction", payload, action);
   return action;
 }
