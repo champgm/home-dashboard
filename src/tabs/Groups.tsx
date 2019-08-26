@@ -90,6 +90,7 @@ export class GroupsComponent extends React.Component<NavigationContainerProps & 
               onEditClick={this.onEditClick.bind(this)}
               onFavoriteClick={this.onFavoriteClick.bind(this)}
               title={group.name}
+              reachable={true}
             />
           );
         })

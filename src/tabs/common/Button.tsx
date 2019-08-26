@@ -4,6 +4,7 @@ import {
   Dimensions,
   Image,
   StyleSheet,
+  Text,
   View,
 } from "react-native";
 import AwesomeButton from "react-native-really-awesome-button";
@@ -15,6 +16,7 @@ export interface Props {
   on?: boolean;
   title: string;
   colorMap: RgbBaseStringMap;
+  reachable: boolean;
   onFavoriteClick: (id: string) => void;
   onEditClick: (id: string) => void;
   onClick: (id: string) => void;
@@ -22,6 +24,7 @@ export interface Props {
 
 interface State {
   on: boolean;
+  reachable: boolean;
 }
 
 export class ItemButton extends React.Component<Props, State> {
@@ -29,13 +32,34 @@ export class ItemButton extends React.Component<Props, State> {
     super(props);
     this.state = {
       on: this.props.on,
+      reachable: this.props.reachable,
     };
   }
+
+  getReachableImage(buttonDimension) {
+    if (this.props.reachable) {
+      return undefined;
+    }
+    return (
+      <Image
+        style={{
+          opacity:.4,
+          zIndex: 100,
+          width: buttonDimension*.9,
+          height: buttonDimension*.9,
+          top: -(buttonDimension*1.65),
+          left: buttonDimension * .07,
+        }}
+        source={require("../../../assets/questionMark.png")} />
+    );
+  }
+
   render() {
     const { width } = Dimensions.get("window");
     const margin = width * .01;
     const buttonDimension = width * .2;
     const editButtonDimension = buttonDimension / 3;
+
     return (
       <View style={[styles.buttonContainer, {
         marginBottom: margin * 4,
@@ -47,7 +71,6 @@ export class ItemButton extends React.Component<Props, State> {
         maxHeight: buttonDimension,
         maxWidth: buttonDimension,
       }]}>
-        {/* <this.props.editModalClass visible={false} /> */}
         <AwesomeButton
           // Main button
           paddingHorizontal={5}
@@ -104,6 +127,7 @@ export class ItemButton extends React.Component<Props, State> {
             }}
             source={require("../../../assets/favorite.png")} />
         </AwesomeButton>
+        {this.getReachableImage(buttonDimension)}
       </View>
     );
   }

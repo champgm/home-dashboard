@@ -35,7 +35,11 @@ export class LightEditor extends React.Component<NavigationContainerProps & Navi
       const lightPromise = this.lightsApi.get(id);
       const light = await lightPromise;
       console.log(`light${JSON.stringify(light, null, 2)}`);
-      if (light.state.colormode && (light.state.colormode !== ColorMode.HS)) {
+      if (
+        light.state.colormode
+        && (light.state.colormode !== ColorMode.HS)
+        && light.state.on
+      ) {
         light.state.colormode = ColorMode.HS;
         light.state.hue = light.state.hue ? light.state.hue : 0;
         light.state.sat = light.state.sat ? light.state.sat : 254;
@@ -85,11 +89,13 @@ export class LightEditor extends React.Component<NavigationContainerProps & Navi
     }
     this.state.light.state.bri = hsb.b;
     console.log(`Set HSB: ${JSON.stringify(hsb)}`);
-    await this.lightsApi.putState(this.state.light.id, {
-      hue: this.state.light.state.hue,
-      sat: this.state.light.state.sat,
-      bri: this.state.light.state.bri,
-    });
+    if (this.state.light.state.on) {
+      await this.lightsApi.putState(this.state.light.id, {
+        hue: this.state.light.state.hue,
+        sat: this.state.light.state.sat,
+        bri: this.state.light.state.bri,
+      });
+    }
     this.setState({ light: await this.lightsApi.get(this.state.light.id) });
   }
 

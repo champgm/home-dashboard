@@ -1,5 +1,5 @@
 import { get, put } from "../common/Parameters";
-import { bridgeUri } from "../configuration/Hue.json";
+import { bridgeUri } from "../configuration/Hue";
 import { create as LightCreate, createSubmittable as createSubmittableLight, Light, Lights } from "../models/Light";
 import { createSubmittable as createSubmittableLightState,LightState } from "../models/LightState";
 import { triggerUpdate } from "../tabs/common/Alerter";

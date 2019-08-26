@@ -1,5 +1,5 @@
 import { get, put } from "../common/Parameters";
-import { bridgeUri } from "../configuration/Hue.json";
+import { bridgeUri } from "../configuration/Hue";
 import { create as GroupCreate, createSubmittable as createSubmittableGroup, Group, Groups } from "../models/Group";
 import { createSubmittable as createSubmittableGroupAction, GroupAction } from "../models/GroupAction";
 import { triggerUpdate } from "../tabs/common/Alerter";

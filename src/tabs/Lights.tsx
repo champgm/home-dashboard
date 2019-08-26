@@ -66,6 +66,9 @@ export class LightsComponent extends React.Component<NavigationContainerProps & 
     const lightButtons = this.state.lights
       ? sortBy(Object.values(this.state.lights), "name")
         .map((light) => {
+          if (!light.state.reachable) {
+            console.log(`Creating button for unreachable light`);
+          }
           return (
             <ItemButton
               id={light.id}
@@ -75,6 +78,7 @@ export class LightsComponent extends React.Component<NavigationContainerProps & 
               onEditClick={this.onEditClick.bind(this)}
               onFavoriteClick={this.onFavoriteClick.bind(this)}
               title={light.name}
+              reachable={light.state.reachable}
             />
           );
         })
