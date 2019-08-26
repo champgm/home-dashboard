@@ -10,6 +10,7 @@ import { getBlinking } from "../../models/Light";
 import { Light } from "../../models/Light";
 import { deregister, register } from "../common/Alerter";
 import { getStyles } from "../common/Style";
+import { getBrightnessSlider } from "./components/BrightnessSlider";
 import { getColorPicker2 } from "./components/ColorPicker";
 import { getStatusToggleRow, Status } from "./components/StatusToggle";
 import { getTitle } from "./components/Title";
@@ -21,6 +22,8 @@ interface State {
 
 export class LightEditor extends React.Component<NavigationContainerProps & NavigationNavigatorProps<any>, State> {
   lightsApi: LightsApi;
+  debouncingBrightness = false;
+
   constructor(props) {
     super(props);
     this.state = {
@@ -78,6 +81,18 @@ export class LightEditor extends React.Component<NavigationContainerProps & Navi
     await this.lightsApi.put(this.state.light);
     this.setState({ light: await this.lightsApi.get(this.state.light.id) });
   }
+
+  async setBrightness(brightness: number, overrideDebounce: boolean) {
+    if (!this.debouncingBrightness || overrideDebounce) {
+      console.log(`Setting brightness: ${brightness}`);
+      this.debouncingBrightness = true;
+      setTimeout(() => this.debouncingBrightness = false, 500);
+      this.state.light.state.bri = brightness;
+      await this.lightsApi.putState(this.state.light.id, { bri: brightness });
+      this.setState({ light: await this.lightsApi.get(this.state.light.id) });
+    }
+  }
+
   async setHsb(hsb: { h: number, s: number, b: number }) {
     if (!this.state.light.state.on) {
       await this.lightsApi.putState(this.state.light.id, { on: true });
@@ -113,17 +128,11 @@ export class LightEditor extends React.Component<NavigationContainerProps & Navi
                 this.endNameEdit.bind(this),
                 this.setName.bind(this))
               }
-              {
-                getColorPicker2(
-                  {
-                    h: this.state.light.state.hue ? this.state.light.state.hue : 0,
-                    s: this.state.light.state.sat ? this.state.light.state.sat : 0,
-                    b: this.state.light.state.bri,
-                  },
-                  this.setHsb.bind(this),
-                  "GroupModalColorPicker",
-                )
-              }
+              {getBrightnessSlider(
+                this.state.light.state.bri,
+                this.setBrightness.bind(this),
+                solarized,
+              )}
               {
                 getStatusToggleRow(
                   "Light Alert Row",
