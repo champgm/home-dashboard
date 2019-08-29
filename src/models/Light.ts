@@ -13,6 +13,31 @@ export interface Light extends Item {
   swversion: string;
   swconfigid?: string;
   productid?: string;
+  swupdate: { lastinstall: null, state: string };
+  productname: string;
+  capabilities: {
+    certified: boolean,
+    control: {
+      mindimlevel: number,
+      maxlumen: number,
+      colorgamuttype: string,
+      colorgamut: [[number, number], [number, number], [number, number]],
+      ct: { min: number, max: number },
+    },
+    streaming: {
+      renderer: true,
+      proxy: true,
+    },
+  };
+  config: {
+    archetype: string,
+    function: string,
+    direction: string,
+    startup: {
+      mode: string,
+      configured: true,
+    },
+  };
 }
 
 export interface Lights {
@@ -35,6 +60,10 @@ export function create(payload: Light): Light {
     swversion: verifyType(payload.swversion, "swversion", "string"),
     swconfigid: verifyType(payload.swconfigid, "swconfigid", "string", false),
     productid: verifyType(payload.productid, "productid", "string", false),
+    capabilities: payload.capabilities,
+    config: payload.config,
+    swupdate: payload.swupdate,
+    productname: payload.productname,
   };
   printLeftoverKeys("Light", payload, light);
   return light;

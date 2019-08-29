@@ -7,6 +7,7 @@ export interface State {
   ct?: number;
   effect?: string;
   hue?: number;
+  mode: string;
   on: boolean;
   reachable: boolean;
   sat?: number;
@@ -27,6 +28,7 @@ export function create(payload: State): State {
     reachable: verifyType(payload.reachable, "reachable", "boolean"),
     sat: verifyType(payload.sat, "sat", "number", false),
     xy: verifyArray(payload.xy, "xy", "number", false),
+    mode: verifyType(payload.mode, "mode", "string"),
   };
   printLeftoverKeys("State", payload, state);
   return state;

@@ -65,7 +65,10 @@ export function printLeftoverKeys(modelType: string, first: any, second: any) {
     .concat(secondKeys.filter((key) => !firstKeys.includes(key)))
     .filter((key) => !(first[key] === undefined && second[key] === undefined));
 
+  const differenceMap = {};
+  difference.forEach((key) => differenceMap[key] = first[key] ? first[key] : second[key]);
+
   if (!(difference.length === 0)) {
-    console.log(`Key difference in model, '${modelType}' detected: ${JSON.stringify(difference, null, 2)}`);
+    console.log(`Key difference in model, '${modelType}' detected: ${JSON.stringify(differenceMap, null, 2)}`);
   }
 }

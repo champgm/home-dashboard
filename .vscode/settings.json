@@ -1,12 +1,18 @@
 {
   "cSpell.words": [
     "COLORLOOP",
+    "colorgamut",
+    "colorgamuttype",
     "colormode",
     "debouncing",
+    "lastinstall",
     "manufacturername",
+    "mindimlevel",
     "modelid",
     "productid",
+    "productname",
     "swconfigid",
+    "swupdate",
     "swversion",
     "uniqueid"
   ]
