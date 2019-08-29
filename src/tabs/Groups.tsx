@@ -8,7 +8,7 @@ import { sortBy } from "../common";
 import { GroupsApi } from "../hue/GroupsApi";
 import { LightsApi } from "../hue/LightsApi";
 import { getStatus, Groups } from "../models/Group";
-import { register, triggerUpdate } from "./common/Alerter";
+import { deregister, register } from "./common/Alerter";
 import { ItemButton } from "./common/Button";
 import { getFavoriteArray, toggleFavorite } from "./common/Favorites";
 import { grey, orange, yellow } from "./common/Style";
@@ -32,6 +32,7 @@ export class GroupsComponent extends React.Component<NavigationContainerProps & 
     this.lightsApi = new LightsApi();
   }
 
+  componentWillUnmount() { deregister("Groups"); }
   async componentDidMount() {
     console.log(`Groups did mount`);
     register("Groups", this.updateGroups.bind(this));
@@ -58,9 +59,7 @@ export class GroupsComponent extends React.Component<NavigationContainerProps & 
       case Status.ON: await this.groupsApi.putAction(id, { on: false }); break;
       case Status.OFF: await this.groupsApi.putAction(id, { on: true }); break;
       case Status.INDETERMINATE: await this.groupsApi.putAction(id, { on: true }); break;
-      default:
-        console.log(`Invalid group state: ${JSON.stringify(this.state.groups[id], null, 2)}`);
-        break;
+      default: console.log(`Invalid group state: ${JSON.stringify(this.state.groups[id], null, 2)}`); break;
     }
     await this.updateGroups();
   }

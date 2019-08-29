@@ -9,6 +9,7 @@ import {
 } from "react-navigation";
 import { GroupEditor } from "./tabs/editor/GroupEditor";
 import { LightEditor } from "./tabs/editor/LightEditor";
+import { FavoritesComponent } from "./tabs/Favorites";
 import { GroupsComponent } from "./tabs/Groups";
 import { LightsComponent } from "./tabs/Lights";
 
@@ -18,6 +19,10 @@ interface State {
   index: number;
   routes: Route[];
 }
+
+const favoritesStack = createStackNavigator({
+  Groups: FavoritesComponent,
+}, { headerMode: "none" });
 
 const groupStack = createStackNavigator({
   Groups: GroupsComponent,
@@ -31,6 +36,7 @@ const lightStack = createStackNavigator({
 
 export const AppContainer: NavigationContainer = createAppContainer(createMaterialTopTabNavigator(
   {
+    Favorites: favoritesStack,
     Lights: lightStack,
     Groups: groupStack,
   },

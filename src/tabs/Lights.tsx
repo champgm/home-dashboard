@@ -10,7 +10,7 @@ import v4 from "uuid/v4";
 import { sortBy } from "../common";
 import { LightsApi } from "../hue/LightsApi";
 import { Lights } from "../models/Light";
-import { register } from "./common/Alerter";
+import { deregister, register } from "./common/Alerter";
 import { ItemButton } from "./common/Button";
 import { getFavoriteArray, toggleFavorite } from "./common/Favorites";
 import { grey, yellow } from "./common/Style";
@@ -31,6 +31,7 @@ export class LightsComponent extends React.Component<NavigationContainerProps & 
     this.lightsApi = new LightsApi();
   }
 
+  componentWillUnmount() { deregister("Lights"); }
   async componentDidMount() {
     console.log(`Lights did mount`);
     register("Lights", this.updateLights.bind(this));
