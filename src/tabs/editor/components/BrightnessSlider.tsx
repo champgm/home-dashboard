@@ -13,15 +13,15 @@ export function getBrightnessSlider(
   return (
     <Slider
       style={{
-        paddingTop:30,
-        paddingBottom:40,
+        paddingTop: 30,
+        paddingBottom: 40,
         alignSelf: "center",
         width: 300,
         height: 40,
       }}
       value={initialValue}
-      onValueChange={(newValue) => valueChanged(newValue, false)}
-      onSlidingComplete={(newValue) => valueChanged(newValue, true)}
+      onValueChange={(newValue) => valueChanged(Math.floor(newValue), false)}
+      onSlidingComplete={(newValue) => valueChanged(Math.floor(newValue), true)}
       minimumValue={0}
       maximumValue={254}
       thumbImage={require("../../../../assets/lightBulb.png")}

@@ -12,11 +12,12 @@ import { RgbBaseMap, RgbBaseStringMap } from "solarizer/tsc-out/RgbMaps";
 import { blue, yellow } from "./Style";
 
 export interface Props {
-  id: string;
-  on?: boolean;
-  title: string;
   colorMap: RgbBaseStringMap;
+  id: string;
+  isFavorite: boolean;
+  on?: boolean;
   reachable: boolean;
+  title: string;
   onFavoriteClick: (id: string) => void;
   onEditClick: (id: string) => void;
   onClick: (id: string) => void;
@@ -43,11 +44,11 @@ export class ItemButton extends React.Component<Props, State> {
     return (
       <Image
         style={{
-          opacity:.4,
+          opacity: .4,
           zIndex: 100,
-          width: buttonDimension*.9,
-          height: buttonDimension*.9,
-          top: -(buttonDimension*1.65),
+          width: buttonDimension * .9,
+          height: buttonDimension * .9,
+          top: -(buttonDimension * 1.65),
           left: buttonDimension * .07,
         }}
         source={require("../../../assets/questionMark.png")} />
@@ -108,9 +109,9 @@ export class ItemButton extends React.Component<Props, State> {
         <AwesomeButton
           // Favorite button
           onPress={() => this.props.onFavoriteClick(this.props.id)}
-          backgroundColor={yellow.base01}
-          backgroundActive={yellow.base02}
-          backgroundDarker={yellow.base03}
+          backgroundColor={this.props.isFavorite ? yellow.base01 : this.props.colorMap.base01}
+          backgroundActive={this.props.isFavorite ? yellow.base02 : this.props.colorMap.base02}
+          backgroundDarker={this.props.isFavorite ? yellow.base03 : this.props.colorMap.base03}
           textColor={yellow.base1}
           style={{
             width: buttonDimension / 3,

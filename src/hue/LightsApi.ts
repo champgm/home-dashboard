@@ -1,7 +1,7 @@
-import { get, put } from "../common/Parameters";
+import { dlete, get, put } from "../common/Parameters";
 import { bridgeUri } from "../configuration/Hue";
 import { create as LightCreate, createSubmittable as createSubmittableLight, Light, Lights } from "../models/Light";
-import { createSubmittable as createSubmittableLightState,LightState } from "../models/LightState";
+import { createSubmittable as createSubmittableLightState, LightState } from "../models/LightState";
 import { triggerUpdate } from "../tabs/common/Alerter";
 
 export class LightsApi {
@@ -18,6 +18,11 @@ export class LightsApi {
     const light = await (await fetch(uri, get)).json();
     light.id = id;
     return LightCreate(light);
+  }
+
+  async delete(id: string) {
+    const uri = `${bridgeUri}/lights/${id}`;
+    const light = await (await fetch(uri, dlete)).json();
   }
 
   async getSome(ids: string[]): Promise<Lights> {
@@ -52,7 +57,7 @@ export class LightsApi {
       ...put,
       body: JSON.stringify(submittableLightState),
     };
-    console.log(`putting light state${JSON.stringify(parameters, null, 2)}`);
+    console.log(`putting light state${JSON.stringify({ uri, parameters }, null, 2)}`);
     const response = await (await fetch(uri, parameters)).json();
     console.log(`put light state response${JSON.stringify(response, null, 2)}`);
     triggerUpdate();

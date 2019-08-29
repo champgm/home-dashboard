@@ -1,6 +1,6 @@
 import _ from "lodash";
 import React from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { ActivityIndicator, AsyncStorage, StyleSheet, View } from "react-native";
 import { NavigationContainerProps, NavigationNavigatorProps } from "react-navigation";
 import { RgbBaseStringMap } from "solarizer/tsc-out/RgbMaps";
 import v4 from "uuid/v4";
@@ -8,13 +8,15 @@ import { sortBy } from "../common";
 import { GroupsApi } from "../hue/GroupsApi";
 import { LightsApi } from "../hue/LightsApi";
 import { getStatus, Groups } from "../models/Group";
-import { register } from "./common/Alerter";
+import { register, triggerUpdate } from "./common/Alerter";
 import { ItemButton } from "./common/Button";
+import { getFavoriteArray, toggleFavorite } from "./common/Favorites";
 import { grey, orange, yellow } from "./common/Style";
 import { Status } from "./editor/components/StatusToggle";
 
 interface State {
   groups?: Groups;
+  favorites: string[];
 }
 
 export class GroupsComponent extends React.Component<NavigationContainerProps & NavigationNavigatorProps<any>, State> {
@@ -25,7 +27,7 @@ export class GroupsComponent extends React.Component<NavigationContainerProps & 
   constructor(props: NavigationContainerProps & NavigationNavigatorProps<any>) {
     super(props);
     this.title = v4();
-    this.state = {};
+    this.state = { favorites: [] };
     this.groupsApi = new GroupsApi();
     this.lightsApi = new LightsApi();
   }
@@ -45,7 +47,10 @@ export class GroupsComponent extends React.Component<NavigationContainerProps & 
   }
 
   async updateGroups() {
-    this.setState({ groups: await this.groupsApi.getAll() });
+    this.setState({
+      groups: await this.groupsApi.getAll(),
+      favorites: await getFavoriteArray("favoriteGroups"),
+    });
   }
 
   async onClick(id: string) {
@@ -57,16 +62,12 @@ export class GroupsComponent extends React.Component<NavigationContainerProps & 
         console.log(`Invalid group state: ${JSON.stringify(this.state.groups[id], null, 2)}`);
         break;
     }
-    this.setState({ groups: await this.groupsApi.getAll() });
+    await this.updateGroups();
   }
 
   onEditClick(id: string) {
     console.log(`Edit clicked`);
     this.props.navigation.navigate("GroupEditor", { id });
-  }
-
-  onFavoriteClick(id: string) {
-    console.log(`favorite clicked`);
   }
 
   render() {
@@ -83,12 +84,13 @@ export class GroupsComponent extends React.Component<NavigationContainerProps & 
           }
           return (
             <ItemButton
+              isFavorite={this.state.favorites.includes(group.id)}
               id={group.id}
               colorMap={colorMap}
               key={`group-${group.id}`}
               onClick={this.onClick.bind(this)}
               onEditClick={this.onEditClick.bind(this)}
-              onFavoriteClick={this.onFavoriteClick.bind(this)}
+              onFavoriteClick={(id: string) => toggleFavorite("favoriteGroups", id)}
               title={group.name}
               reachable={true}
             />

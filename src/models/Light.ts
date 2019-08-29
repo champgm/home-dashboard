@@ -2,10 +2,10 @@ import { printLeftoverKeys, verifyType } from ".";
 import { Status } from "../tabs/editor/components/StatusToggle";
 import { Alert } from "./Alert";
 import { Item } from "./Item";
-import { create as StateCreate, State } from "./State";
+import { create as StateCreate, LightState } from "./LightState";
 
 export interface Light extends Item {
-  state: State;
+  state: LightState;
   type: string;
   modelid: string;
   manufacturername: string;

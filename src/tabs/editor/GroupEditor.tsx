@@ -66,12 +66,6 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
     deregister("GroupEditor");
   }
 
-  // changeField(value: any, fieldName: string) {
-  //   console.log(`${fieldName} changed: ${value}`);
-  //   _.set(this.state.group, fieldName, value);
-  //   this.setState({ group: this.state.group });
-  // }
-
   setName(name: string) {
     this.state.group.name = name;
     this.setState({ group: this.state.group });
@@ -90,13 +84,6 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
     this.setState({ group: await this.groupsApi.get(this.state.group.id) });
   }
 
-  toggleEditingLightsOrColors() {
-    this.setState({
-      editingLights: !this.state.editingLights,
-      editingColor: !this.state.editingColor,
-    });
-  }
-
   async toggleOn(on: boolean) {
     this.state.group.action.on = on;
     await this.groupsApi.putAction(this.state.group.id, { on: this.state.group.action.on });
@@ -113,16 +100,6 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
     this.setState({ group: await this.groupsApi.get(this.state.group.id) });
   }
 
-  // async submitChanges() {
-  //   await this.groupsApi.put(this.state.group);
-  //   const group = await this.groupsApi.get(this.state.group.id);
-  //   this.setState({ group });
-  // }
-
-  // async resetChanges() {
-  //   this.setState({ group: await this.groupsApi.get(this.state.group.id) });
-  // }
-
   async setHsb(hsb: { h: number, s: number, b: number }) {
     if (this.state.group.action.colormode) {
       this.state.group.action.sat = hsb.s;
@@ -135,11 +112,10 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
 
   async setBrightness(brightness: number, overrideDebounce: boolean) {
     if (!this.debouncingBrightness || overrideDebounce) {
-      console.log(`Setting brightness: ${brightness}`);
       this.debouncingBrightness = true;
       this.state.group.action.bri = brightness;
       await this.groupsApi.putAction(this.state.group.id, { bri: brightness });
-      this.setState({ group: await this.groupsApi.get(this.state.group.id) });
+      await this.setState({ group: await this.groupsApi.get(this.state.group.id) });
       setTimeout(() => this.debouncingBrightness = false, 500);
     }
   }
@@ -157,18 +133,6 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
                 this.state.group.name,
                 this.endNameEdit.bind(this),
                 this.setName.bind(this))}
-              {/* {
-                this.state.editingColor
-                  ? getColorPicker2(
-                    {
-                      h: this.state.group.action.hue ? this.state.group.action.hue : 0,
-                      s: this.state.group.action.sat ? this.state.group.action.sat : 0,
-                      b: this.state.group.action.bri,
-                    },
-                    this.setHsb.bind(this),
-                    "LightModalColorPicker",
-                  ) : null
-              } */}
               {
                 getLightSelector(
                   this.state.group.lights,
@@ -176,24 +140,6 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
                   this.toggleLightSelection.bind(this),
                 )
               }
-              {/* {
-                getTabLike([
-                  {
-                    label: "Change Colors",
-                    selected: this.state.editingColor,
-                    toggleCallback: this.toggleEditingLightsOrColors.bind(this),
-                    selectedColors: createBasesFromColor(rgb.green, "base01"),
-                    deSelectedColors: rgbStrings,
-                  },
-                  {
-                    label: "Select Lights",
-                    selected: this.state.editingLights,
-                    toggleCallback: this.toggleEditingLightsOrColors.bind(this),
-                    selectedColors: createBasesFromColor(rgb.green, "base01"),
-                    deSelectedColors: rgbStrings,
-                  },
-                ])
-              } */}
               {getBrightnessSlider(
                 this.state.group.action.bri,
                 this.setBrightness.bind(this),
@@ -241,14 +187,6 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
                   this.toggleOn.bind(this),
                 )
               }
-              {/* {
-                getSubmitCancel(
-                  "Submit Changes",
-                  "Reset Changes",
-                  this.submitChanges.bind(this),
-                  this.resetChanges.bind(this),
-                )
-              } */}
             </View>
           </ScrollView>
         </View >

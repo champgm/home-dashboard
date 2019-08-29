@@ -1,13 +1,14 @@
 import _ from "lodash";
 import React from "react";
 import { ActivityIndicator, ScrollView, View } from "react-native";
+import AwesomeButton from "react-native-really-awesome-button";
 import { NavigationContainerProps, NavigationNavigatorProps } from "react-navigation";
 import { rgbStrings as solarized } from "solarizer";
 import { LightsApi } from "../../hue/LightsApi";
 import { Alert } from "../../models/Alert";
 import { ColorMode } from "../../models/ColorMode";
-import { getBlinking } from "../../models/Light";
 import { Light } from "../../models/Light";
+import { getBlinking } from "../../models/Light";
 import { deregister, register } from "../common/Alerter";
 import { getStyles } from "../common/Style";
 import { getBrightnessSlider } from "./components/BrightnessSlider";
@@ -37,7 +38,7 @@ export class LightEditor extends React.Component<NavigationContainerProps & Navi
     if (id !== "-1") {
       const lightPromise = this.lightsApi.get(id);
       const light = await lightPromise;
-      console.log(`light${JSON.stringify(light, null, 2)}`);
+      // console.log(`light${JSON.stringify(light, null, 2)}`);
       if (
         light.state.colormode
         && (light.state.colormode !== ColorMode.HS)
@@ -82,14 +83,18 @@ export class LightEditor extends React.Component<NavigationContainerProps & Navi
     this.setState({ light: await this.lightsApi.get(this.state.light.id) });
   }
 
+  async deleteLight() {
+    await this.lightsApi.delete(this.state.light.id);
+    this.props.navigation.navigate("Lights");
+  }
+
   async setBrightness(brightness: number, overrideDebounce: boolean) {
     if (!this.debouncingBrightness || overrideDebounce) {
-      console.log(`Setting brightness: ${brightness}`);
       this.debouncingBrightness = true;
-      setTimeout(() => this.debouncingBrightness = false, 500);
       this.state.light.state.bri = brightness;
       await this.lightsApi.putState(this.state.light.id, { bri: brightness });
-      this.setState({ light: await this.lightsApi.get(this.state.light.id) });
+      await this.setState({ light: await this.lightsApi.get(this.state.light.id) });
+      setTimeout(() => this.debouncingBrightness = false, 500);
     }
   }
 
@@ -103,7 +108,7 @@ export class LightEditor extends React.Component<NavigationContainerProps & Navi
       this.state.light.state.hue = hsb.h;
     }
     this.state.light.state.bri = hsb.b;
-    console.log(`Set HSB: ${JSON.stringify(hsb)}`);
+    // console.log(`Set HSB: ${JSON.stringify(hsb)}`);
     if (this.state.light.state.on) {
       await this.lightsApi.putState(this.state.light.id, {
         hue: this.state.light.state.hue,
@@ -121,6 +126,17 @@ export class LightEditor extends React.Component<NavigationContainerProps & Navi
         ? <View style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={{ flex: 1 }}>
             <View style={{ flex: 1 }}>
+              <AwesomeButton
+                style={{ marginTop: styles.buttonHeight / 2 }}
+                key={`Delete Light: ${this.state.light.id}`}
+                accessibilityLabel={`Delete Light: ${this.state.light.id}`}
+                backgroundColor={styles.red.base01}
+                backgroundActive={styles.red.base02}
+                backgroundDarker={styles.red.base03}
+                textColor={styles.red.base1}
+                height={styles.buttonHeight / 2}
+                onPress={() => this.deleteLight()}
+              >{` DELETE `}</AwesomeButton>
               {getTitle(
                 "Light",
                 this.state.light.id,
@@ -173,14 +189,6 @@ export class LightEditor extends React.Component<NavigationContainerProps & Navi
                   this.toggleOn.bind(this),
                 )
               }
-              {/* {
-                getSubmitCancel(
-                  "Submit Changes",
-                  "Reset Changes",
-                  this.submitChanges.bind(this),
-                  this.resetChanges.bind(this),
-                )
-              } */}
             </View>
           </ScrollView>
         </View >
