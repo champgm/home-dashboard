@@ -29,7 +29,6 @@ export function getStatusToggleRow(
   let statusActionColors: RgbBaseStringMap;
   let statusActionText: string;
   let countsAsOn: boolean;
-  console.log(`statusFunction()${JSON.stringify(statusFunction(), null, 2)}`);
   switch (statusFunction()) {
     case Status.ON:
       statusColors = createBasesFromColor(statusToggleStatus.onBaseColor, "base01");
@@ -54,10 +53,6 @@ export function getStatusToggleRow(
       break;
     default: throw new Error(`Unknown Status value: ${statusFunction()}`);
   }
-  console.log(`statusToggleStatus.onBaseColor${JSON.stringify(statusToggleStatus.onBaseColor, null, 2)}`);
-  console.log(`statusToggleStatus.offBaseColor${JSON.stringify(statusToggleStatus.offBaseColor, null, 2)}`);
-  console.log(`statusToggleStatus.indeterminateBaseColor${JSON.stringify(statusToggleStatus.indeterminateBaseColor, null, 2)}`);
-  console.log(`statusColors${JSON.stringify(statusColors, null, 2)}`);
   return (
     <View style={[{
       // ...showBorder,

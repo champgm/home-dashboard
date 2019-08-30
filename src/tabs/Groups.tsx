@@ -58,6 +58,11 @@ export class GroupsComponent extends React.Component<NavigationContainerProps & 
     this.props.navigation.navigate("GroupEditor", { id });
   }
 
+  onCreateNewClick() {
+    console.log(`NEW clicked`);
+    this.props.navigation.navigate("GroupEditor");
+  }
+
   render() {
     const groupButtons = this.state.groups
       ? sortBy(Object.values(this.state.groups), "name")
@@ -84,6 +89,17 @@ export class GroupsComponent extends React.Component<NavigationContainerProps & 
             />
           );
         })
+        .concat(
+          <ItemButton
+            colorMap={grey}
+            key={`group-NEW`}
+            onClick={this.onCreateNewClick.bind(this)}
+            title={"NEW"}
+            reachable={true}
+            hideEditButton={true}
+            hideFavoritesButton={true}
+          />,
+        )
       : <ActivityIndicator size="large" color="#0000ff" />;
     return (
       <View style={[styles.scene]} >

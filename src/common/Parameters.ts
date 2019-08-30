@@ -10,3 +10,7 @@ export const dlete = {
   method: "DELETE",
   json: true,
 };
+export const post = {
+  method: "POST",
+  json: true,
+};

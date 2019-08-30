@@ -69,7 +69,7 @@ export class FavoritesComponent extends React.Component<NavigationContainerProps
           case Status.ON: await this.groupsApi.putAction(id, { on: false }); break;
           case Status.OFF: await this.groupsApi.putAction(id, { on: true }); break;
           case Status.INDETERMINATE: await this.groupsApi.putAction(id, { on: true }); break;
-          default: console.log(`Invalid group state: ${JSON.stringify(this.state.groups[id], null, 2)}`); break;
+          default: throw new Error(`Invalid group state: ${JSON.stringify(this.state.groups[id], null, 2)}`); break;
         }
         break;
       case Type.LIGHT:
@@ -135,7 +135,7 @@ export class FavoritesComponent extends React.Component<NavigationContainerProps
           return (
             <ItemButton
               isFavorite={this.state.favoriteGroups.includes(group.id)}
-              id={group.id}
+              id={`${Type.GROUP}的${group.id}`}
               colorMap={colorMap}
               key={`group-${group.id}`}
               onClick={this.onClick.bind(this)}

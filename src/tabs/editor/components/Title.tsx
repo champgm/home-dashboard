@@ -22,7 +22,12 @@ export function getTitle(
         fontSize: 20,
         color: styles.solarized.base0,
         textAlign: "center",
-      }}>{`${itemType} ${itemId}`}</Text>
+      }}>{
+          itemId === "-1"
+            ? `New ${itemType}`
+            : `${itemType} ${itemId}`
+        }
+      </Text>
       <TextInput
         style={{
           textAlign: "center",

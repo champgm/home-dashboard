@@ -13,14 +13,16 @@ import { blue, yellow } from "./Style";
 
 export interface Props {
   colorMap: RgbBaseStringMap;
-  id: string;
-  isFavorite: boolean;
+  id?: string;
+  isFavorite?: boolean;
   on?: boolean;
-  reachable: boolean;
+  reachable?: boolean;
   title: string;
-  onFavoriteClick: (id: string) => void;
-  onEditClick: (id: string) => void;
+  onFavoriteClick?: (id: string) => void;
+  onEditClick?: (id: string) => void;
   onClick: (id: string) => void;
+  hideEditButton?: boolean;
+  hideFavoritesButton?: boolean;
 }
 
 interface State {
@@ -84,7 +86,7 @@ export class ItemButton extends React.Component<Props, State> {
           onPress={() => this.props.onClick(this.props.id)}>
           {this.props.title}
         </AwesomeButton>
-        <AwesomeButton
+        {!this.props.hideEditButton ? <AwesomeButton
           // Edit button
           onPress={() => this.props.onEditClick(this.props.id)}
           backgroundColor={blue.base01}
@@ -105,8 +107,8 @@ export class ItemButton extends React.Component<Props, State> {
               height: editButtonDimension * .8,
             }}
             source={require("../../../assets/edit.png")} />
-        </AwesomeButton>
-        <AwesomeButton
+        </AwesomeButton> : undefined}
+        {!this.props.hideFavoritesButton ? <AwesomeButton
           // Favorite button
           onPress={() => this.props.onFavoriteClick(this.props.id)}
           backgroundColor={this.props.isFavorite ? yellow.base01 : this.props.colorMap.base01}
@@ -127,7 +129,7 @@ export class ItemButton extends React.Component<Props, State> {
               height: editButtonDimension * .8,
             }}
             source={require("../../../assets/favorite.png")} />
-        </AwesomeButton>
+        </AwesomeButton> : undefined}
         {this.getReachableImage(buttonDimension)}
       </View>
     );

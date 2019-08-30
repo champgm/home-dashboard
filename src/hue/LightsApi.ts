@@ -22,7 +22,8 @@ export class LightsApi {
 
   async delete(id: string) {
     const uri = `${bridgeUri}/lights/${id}`;
-    const light = await (await fetch(uri, dlete)).json();
+    await (await fetch(uri, dlete)).json();
+    triggerUpdate();
   }
 
   async getSome(ids: string[]): Promise<Lights> {

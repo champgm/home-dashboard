@@ -55,9 +55,34 @@ export function getStatus(group: Group): Status {
   if (!group.state.any_on) { return Status.OFF; }
   if (group.state.all_on) { return Status.ON; }
   if (group.state.any_on) { return Status.INDETERMINATE; }
+  throw new Error(`Unable to generate status value from group state: ${JSON.stringify(group.state, null, 2)}`);
 }
 
 export function getBlinking(group: Group): Status {
-  if (group.action.alert === Alert.NONE) { return Status.OFF; }
-  if (group.action.alert === Alert.LSELECT) { return Status.ON; }
+  switch (group.action.alert) {
+    case Alert.NONE: return Status.OFF;
+    case Alert.LSELECT: return Status.ON;
+    case Alert.SELECT: return Status.ON;
+    default: throw new Error(`Unknown Alert value: ${group.action.alert}`);
+  }
+}
+
+export function getEmpty() {
+  return create({
+    state: GroupStateCreate({
+      all_on: false,
+      any_on: false,
+    }),
+    type: "Room",
+    id: "-1",
+    name: "Group Name",
+    action: GroupActionCreate({
+      alert: Alert.NONE,
+      bri: 254,
+      on: true,
+    }),
+    lights: [],
+    recycle: false,
+    sensors: [],
+  });
 }

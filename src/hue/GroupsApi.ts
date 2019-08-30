@@ -1,4 +1,4 @@
-import { get, put } from "../common/Parameters";
+import { dlete, get, post, put } from "../common/Parameters";
 import { bridgeUri } from "../configuration/Hue";
 import { create as GroupCreate, createSubmittable as createSubmittableGroup, Group, Groups } from "../models/Group";
 import { createSubmittable as createSubmittableGroupAction, GroupAction } from "../models/GroupAction";
@@ -19,25 +19,34 @@ export class GroupsApi {
     return GroupCreate(group);
   }
 
+  async delete(id: string) {
+    const uri = `${bridgeUri}/groups/${id}`;
+    await (await fetch(uri, dlete)).json();
+    triggerUpdate();
+  }
+
   async put(group: Group): Promise<void> {
     const uri = `${bridgeUri}/groups/${group.id}`;
     const submittableGroup = createSubmittableGroup(group);
-    const parameters: RequestInit = {
-      ...put,
-      body: JSON.stringify(submittableGroup),
-    };
+    const parameters: RequestInit = { ...put, body: JSON.stringify(submittableGroup) };
     const response = await (await fetch(uri, parameters)).json();
     console.log(`put group response${JSON.stringify(response, null, 2)}`);
+    triggerUpdate();
+  }
+
+  async create(group: Group): Promise<void> {
+    const uri = `${bridgeUri}/groups`;
+    const submittableGroup = createSubmittableGroup(group);
+    const parameters: RequestInit = { ...post, body: JSON.stringify(submittableGroup) };
+    const response = await (await fetch(uri, parameters)).json();
+    console.log(`post group response${JSON.stringify(response, null, 2)}`);
     triggerUpdate();
   }
 
   async putAction(id: string, groupAction: Partial<GroupAction>): Promise<void> {
     const uri = `${bridgeUri}/groups/${id}/action`;
     const submittableGroupAction = createSubmittableGroupAction(groupAction);
-    const parameters: RequestInit = {
-      ...put,
-      body: JSON.stringify(submittableGroupAction),
-    };
+    const parameters: RequestInit = { ...put, body: JSON.stringify(submittableGroupAction) };
     const response = await (await fetch(uri, parameters)).json();
     console.log(`put group action response${JSON.stringify(response, null, 2)}`);
     triggerUpdate();
