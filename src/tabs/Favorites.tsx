@@ -8,7 +8,7 @@ import {
 import { NavigationContainerProps, NavigationNavigatorProps } from "react-navigation";
 import { RgbBaseStringMap } from "solarizer/tsc-out/RgbMaps";
 import v4 from "uuid/v4";
-import { sortBy } from "../common";
+import { revealAllProperties, sortBy } from "../common";
 import { GroupsApi } from "../hue/GroupsApi";
 import { LightsApi } from "../hue/LightsApi";
 import { getStatus, Groups } from "../models/Group";
@@ -16,7 +16,8 @@ import { Lights } from "../models/Light";
 import { Type, verify } from "../models/Type";
 import { deregister, register } from "./common/Alerter";
 import { ItemButton } from "./common/Button";
-import { toggleFavorite } from "./common/Favorites";
+import { getFavoriteArray, toggleFavorite } from "./common/Favorites";
+import { groups, lights } from "./common/HueState";
 import { grey, orange, yellow } from "./common/Style";
 import { Status } from "./editor/components/StatusToggle";
 
@@ -47,23 +48,14 @@ export class FavoritesComponent extends React.Component<NavigationContainerProps
   async componentDidMount() {
     console.log(`Favorites did mount`);
     register("Favorites", this.update.bind(this));
-    await this.poll();
-  }
-
-  async poll() {
-    console.log(`Polling...`);
-    await this.update();
-    setTimeout(() => {
-      this.poll();
-    }, 5000);
   }
 
   async update() {
-    const allLightsPromise = this.lightsApi.getAll();
-    const allGroupsPromise = this.groupsApi.getAll();
     this.setState({
-      lights: await allLightsPromise,
-      groups: await allGroupsPromise,
+      lights,
+      groups,
+      favoriteGroups: await getFavoriteArray("favoriteGroups"),
+      favoriteLights: await getFavoriteArray("favoriteLights"),
     });
   }
 

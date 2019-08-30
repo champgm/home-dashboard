@@ -47,7 +47,6 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
       const groupPromise = this.groupsApi.get(id);
       const lightPromise = this.lightsApi.getAll();
       const group = await groupPromise;
-      console.log(`group${JSON.stringify(group, null, 2)}`);
       const allLights = await lightPromise;
       if (group.action.colormode) {
         group.action.colormode = ColorMode.HS;

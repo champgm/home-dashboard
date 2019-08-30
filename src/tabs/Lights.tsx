@@ -13,6 +13,7 @@ import { Lights } from "../models/Light";
 import { deregister, register } from "./common/Alerter";
 import { ItemButton } from "./common/Button";
 import { getFavoriteArray, toggleFavorite } from "./common/Favorites";
+import { lights } from "./common/HueState";
 import { grey, yellow } from "./common/Style";
 
 interface State {
@@ -35,20 +36,11 @@ export class LightsComponent extends React.Component<NavigationContainerProps & 
   async componentDidMount() {
     console.log(`Lights did mount`);
     register("Lights", this.updateLights.bind(this));
-    await this.pollLights();
-  }
-
-  async pollLights() {
-    console.log(`Polling lights...`);
-    await this.updateLights();
-    setTimeout(() => {
-      this.pollLights();
-    }, 5000);
   }
 
   async updateLights() {
     this.setState({
-      lights: await this.lightsApi.getAll(),
+      lights,
       favorites: await getFavoriteArray("favoriteLights"),
     });
   }

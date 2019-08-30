@@ -5,7 +5,7 @@ import { View } from "react-native";
 import { Route } from "react-native-tab-view";
 import {
   createAppContainer, createMaterialTopTabNavigator,
-  createStackNavigator, NavigationContainer,
+  createStackNavigator, NavigationContainer, NavigationContainerProps, NavigationNavigatorProps,
 } from "react-navigation";
 import { GroupEditor } from "./tabs/editor/GroupEditor";
 import { LightEditor } from "./tabs/editor/LightEditor";

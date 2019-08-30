@@ -81,6 +81,10 @@ export function createSubmittable(payload: Light): Partial<Light> {
 }
 
 export function getBlinking(light: Light): Status {
-  if (light.state.alert === Alert.NONE) { return Status.OFF; }
-  if (light.state.alert === Alert.LSELECT) { return Status.ON; }
+  switch (light.state.alert) {
+    case Alert.NONE: return Status.OFF;
+    case Alert.LSELECT: return Status.ON;
+    case Alert.SELECT: return Status.ON;
+    default: throw new Error(`Unknown Alert value: ${light.state.alert}`);
+  }
 }

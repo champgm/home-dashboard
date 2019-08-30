@@ -6,11 +6,11 @@ import { RgbBaseStringMap } from "solarizer/tsc-out/RgbMaps";
 import v4 from "uuid/v4";
 import { sortBy } from "../common";
 import { GroupsApi } from "../hue/GroupsApi";
-import { LightsApi } from "../hue/LightsApi";
 import { getStatus, Groups } from "../models/Group";
 import { deregister, register } from "./common/Alerter";
 import { ItemButton } from "./common/Button";
 import { getFavoriteArray, toggleFavorite } from "./common/Favorites";
+import { groups } from "./common/HueState";
 import { grey, orange, yellow } from "./common/Style";
 import { Status } from "./editor/components/StatusToggle";
 
@@ -21,7 +21,6 @@ interface State {
 
 export class GroupsComponent extends React.Component<NavigationContainerProps & NavigationNavigatorProps<any>, State> {
   title: any;
-  lightsApi: LightsApi;
   groupsApi: GroupsApi;
 
   constructor(props: NavigationContainerProps & NavigationNavigatorProps<any>) {
@@ -29,27 +28,17 @@ export class GroupsComponent extends React.Component<NavigationContainerProps & 
     this.title = v4();
     this.state = { favorites: [] };
     this.groupsApi = new GroupsApi();
-    this.lightsApi = new LightsApi();
   }
 
   componentWillUnmount() { deregister("Groups"); }
   async componentDidMount() {
     console.log(`Groups did mount`);
     register("Groups", this.updateGroups.bind(this));
-    await this.pollGroups();
-  }
-
-  async pollGroups() {
-    console.log(`Polling groups...`);
-    await this.updateGroups();
-    setTimeout(() => {
-      this.pollGroups();
-    }, 5000);
   }
 
   async updateGroups() {
     this.setState({
-      groups: await this.groupsApi.getAll(),
+      groups,
       favorites: await getFavoriteArray("favoriteGroups"),
     });
   }
