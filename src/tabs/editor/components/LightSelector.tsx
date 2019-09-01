@@ -1,5 +1,5 @@
 import React from "react";
-import { View } from "react-native";
+import { View, ViewStyle } from "react-native";
 import AwesomeButton from "react-native-really-awesome-button";
 import { sortBy } from "../../../common";
 import { getStyles } from "../../common/Style";
@@ -12,8 +12,12 @@ export function getLightSelector(
   const styles = getStyles();
   const sortedItems = sortBy(items, "name");
   const lightSelectButtons = sortedItems.map((lightMeta) => {
+    const buttonDimension = 99;
+    const style: ViewStyle = {
+      margin: 5,
+    };
     return (<AwesomeButton
-      style={{ marginBottom: 5 }}
+      style={style}
       key={lightMeta.id}
       onPress={() => toggleLightSelection(lightMeta.id)}
       accessibilityLabel={lightMeta.name}
@@ -21,7 +25,8 @@ export function getLightSelector(
       backgroundActive={initiallySelectedItems.includes(lightMeta.id) ? styles.blue.base02 : styles.solarized.base02}
       backgroundDarker={initiallySelectedItems.includes(lightMeta.id) ? styles.blue.base03 : styles.solarized.base03}
       textColor={initiallySelectedItems.includes(lightMeta.id) ? styles.blue.base1 : styles.solarized.base1}
-      width={80}
+      width={buttonDimension}
+      height={buttonDimension}
       textSize={12}
     >
       {`${lightMeta.name}`}
@@ -29,10 +34,10 @@ export function getLightSelector(
   });
   return (
     <View style={{
-      flexGrow:1,
+      flexGrow: 1,
       flexDirection: "row",
       flexWrap: "wrap",
-      justifyContent: "space-between",
+      justifyContent: "space-around",
     }}>
       {lightSelectButtons}
     </View>

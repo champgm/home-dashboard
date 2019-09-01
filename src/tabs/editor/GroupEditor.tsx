@@ -55,7 +55,6 @@ export class GroupEditor extends React.Component<NavigationContainerProps & Navi
         group.action.sat = group.action.sat ? group.action.sat : 0;
       }
       this.setState({ lights, group, newGroup: false });
-      register("GroupEditor", this.componentDidMount.bind(this));
     } else {
       const group = getEmpty();
       this.setState({ lights, group, newGroup: true });

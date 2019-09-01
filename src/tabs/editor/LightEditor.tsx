@@ -47,16 +47,16 @@ export class LightEditor extends React.Component<NavigationContainerProps & Navi
         light.state.colormode = ColorMode.HS;
         light.state.hue = light.state.hue ? light.state.hue : 0;
         light.state.sat = light.state.sat ? light.state.sat : 254;
-        this.lightsApi.putState(light.id, light.state);
+        await this.lightsApi.putState(light.id, light.state);
       }
       this.setState({ light });
     }
-    register("LightEditor", this.componentDidMount.bind(this));
   }
 
   componentWillUnmount() {
     deregister("LightEditor");
   }
+
   async toggleOn(on: boolean) {
     this.state.light.state.on = on;
     await this.lightsApi.putState(this.state.light.id, { on: this.state.light.state.on });
