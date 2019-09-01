@@ -1,4 +1,4 @@
-import { dlete, get, put } from "../common/Parameters";
+import { dlete, get, put, post } from "../common/Parameters";
 import { bridgeUri } from "../configuration/Hue";
 import { create as LightCreate, createSubmittable as createSubmittableLight, Light, Lights } from "../models/Light";
 import { createSubmittable as createSubmittableLightState, LightState } from "../models/LightState";
@@ -23,6 +23,12 @@ export class LightsApi {
   async delete(id: string) {
     const uri = `${bridgeUri}/lights/${id}`;
     await (await fetch(uri, dlete)).json();
+    triggerUpdate();
+  }
+
+  async searchForNew() {
+    const uri = `${bridgeUri}/lights`;
+    await (await fetch(uri, post)).json();
     triggerUpdate();
   }
 

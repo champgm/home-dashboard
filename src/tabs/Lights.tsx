@@ -76,7 +76,17 @@ export class LightsComponent extends React.Component<NavigationContainerProps & 
               reachable={light.state.reachable}
             />
           );
-        })
+        }).concat(
+          <ItemButton
+            colorMap={grey}
+            key={`light-SCAN`}
+            onClick={this.lightsApi.searchForNew}
+            title={"Scan for new lights"}
+            reachable={true}
+            hideEditButton={true}
+            hideFavoritesButton={true}
+          />,
+        )
       : <ActivityIndicator size="large" color="#0000ff" />;
     return (
       <View style={[styles.scene]} >

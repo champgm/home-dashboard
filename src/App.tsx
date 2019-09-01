@@ -21,7 +21,7 @@ interface State {
 }
 
 const favoritesStack = createStackNavigator({
-  Groups: FavoritesComponent,
+  Favorites: FavoritesComponent,
 }, { headerMode: "none" });
 
 const groupStack = createStackNavigator({
