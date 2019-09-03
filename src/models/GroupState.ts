@@ -7,10 +7,10 @@ export interface GroupState {
 
 export function create(payload: GroupState): GroupState {
   if (!payload) { throw new Error("GroupState not found"); }
-  const action = {
+  const groupState = {
     all_on: verifyType(payload.all_on, "all_on", "boolean"),
     any_on: verifyType(payload.any_on, "any_on", "boolean"),
   };
-  printLeftoverKeys("GroupState", payload, action);
-  return action;
+  printLeftoverKeys("GroupState", payload, groupState);
+  return groupState;
 }
