@@ -1,7 +1,7 @@
 # Home Dashboard
 An amalgamation dashboard for the various smart devices in my home.
 
-![image](https://raw.githubusercontent.com/champgm/home-dashboard/React-Native/screenshot1.png)![image](https://raw.githubusercontent.com/champgm/home-dashboard/React-Native/screenshot2.png)![image](https://raw.githubusercontent.com/champgm/home-dashboard/React-Native/screenshot3.png)
+![image](https://raw.githubusercontent.com/champgm/home-dashboard/React-Native/screenshot1.png) ![image](https://raw.githubusercontent.com/champgm/home-dashboard/React-Native/screenshot2.png)  ![image](https://raw.githubusercontent.com/champgm/home-dashboard/React-Native/screenshot3.png)
 
 # Configuration
 A file, named `Hue.ts` should be placed in `src/configuration`. Its contents should look something like this:
