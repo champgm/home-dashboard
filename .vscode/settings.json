@@ -7,6 +7,7 @@
     "debouncing",
     "dlete",
     "lastinstall",
+    "lasttriggered",
     "lastupdated",
     "manufacturername",
     "mindimlevel",
@@ -16,6 +17,7 @@
     "swconfigid",
     "swupdate",
     "swversion",
+    "timestriggered",
     "uniqueid"
   ]
 }

@@ -1,7 +1,7 @@
 import { dlete, get, put, post } from "../common/Parameters";
 import { bridgeUri } from "../configuration/Hue";
-import { create as LightCreate, createSubmittable as createSubmittableLight, Light, Sensors } from "../models/Light";
-import { createSubmittable as createSubmittableLightState, LightState } from "../models/LightState";
+import { create as SensorCreate,  Sensor, Sensors } from "../models/Sensor";
+import { createSubmittable as createSubmittableSensorState, SensorState } from "../models/SensorState";
 import { triggerUpdate } from "../tabs/common/Alerter";
 
 export class SensorsApi {
@@ -13,11 +13,11 @@ export class SensorsApi {
     return sensorsMap;
   }
 
-  async get(id: string): Promise<Light> {
+  async get(id: string): Promise<Sensor> {
     const uri = `${bridgeUri}/sensors/${id}`;
     const light = await (await fetch(uri, get)).json();
     light.id = id;
-    return LightCreate(light);
+    return SensorCreate(light);
   }
 
   async delete(id: string) {
@@ -42,38 +42,25 @@ export class SensorsApi {
     return allSensors;
   }
 
-  async put(light: Light): Promise<void> {
-    const uri = `${bridgeUri}/sensors/${light.id}`;
-    if (light.state) {
-      await this.putState(light.id, light.state);
-    }
-    const submittableLight = createSubmittableLight(light);
-    const parameters: RequestInit = {
-      ...put,
-      body: JSON.stringify(submittableLight),
-    };
-    const response = await (await fetch(uri, parameters)).json();
-    console.log(`put light response${JSON.stringify(response, null, 2)}`);
-    triggerUpdate();
-  }
-
-  async putState(id: string, lightState: Partial<LightState>): Promise<void> {
-    const uri = `${bridgeUri}/sensors/${id}/state`;
-    const submittableLightState = createSubmittableLightState(lightState);
-    const parameters: RequestInit = {
-      ...put,
-      body: JSON.stringify(submittableLightState),
-    };
-    console.log(`putting light state${JSON.stringify({ uri, parameters }, null, 2)}`);
-    const response = await (await fetch(uri, parameters)).json();
-    console.log(`put light state response${JSON.stringify(response, null, 2)}`);
-    triggerUpdate();
-  }
+  // async put(light: Sensor): Promise<void> {
+  //   const uri = `${bridgeUri}/sensors/${light.id}`;
+  //   if (light.state) {
+  //     await this.putState(light.id, light.state);
+  //   }
+  //   const submittableSensor = createSubmittableSensor(light);
+  //   const parameters: RequestInit = {
+  //     ...put,
+  //     body: JSON.stringify(submittableSensor),
+  //   };
+  //   const response = await (await fetch(uri, parameters)).json();
+  //   console.log(`put light response${JSON.stringify(response, null, 2)}`);
+  //   triggerUpdate();
+  // }
 
   attachId(sensorsMap: Sensors): Sensors {
     for (const lightId of Object.keys(sensorsMap)) {
       sensorsMap[lightId].id = lightId;
-      sensorsMap[lightId] = LightCreate(sensorsMap[lightId]);
+      sensorsMap[lightId] = SensorCreate(sensorsMap[lightId]);
     }
     return sensorsMap;
   }

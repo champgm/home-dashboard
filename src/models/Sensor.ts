@@ -14,6 +14,10 @@ export interface Sensor extends Item {
   uniqueid: string;
 }
 
+export interface Sensors {
+  [id: string]: Sensor;
+}
+
 export function create(payload: Sensor): Sensor {
   if (!payload) {
     console.log(`${JSON.stringify(payload, null, 2)}`);
