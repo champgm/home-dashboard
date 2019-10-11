@@ -28,6 +28,7 @@ export class GroupsComponent extends React.Component<NavigationContainerProps & 
     this.title = v4();
     this.state = { favorites: [] };
     this.groupsApi = new GroupsApi();
+    
   }
 
   componentWillUnmount() { deregister("Groups"); }
