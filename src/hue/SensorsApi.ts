@@ -14,14 +14,20 @@ export class SensorsApi {
 
   async get(id: string): Promise<Sensor> {
     const uri = `${bridgeUri}/sensors/${id}`;
-    const light = await (await fetch(uri, get)).json();
-    light.id = id;
-    return SensorCreate(light);
+    const sensor = await (await fetch(uri, get)).json();
+    sensor.id = id;
+    return SensorCreate(sensor);
   }
 
   async delete(id: string) {
     const uri = `${bridgeUri}/sensors/${id}`;
     await (await fetch(uri, dlete)).json();
+    triggerUpdate();
+  }
+
+  async searchForNew() {
+    const uri = `${bridgeUri}/sensors`;
+    await (await fetch(uri, post)).json();
     triggerUpdate();
   }
 
@@ -35,20 +41,25 @@ export class SensorsApi {
     return allSensors;
   }
 
-  // async put(light: Sensor): Promise<void> {
-  //   const uri = `${bridgeUri}/sensors/${light.id}`;
-  //   if (light.state) {
-  //     await this.putState(light.id, light.state);
-  //   }
-  //   const submittableSensor = createSubmittableSensor(light);
-  //   const parameters: RequestInit = {
-  //     ...put,
-  //     body: JSON.stringify(submittableSensor),
-  //   };
-  //   const response = await (await fetch(uri, parameters)).json();
-  //   console.log(`put light response${JSON.stringify(response, null, 2)}`);
-  //   triggerUpdate();
-  // }
+  async put(sensor: Partial<Sensor>): Promise<void> {
+    const uri = `${bridgeUri}/sensors/${sensor.id}`;
+    // const submittableSensor = createSubmittableSensor(sensor);
+    const parameters: RequestInit = {
+      ...put,
+      body: JSON.stringify(sensor),
+    };
+    const response = await (await fetch(uri, parameters)).json();
+    console.log(`put sensor response${JSON.stringify(response, null, 2)}`);
+    triggerUpdate();
+  }
+
+  async create(sensor: Sensor): Promise<void> {
+    const uri = `${bridgeUri}/sensors`;
+    const parameters: RequestInit = { ...post, body: JSON.stringify(sensor) };
+    const response = await (await fetch(uri, parameters)).json();
+    console.log(`post sensor response${JSON.stringify(response, null, 2)}`);
+    triggerUpdate();
+  }
 
   attachId(sensorsMap: Sensors): Sensors {
     for (const id of Object.keys(sensorsMap)) {

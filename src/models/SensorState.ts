@@ -4,7 +4,7 @@ export interface SensorState {
   daylight?: string;
   lastupdated: string;
   status?: number;
-  buttonevent: number;
+  buttonevent?: number;
 }
 
 export function create(payload: SensorState): SensorState {

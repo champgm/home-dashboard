@@ -2,8 +2,8 @@ import { createArray, printLeftoverKeys, verifyArray, verifyType } from ".";
 import { create as createSensorEvent, SensorEvent } from "./SensorEvent";
 
 export interface SensorInput {
-  repeatintervals: number[];
-  events: SensorEvent[];
+  repeatintervals?: number[];
+  events?: SensorEvent[];
 }
 
 export function create(payload: SensorInput): SensorInput {

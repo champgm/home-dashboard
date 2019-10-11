@@ -30,7 +30,6 @@ export class LightEditor extends React.Component<NavigationContainerProps & Navi
     this.state = {
     };
     this.lightsApi = new LightsApi();
-    this.lightsApi = new LightsApi();
   }
 
   async componentDidMount() {

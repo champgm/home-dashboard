@@ -5,9 +5,9 @@ export interface SensorConfig {
   reachable?: boolean;
   battery?: number;
   pending?: any[];
-  sunriseoffset: number;
-  sunsetoffset: number;
-  configured: boolean;
+  sunriseoffset?: number;
+  sunsetoffset?: number;
+  configured?: boolean;
 }
 
 export function create(payload: SensorConfig): SensorConfig {
@@ -15,10 +15,10 @@ export function create(payload: SensorConfig): SensorConfig {
   const sensorConfig = {
     on: verifyType(payload.on, "on", "boolean"),
     reachable: verifyType(payload.reachable, "reachable", "boolean", false),
-    configured: verifyType(payload.configured, "configured", "boolean",false),
+    configured: verifyType(payload.configured, "configured", "boolean", false),
     sunriseoffset: verifyType(payload.sunriseoffset, "sunriseoffset", "number", false),
     sunsetoffset: verifyType(payload.sunsetoffset, "sunsetoffset", "number", false),
-    battery: payload.battery ? verifyType(payload.battery, "battery", "number") : payload.battery,
+    battery: verifyType(payload.battery, "battery", "number", false),
     pending: payload.pending,
   };
   printLeftoverKeys("SensorConfig", payload, sensorConfig);

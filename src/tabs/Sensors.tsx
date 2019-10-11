@@ -46,13 +46,13 @@ export class SensorsComponent extends React.Component<NavigationContainerProps &
   }
 
   async onClick(id: string) {
-    await this.sensorsApi.putState(id, { on: !this.state.sensors[id].state.on });
+    await this.sensorsApi.put({id, config: { on: !this.state.sensors[id].config.on } });
     await this.updateSensors();
   }
 
   onEditClick(id: string) {
     console.log(`Edit clicked`);
-    this.props.navigation.navigate("LightEditor", { id });
+    this.props.navigation.navigate("SensorEditor", { id });
   }
 
   onFavoriteClick(id: string) {
@@ -60,26 +60,26 @@ export class SensorsComponent extends React.Component<NavigationContainerProps &
   }
 
   render() {
-    const lightButtons = this.state.sensors
+    const sensorButtons = this.state.sensors
       ? sortBy(Object.values(this.state.sensors), "name")
-        .map((light) => {
+        .map((sensor) => {
           return (
             <ItemButton
-              isFavorite={this.state.favorites.includes(light.id)}
-              id={light.id}
-              key={`light-${light.id}`}
-              colorMap={light.state.on ? yellow : grey}
+              isFavorite={this.state.favorites.includes(sensor.id)}
+              id={sensor.id}
+              key={`sensor-${sensor.id}`}
+              colorMap={sensor.config.on ? yellow : grey}
               onClick={this.onClick.bind(this)}
               onEditClick={this.onEditClick.bind(this)}
               onFavoriteClick={(id: string) => toggleFavorite("favoriteSensors", id)}
-              title={light.name}
-              reachable={light.state.reachable}
+              title={sensor.name}
+              reachable={sensor.config.reachable}
             />
           );
         }).concat(
           <ItemButton
             colorMap={grey}
-            key={`light-SCAN`}
+            key={`sensor-SCAN`}
             onClick={this.sensorsApi.searchForNew}
             title={"Scan for new sensors"}
             reachable={true}
@@ -90,7 +90,7 @@ export class SensorsComponent extends React.Component<NavigationContainerProps &
       : <ActivityIndicator size="large" color="#0000ff" />;
     return (
       <View style={[styles.scene]} >
-        {lightButtons}
+        {sensorButtons}
       </View>
     );
   }

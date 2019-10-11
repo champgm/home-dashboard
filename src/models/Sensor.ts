@@ -16,7 +16,7 @@ export interface Sensor extends Item {
   type: string;
   uniqueid?: string;
   pending?: any[];
-  swupdate: { lastinstall: null, state: string };
+  swupdate: { lastinstall: string, state: string };
   capabilities: SensorCapability;
 }
 
@@ -42,10 +42,57 @@ export function create(payload: Sensor): Sensor {
     state: createSensorState(payload.state),
     swversion: verifyType(payload.swversion, "swversion", "string", false),
     type: verifyType(payload.type, "type", "string"),
-    uniqueid: verifyType(payload.uniqueid, "uniqueid", "string",false),
+    uniqueid: verifyType(payload.uniqueid, "uniqueid", "string", false),
     pending: payload.pending,
     swupdate: payload.swupdate,
   };
   printLeftoverKeys("Sensor", payload, sensor);
   return sensor;
+}
+
+export function createSubmittable(payload: Sensor): Partial<Sensor> {
+  if (!payload) {
+    console.log(`${JSON.stringify(payload, null, 2)}`);
+    throw new Error("Sensor not found");
+  }
+  const group = {
+    config: createSensorConfig(payload.config),
+    manufacturername: verifyType(payload.manufacturername, "manufacturername", "string"),
+    modelid: verifyType(payload.modelid, "modelid", "string"),
+    name: verifyType(payload.name, "name", "string"),
+    recycle: verifyType(payload.recycle, "recycle", "boolean", false),
+    state: createSensorState(payload.state),
+    swversion: verifyType(payload.swversion, "swversion", "string", false),
+    type: verifyType(payload.type, "type", "string"),
+    uniqueid: verifyType(payload.uniqueid, "uniqueid", "string", false),
+    pending: payload.pending,
+  };
+  return group;
+}
+
+export function getEmpty(): Sensor {
+  return create({
+    id: "id",
+    name: "name",
+    diversityid: "diversityid",
+    type: "type",
+    swupdate: {
+      lastinstall: "lastinstall",
+      state: "state",
+    },
+    capabilities: {
+      certified: true,
+      primary: true,
+      inputs: [],
+    },
+    config: {
+      on: true,
+    },
+    manufacturername: "manufacturername",
+    modelid: "modelid",
+    productname: "productname",
+    state: createSensorState({
+      lastupdated: "lastupdated",
+    }),
+  });
 }

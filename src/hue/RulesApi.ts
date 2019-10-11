@@ -1,6 +1,6 @@
 import { dlete, get, post, put } from "../common/Parameters";
 import { bridgeUri } from "../configuration/Hue";
-import { create as RuleCreate, Rule, Rules } from "../models/Rule";
+import { create as RuleCreate, createSubmittable as createSubmittableRule, Rule, Rules } from "../models/Rule";
 import { triggerUpdate } from "../tabs/common/Alerter";
 
 export class RulesApi {
@@ -14,9 +14,9 @@ export class RulesApi {
 
   async get(id: string): Promise<Rule> {
     const uri = `${bridgeUri}/rules/${id}`;
-    const light = await (await fetch(uri, get)).json();
-    light.id = id;
-    return RuleCreate(light);
+    const rule = await (await fetch(uri, get)).json();
+    rule.id = id;
+    return RuleCreate(rule);
   }
 
   async delete(id: string) {
@@ -35,20 +35,25 @@ export class RulesApi {
     return allRules;
   }
 
-  // async put(light: Rule): Promise<void> {
-  //   const uri = `${bridgeUri}/rules/${light.id}`;
-  //   if (light.state) {
-  //     await this.putState(light.id, light.state);
-  //   }
-  //   const submittableRule = createSubmittableRule(light);
-  //   const parameters: RequestInit = {
-  //     ...put,
-  //     body: JSON.stringify(submittableRule),
-  //   };
-  //   const response = await (await fetch(uri, parameters)).json();
-  //   console.log(`put light response${JSON.stringify(response, null, 2)}`);
-  //   triggerUpdate();
-  // }
+  async create(rule: Rule): Promise<void> {
+    const uri = `${bridgeUri}/rules`;
+    const parameters: RequestInit = { ...post, body: JSON.stringify(rule) };
+    const response = await (await fetch(uri, parameters)).json();
+    console.log(`post rule response${JSON.stringify(response, null, 2)}`);
+    triggerUpdate();
+  }
+
+  async put(rule: Rule): Promise<void> {
+    const uri = `${bridgeUri}/rules/${rule.id}`;
+    const submittableRule = createSubmittableRule(rule);
+    const parameters: RequestInit = {
+      ...put,
+      body: JSON.stringify(submittableRule),
+    };
+    const response = await (await fetch(uri, parameters)).json();
+    console.log(`put rule response${JSON.stringify(response, null, 2)}`);
+    triggerUpdate();
+  }
 
   attachId(rulesMap: Rules): Rules {
     for (const id of Object.keys(rulesMap)) {

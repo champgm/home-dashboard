@@ -4,14 +4,20 @@ import React from "react";
 import { View } from "react-native";
 import { Route } from "react-native-tab-view";
 import {
-  createAppContainer, createMaterialTopTabNavigator,
-  createStackNavigator, NavigationContainer, NavigationContainerProps, NavigationNavigatorProps,
+  createAppContainer,
+  createMaterialTopTabNavigator,
+  createStackNavigator,
+  NavigationContainer,
 } from "react-navigation";
 import { GroupEditor } from "./tabs/editor/GroupEditor";
 import { LightEditor } from "./tabs/editor/LightEditor";
+import { RuleEditor } from "./tabs/editor/RuleEditor";
+import { SensorEditor } from "./tabs/editor/SensorEditor";
 import { FavoritesComponent } from "./tabs/Favorites";
 import { GroupsComponent } from "./tabs/Groups";
 import { LightsComponent } from "./tabs/Lights";
+import { RulesComponent } from "./tabs/Rules";
+import { SensorsComponent } from "./tabs/Sensors";
 
 export interface Props { }
 
@@ -34,14 +40,27 @@ const lightStack = createStackNavigator({
   LightEditor,
 }, { headerMode: "none" });
 
+const sensorStack = createStackNavigator({
+  Sensors: SensorsComponent,
+  SensorEditor,
+}, { headerMode: "none" });
+
+const ruleStack = createStackNavigator({
+  Rules: RulesComponent,
+  RuleEditor,
+}, { headerMode: "none" });
+
 export const AppContainer: NavigationContainer = createAppContainer(createMaterialTopTabNavigator(
   {
     Favorites: favoritesStack,
     Groups: groupStack,
     Lights: lightStack,
+    Sensors: sensorStack,
+    Rules: ruleStack,
   },
   {
-    /* Other configuration remains unchanged */
+    swipeEnabled: true,
+    tabBarPosition:"bottom",
   },
 ));
 
