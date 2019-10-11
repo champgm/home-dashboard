@@ -37,8 +37,8 @@ const lightStack = createStackNavigator({
 export const AppContainer: NavigationContainer = createAppContainer(createMaterialTopTabNavigator(
   {
     Favorites: favoritesStack,
-    Lights: lightStack,
     Groups: groupStack,
+    Lights: lightStack,
   },
   {
     /* Other configuration remains unchanged */

@@ -8,7 +8,6 @@ export class LightsApi {
 
   async getAll(): Promise<Lights> {
     const uri = `${bridgeUri}/lights/`;
-    console.log(`get all lights: ${uri}`);
     let lightsMap = await (await fetch(uri, get)).json();
     lightsMap = this.attachId(lightsMap);
     return lightsMap;
