@@ -9,7 +9,7 @@ import { NavigationContainerProps, NavigationNavigatorProps } from "react-naviga
 import v4 from "uuid/v4";
 import { sortBy } from "../common";
 import { SensorsApi } from "../hue/SensorsApi";
-import { Sensors } from "../models/Light";
+import { Sensors } from "../models/Sensor";
 import { deregister, register } from "./common/Alerter";
 import { ItemButton } from "./common/Button";
 import { getFavoriteArray, toggleFavorite } from "./common/Favorites";

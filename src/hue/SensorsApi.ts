@@ -1,6 +1,6 @@
-import { dlete, get, put, post } from "../common/Parameters";
+import { dlete, get, post, put } from "../common/Parameters";
 import { bridgeUri } from "../configuration/Hue";
-import { create as SensorCreate,  Sensor, Sensors } from "../models/Sensor";
+import { create as SensorCreate, Sensor, Sensors } from "../models/Sensor";
 import { createSubmittable as createSubmittableSensorState, SensorState } from "../models/SensorState";
 import { triggerUpdate } from "../tabs/common/Alerter";
 
@@ -58,9 +58,14 @@ export class SensorsApi {
   // }
 
   attachId(sensorsMap: Sensors): Sensors {
-    for (const lightId of Object.keys(sensorsMap)) {
-      sensorsMap[lightId].id = lightId;
-      sensorsMap[lightId] = SensorCreate(sensorsMap[lightId]);
+    for (const id of Object.keys(sensorsMap)) {
+      sensorsMap[id].id = id;
+      try {
+        sensorsMap[id] = SensorCreate(sensorsMap[id]);
+      } catch (error) {
+        console.log(`Error: ${error}`);
+        console.log(`Could not create sensor: ${JSON.stringify(sensorsMap[id], null, 2)}`);
+      }
     }
     return sensorsMap;
   }

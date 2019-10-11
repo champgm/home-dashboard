@@ -1,11 +1,13 @@
 {
   "cSpell.words": [
     "COLORLOOP",
+    "buttonevent",
     "colorgamut",
     "colorgamuttype",
     "colormode",
     "debouncing",
     "dlete",
+    "eventtype",
     "lastinstall",
     "lasttriggered",
     "lastupdated",
@@ -14,6 +16,9 @@
     "modelid",
     "productid",
     "productname",
+    "repeatintervals",
+    "sunriseoffset",
+    "sunsetoffset",
     "swconfigid",
     "swupdate",
     "swversion",

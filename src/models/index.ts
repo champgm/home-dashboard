@@ -70,5 +70,8 @@ export function printLeftoverKeys(modelType: string, first: any, second: any) {
 
   if (!(difference.length === 0)) {
     console.log(`Key difference in model, '${modelType}' detected: ${JSON.stringify(differenceMap, null, 2)}`);
+    console.log(`Difference: ${difference}`);
+    console.log(`first${JSON.stringify(first, null, 2)}`);
+    console.log(`second${JSON.stringify(second, null, 2)}`);
   }
 }

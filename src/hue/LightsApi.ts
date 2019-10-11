@@ -1,4 +1,4 @@
-import { dlete, get, put, post } from "../common/Parameters";
+import { dlete, get, post, put } from "../common/Parameters";
 import { bridgeUri } from "../configuration/Hue";
 import { create as LightCreate, createSubmittable as createSubmittableLight, Light, Lights } from "../models/Light";
 import { createSubmittable as createSubmittableLightState, LightState } from "../models/LightState";
