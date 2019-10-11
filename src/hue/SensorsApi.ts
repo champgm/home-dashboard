@@ -1,7 +1,6 @@
 import { dlete, get, post, put } from "../common/Parameters";
 import { bridgeUri } from "../configuration/Hue";
 import { create as SensorCreate, Sensor, Sensors } from "../models/Sensor";
-import { createSubmittable as createSubmittableSensorState, SensorState } from "../models/SensorState";
 import { triggerUpdate } from "../tabs/common/Alerter";
 
 export class SensorsApi {
@@ -23,12 +22,6 @@ export class SensorsApi {
   async delete(id: string) {
     const uri = `${bridgeUri}/sensors/${id}`;
     await (await fetch(uri, dlete)).json();
-    triggerUpdate();
-  }
-
-  async searchForNew() {
-    const uri = `${bridgeUri}/sensors`;
-    await (await fetch(uri, post)).json();
     triggerUpdate();
   }
 

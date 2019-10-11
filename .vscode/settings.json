@@ -11,6 +11,7 @@
     "lastinstall",
     "lasttriggered",
     "lastupdated",
+    "localtime",
     "manufacturername",
     "mindimlevel",
     "modelid",
@@ -23,6 +24,7 @@
     "swupdate",
     "swversion",
     "timestriggered",
+    "transitiontime",
     "uniqueid"
   ]
 }

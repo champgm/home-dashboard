@@ -4,7 +4,7 @@ import { RuleConditionOperator } from "./RuleConditionOperator";
 export interface RuleCondition {
   address: string;
   operator: RuleConditionOperator;
-  value: string;
+  value?: string;
 }
 
 export interface RuleConditions {
@@ -19,7 +19,7 @@ export function create(payload: RuleCondition): RuleCondition {
   const ruleCondition = {
     address: verifyType(payload.address, "address", "string"),
     operator: verifyRuleConditionOperator(payload.operator),
-    value: verifyType(payload.value, "value", "string"),
+    value: verifyType(payload.value, "value", "string", false),
   };
   printLeftoverKeys("RuleCondition", payload, ruleCondition);
   return ruleCondition;

@@ -1,6 +1,6 @@
 export enum RuleConditionOperator {
   DDX = "ddx",
-  DX = "dx ",
+  DX = "dx",
   EQ = "eq",
   GT = "gt",
   IN = "in",

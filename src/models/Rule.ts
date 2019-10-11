@@ -12,6 +12,7 @@ export interface Rule extends Item {
   status: string;
   conditions: RuleCondition[];
   actions: RuleAction[];
+  recycle: boolean;
 }
 
 export interface Rules {
@@ -28,6 +29,7 @@ export function create(payload: Rule): Rule {
     name: verifyType(payload.name, "name", "string"),
     owner: verifyType(payload.owner, "owner", "string"),
     created: verifyType(payload.created, "created", "string"),
+    recycle: verifyType(payload.recycle, "recycle", "boolean"),
     lasttriggered: verifyType(payload.lasttriggered, "lasttriggered", "string"),
     timestriggered: verifyType(payload.timestriggered, "timestriggered", "number"),
     status: verifyType(payload.status, "status", "string"),
