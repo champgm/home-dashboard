@@ -1,36 +1,59 @@
-# Home Dashboard
-An amalgamation dashboard for the various smart devices in my home.
+# home-dashboard
 
-![image](https://raw.githubusercontent.com/champgm/home-dashboard/React-Native/screenshot1.png) ![image](https://raw.githubusercontent.com/champgm/home-dashboard/React-Native/screenshot2.png)  ![image](https://raw.githubusercontent.com/champgm/home-dashboard/React-Native/screenshot3.png)
+This project is adapted from [home-dashboard](https://github.com/champgm/home-dashboard).
 
-# Configuration
-A file, named `Hue.ts` should be placed in `src/configuration`. Its contents should look something like this:
-```typescript
-const localNetwork = "http://<bridgeIp>:80/api/<bridgeApiKey>";
-const localWithEmulator = "http://10.0.2.2:<expoPort>/api/<bridgeApiKey>";
+It is created with Expo typescript template:
 
-export const bridgeUri = __DEV__ ? localWithEmulator : localNetwork;
+`npx create-expo-app --template`
+
+## Running & Testing
+`npx expo start`
+
+## Build
+https://docs.expo.dev/build/setup/
+
+Steps to install the app directly to the Android device:
+
+1. Create EAS build
+
+- Install lastest EAS CLI \
+`npm install -g eas-cli`
+
+- Log in to EXPO (need EXPO username/pwd) \
+`eas login`
+
+- Configure project - this will generate `eas.json` file \
+`eas build:configure`
+
+2. Build APKs for android emulators/devices
+
+- Modify `eas.json` like the following:
+```
+{
+  "build": {
+    "preview": {
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "preview2": {
+      "android": {
+        "gradleCommand": ":app:assembleRelease"
+      }
+    },
+    "preview3": {
+      "developmentClient": true
+    },
+    "production": {}
+  }
+}
+
 ```
 
-# Start for testing/development
-## Install [Expo](https://expo.io)
-```
-npm install -g expo
-```
-## Start Expo
-Choose one
-```
-npm run startlocal
-npm run startlan
-npm run android
-```
-A convenience script to start a local android emulator (if installed) without opening Android Studio is included. You will need to modify this if your emulator isn't named `Pixel_2_API_28`.
-```
-npm run emulator
-```
+- Run build \
+`eas build -p android --profile preview`
 
-# Build package
-You will need to configure your [expo](https://expo.io) account, but it should prompt you to do so if you haven't already
-```
-npm run build
-```
+- Download and install on device
+
+Note:
+I created `.easignore` file in addition to `.gitignore` file so that EAS will be able to find the configuration file.
