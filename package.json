@@ -1,6 +1,6 @@
 {
   "name": "home-dashboard",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "main": "node_modules/expo/AppEntry.js",
   "expo": {
@@ -23,8 +23,8 @@
     "test": "jest",
     "test:ci": "jest --runInBand --coverage=false",
     "check:fixture-secrets": "node scripts/check-characterization-secrets.mjs",
-    "doctor": "expo-doctor",
-    "build": "eas build --platform android --profile release-apk",
+    "doctor": "npx -y expo-doctor",
+    "build": "npx eas-cli@latest build --platform android --profile release-apk",
     "export:android": "expo export --platform android"
   },
   "dependencies": {

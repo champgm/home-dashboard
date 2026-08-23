@@ -2,7 +2,7 @@
   "expo": {
     "name": "Home Dashboard",
     "slug": "home-dashboard",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "sdkVersion": "57.0.0",
     "platforms": [
       "android",
@@ -31,7 +31,7 @@
     ],
     "android": {
       "package": "com.zhna123.homedashboard.v2",
-      "versionCode": 20000,
+      "versionCode": 20100,
       "allowBackup": false,
       "permissions": [
         "android.permission.INTERNET"

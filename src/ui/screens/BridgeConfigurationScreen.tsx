@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput } from "react-native";
 import { validatePrivateIpv4 } from "../../config/endpointValidation";
 import { useAppRuntime } from "../AppContext";
@@ -8,6 +8,7 @@ export function BridgeConfigurationScreen(): JSX.Element {
   const runtime = useAppRuntime();
   const [ipv4, setIpv4] = useState(runtime.configStore.getCommitted()?.bridge.ipv4 || "");
   const [message, setMessage] = useState<string>();
+  useEffect(() => runtime.configStore.subscribe(() => setIpv4(runtime.configStore.getCommitted()?.bridge.ipv4 || "")), [runtime]);
   return (
     <Screen title="Bridge Configuration">
       <Text style={styles.label}>Bound bridge private IPv4 address</Text>

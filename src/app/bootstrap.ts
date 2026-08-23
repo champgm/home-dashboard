@@ -80,6 +80,20 @@ export async function bootstrapApplication(): Promise<ApplicationRuntime> {
     get readiness() { return activeReadiness; },
     async resetLocalConfiguration() {
       const result = await configStore.reset();
+      if (result.status === "success" && activeBindingResult.status === "present") {
+        const next = configStore.getCommitted();
+        if (next?.bridge.ipv4) {
+          service.setHueClient(new HueV1Adapter({
+            bridgeIpv4: next.bridge.ipv4,
+            credential: activeBindingResult.binding.credential,
+            expectedBridgeId: activeBindingResult.binding.bridgeId,
+          }));
+          activeReadiness = "Ready";
+        } else {
+          service.setHueClient(undefined);
+          activeReadiness = "HueUnconfigured";
+        }
+      }
       return result.status === "success";
     },
     async saveConfig(mutator) {

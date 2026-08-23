@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput } from "react-native";
 import { validatePrivateIpv4 } from "../../config/endpointValidation";
 import { useAppRuntime } from "../AppContext";
@@ -8,6 +8,7 @@ export function HueProvisioningScreen(): JSX.Element {
   const runtime = useAppRuntime();
   const [ipv4, setIpv4] = useState(runtime.configStore.getCommitted()?.bridge.ipv4 || "");
   const [message, setMessage] = useState<string>();
+  useEffect(() => runtime.configStore.subscribe(() => setIpv4(runtime.configStore.getCommitted()?.bridge.ipv4 || "")), [runtime]);
   const available = runtime.readiness === "HueBindingAbsent" || runtime.readiness === "HueUnconfigured";
   return <Screen title="Hue Initial Provisioning">
     <Text style={styles.body}>{available ? "Configure the bridge address, press the physical Hue link button, then start provisioning. The app is permanently bound only after the credential and bridge identity are stored together." : "Initial provisioning is unavailable after a protected Hue binding exists. Same-bridge reauthorization is the supported recovery path."}</Text>

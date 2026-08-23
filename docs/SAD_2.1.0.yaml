@@ -1,0 +1,865 @@
+metadata:
+  document_id: SAD-HOME-DASHBOARD
+  title: Home Dashboard Software Architecture Document
+  version: 2.1.0
+  status: approved-implementation-baseline
+  date: '2026-08-23'
+  authority: Authoritative for selected implementation architecture. If this document conflicts with the SRS, implementation
+    shall stop until reconciled.
+  companion_document: SRS_2.1.0.yaml
+decision_guardrails:
+  purpose: Record explicit stakeholder simplifications that are not open architecture questions. Future review shall not reopen
+    them unless the stakeholder changes the requirement.
+  locked_decisions:
+  - id: DG-001
+    decision: Exactly one Hue bridge installation is permanently in scope. Bridge switching, replacement, migration, adoption,
+      and multi-bridge support are intentional non-goals.
+  - id: DG-002
+    decision: Same-bridge Hue resource-ID reuse can cause an old Favorite to resolve to a newly created resource with the
+      same kind/id. This residual risk is explicitly accepted because the household Hue resource set is exceptionally static;
+      no identity-continuity subsystem is required.
+  - id: DG-003
+    decision: Process-durable transaction journals for ordinary Hue/TP-Link commands, deletes, searches, and provisioning
+      are intentionally omitted. After app/background/process loss, authoritative refresh and explicit user retry/manual cleanup
+      are sufficient unless a future stakeholder requirement says otherwise.
+  - id: DG-004
+    decision: Runtime device endpoints are literal private/local IPv4 addresses. DNS/mDNS discovery, app-managed Android route/VPN/proxy
+      selection, and a hostile-local-device redirect threat model are intentional non-goals; the application validates the
+      destination it constructs but otherwise uses normal OS networking.
+  - id: DG-005
+    decision: Hue Rule/Schedule policy validation is immediate-operation validation, not recursive theorem-proving over future
+      automation graphs. This is an accepted simplification for a trusted, static household bridge.
+  - id: DG-006
+    decision: Configuration corruption may require explicit local reset/re-entry. The system is not required to implement
+      forensic partial recovery or a transactional configuration database.
+  change_control: Changing any DG-* decision requires an explicit stakeholder requirement revision and a new SRS/SAD baseline;
+    it is not a defect to be rediscovered during ordinary adversarial review.
+architectural_drivers:
+- driver: Permanent single Hue bridge; no bridge migration/switching.
+  srs:
+  - CON-002
+  - HUE-018
+- driver: Frozen legacy Hue V1 and TP-Link device protocols.
+  srs:
+  - CON-007
+  - HUE-012
+  - TPL-001
+- driver: Full Hue V1 resource management while bridge configuration remains read-only.
+  srs:
+  - HUE-004
+  - HUE-005
+  - HUE-006
+  - HUE-007
+  - HUE-008
+  - HUE-009
+  - HUE-010
+  - HUE-011
+- driver: Foreground-only operation with five-second refresh.
+  srs:
+  - CON-006
+  - FR-003
+  - FR-004
+- driver: Two trusted independent phones, no cloud/sync/accounts.
+  srs:
+  - CON-003
+  - CON-005
+  - PRIV-001
+- driver: Static private IPv4 device endpoints and no discovery.
+  srs:
+  - CON-009
+  - CON-010
+  - HUE-001
+  - TPL-004
+- driver: Deliberately simple failure recovery; stale UI/manual retry is acceptable for rare crash-edge cases.
+  srs:
+  - FR-015
+  - REL-004
+architecture_overview:
+  style: Small foreground mobile application with adapter-isolated legacy protocols and one in-memory state store.
+  topology: Single Android process; no server/backend/background worker.
+  diagram: "UI/Navigation -> ApplicationService -> DeviceStateStore\n                         |-> HueV1Adapter -> Hue bridge\
+    \ HTTP\n                         |-> TpLinkLegacyAdapter -> plugs TCP\n                         |-> ConfigStore -> AsyncStorage(one\
+    \ JSON object)\n                         `-> CredentialStore -> SecureStore"
+selected_platform:
+  framework:
+    expo_sdk: '57'
+    react_native: '0.86'
+    typescript: true
+    rationale: Current modern Android/React Native baseline selected earlier in the project.
+  android:
+    package: com.zhna123.homedashboard.v2
+    target_api: 36
+    distribution: privately signed sideload APK
+    backup: disabled
+  navigation:
+    library: React Navigation 7 material top tabs
+    tab_scroll: true
+    swipe: true
+  persistence:
+    non_secret: '@react-native-async-storage/async-storage, one JSON object'
+    secret: expo-secure-store
+  tplink_socket:
+    primary: react-native-tcp-socket
+    fallback: minimal Android native TCP module only if primary fails RN 0.86 device spike
+architectural_decisions:
+- id: ADR-001
+  decision: Use a current React Native/Expo Android application rather than a Swift/Kotlin rewrite.
+  rationale: The product is UI/state/protocol dominated; React Native already fits and avoids two native codebases.
+  satisfies:
+  - CON-001
+  - QA-001
+  - QA-003
+- id: ADR-002
+  decision: Bind Home Dashboard permanently to one Hue bridge identity after first provisioning. No bridge switching/replacement
+    workflow exists.
+  rationale: Explicit stakeholder invariant DG-001; deletes large amounts of recovery/migration machinery.
+  satisfies:
+  - CON-002
+  - HUE-018
+  - HUE-019
+- id: ADR-003
+  decision: Use a HueV1Adapter isolated behind an application service, with compatibility tests against API 1.38.0 fixtures
+    and documented V1 forms.
+  rationale: Preserves legacy behavior while allowing UI/platform modernization.
+  satisfies:
+  - CON-007
+  - HUE-003
+  - HUE-004
+  - HUE-005
+  - HUE-006
+  - HUE-007
+  - HUE-008
+  - HUE-009
+  - HUE-010
+  - QA-003
+- id: ADR-004
+  decision: Use a TpLinkLegacyAdapter with direct TCP to configured private IPv4 endpoints; no discovery. Prefer react-native-tcp-socket
+    behind an adapter, with a minimal native socket fallback only if device validation requires it.
+  rationale: The known Node implementation proves the protocol; only raw TCP is needed when endpoints are manual.
+  satisfies:
+  - CON-009
+  - TPL-001
+  - TPL-002
+  - TPL-004
+  - QA-003
+- id: ADR-005
+  decision: Persist all non-secret app state as one JSON configuration object under one AsyncStorage key; do not use SQLite
+    or durable remote-operation journals.
+  rationale: The dataset is tiny; a single object avoids cross-record transaction complexity. Corruption is handled by explicit
+    reset rather than forensic recovery.
+  satisfies:
+  - DATA-001
+  - DATA-002
+  - DATA-003
+  - DATA-004
+  - DATA-005
+  - DG-003
+  - DG-006
+- id: ADR-006
+  decision: Store one HueBinding {bridgeId, credential} in Expo SecureStore/Android protected storage under one fixed application
+    key; do not expose an ordinary in-app operation that removes/replaces it with a different bridge identity.
+  rationale: Separates the secret from ordinary local configuration.
+  satisfies:
+  - SEC-001
+  - HUE-017
+  - HUE-019
+- id: ADR-007
+  decision: 'Use foreground-only refresh: immediate foreground snapshot then 5-second opportunities. Hue allows at most one
+    snapshot read in flight; plugs are polled independently and an endpoint already busy is skipped.'
+  rationale: Matches the established app behavior and avoids background complexity.
+  satisfies:
+  - CON-006
+  - FR-003
+  - FR-004
+  - REL-007
+- id: ADR-008
+  decision: 'Use simple write ordering: one Hue mutation at a time; starting a Hue mutation increments a Hue state generation,
+    invalidating any prior snapshot; no new Hue snapshot begins until the mutation completes/abandons; then a full Hue refresh
+    supplies authoritative state. Plug writes mark only that endpoint Pending and perform read-back.'
+  rationale: Prevents obvious stale callback overwrite without per-resource/collection barrier machinery. Other-phone changes
+    are allowed to converge on the next poll.
+  satisfies:
+  - REL-001
+  - REL-002
+  - REL-003
+  - REL-005
+  - FR-002
+- id: ADR-009
+  decision: Deletion uses confirmation then one remote/local delete attempt. No deletion journal is persisted. Definite Hue
+    success triggers best-effort Favorite cleanup; ambiguous/background/process-loss outcomes are resolved by ordinary refresh
+    and manual user action.
+  rationale: The realistic worst case is a stale/missing Favorite, already handled by FR-015; durable transaction coordination
+    is disproportionate.
+  satisfies:
+  - FR-014
+  - FR-015
+  - REL-004
+  - UX-DEL-001
+  - UX-DEL-002
+  - UX-DEL-003
+- id: ADR-010
+  decision: Hue Light/Sensor search state is not persisted. Before a search POST, query the bridge search-status endpoint;
+    background/restart forgets local progress and foreground UI re-queries bridge status.
+  rationale: The bridge owns the long-running search; a phone-side durable search journal adds little value.
+  satisfies:
+  - HUE-015
+  - CON-006
+- id: ADR-011
+  decision: Hue provisioning and reauthorization have no durable transaction state. Link-button create-user is followed by
+    bridgeid verification and SecureStore persistence. If the process/storage fails, explicit user retry is accepted and may
+    leave an unused Hue API user.
+  rationale: Provisioning is rare and low-impact; the accepted orphan-user risk is cheaper than a crash-recovery state machine.
+  satisfies:
+  - HUE-002
+  - HUE-017
+  - HUE-018
+  - HUE-019
+- id: ADR-012
+  decision: 'HueActionPolicy validates only the immediate structured operation being authored: deny bridge administration/configuration,
+    provisioning, firmware/reset/network administration and DELETE; allow supported non-bridge operations. Do not recursively
+    analyze future Rule/Schedule graphs.'
+  rationale: Trusted/static household automation does not justify recursive concurrency-safe policy analysis.
+  satisfies:
+  - HUE-011
+  - HUE-016
+  - FR-008
+- id: ADR-013
+  decision: Production device endpoints are literal private/local IPv4 addresses. Validate addresses before I/O, do not implement
+    DNS/mDNS discovery, and do not implement custom Android Network/VPN/proxy binding.
+  rationale: Static/reserved addresses are already an environmental fact; route-selection machinery was disproportionate.
+  satisfies:
+  - CON-010
+  - HUE-001
+  - TPL-003
+  - TPL-004
+  - SEC-003
+  - PRIV-002
+  - PRIV-003
+- id: ADR-014
+  decision: Favorite identity for Hue uses (resource kind, Hue resource id) within the permanently bound bridge. No same-bridge
+    ID-reuse mitigation is implemented.
+  rationale: Explicit stakeholder acceptance DG-002; resources have remained static for many years.
+  satisfies:
+  - FR-007
+  - FR-015
+  - DG-002
+- id: ADR-015
+  decision: Disable Android cloud backup and application-data device transfer for Home Dashboard data.
+  rationale: Preserves independent phone-local configuration and privacy.
+  satisfies:
+  - PRIV-004
+  - CON-005
+- id: ADR-016
+  decision: "Introduce a sparse v2 user overlay over immutable APK bundled bridge/plug defaults. Resolve at read time; do not materialize bundled defaults into AsyncStorage."
+  rationale: "Only provenance-aware overlay state can distinguish untouched defaults, overrides, additions, and explicit removal across application updates."
+  satisfies:
+  - HUE-001
+  - TPL-009
+  - DATA-001
+  - DATA-002
+  - DATA-003
+  - DATA-005
+- id: ADR-017
+  decision: "Migrate the 2.0 materialized configuration by stable plug ID and preserve Favorites/settings; use tombstones for absent bundled plugs and keep HueBinding outside the migration."
+  rationale: "Stable IDs prevent unnecessary Favorite re-keying while fail-closed migration preserves user intent and the protected single-bridge invariant."
+  satisfies:
+  - CON-005
+  - DATA-001
+  - DATA-002
+  - DATA-003
+  - SEC-001
+runtime_components:
+- id: CMP-UI
+  name: UI and Navigation
+  responsibilities:
+  - Scrollable top tabs, resource lists/Favorites, editors, dialogs, Advanced/Bridge.
+- id: CMP-APP
+  name: ApplicationService
+  responsibilities:
+  - Coordinates user intents, busy/pending states, adapter calls, result classification, and refresh.
+- id: CMP-STATE
+  name: DeviceStateStore
+  responsibilities:
+  - In-memory Hue snapshot and plug states; Known/Unknown/Pending; lifecycle and Hue generation tokens.
+- id: CMP-HUE
+  name: HueV1Adapter
+  responsibilities:
+  - Hue V1 HTTP serialization/parsing, full resource CRUD/control/search/provisioning calls, rate pacing.
+- id: CMP-HUE-CATALOG
+  name: HueV1ResourceCatalog
+  responsibilities:
+  - Documented V1 field/operator/time-pattern descriptors used by editors and serializers; merges documented forms with characterized
+    fixture coverage.
+- id: CMP-ACTION
+  name: HueActionPolicy
+  responsibilities:
+  - Validates the immediate structured Rule/Schedule operation and denies direct prohibited admin/delete operations.
+- id: CMP-TPLINK
+  name: TpLinkLegacyAdapter
+  responsibilities:
+  - Legacy framed XOR TCP, sysinfo, relay, alias, optional energy telemetry.
+- id: CMP-CONFIG
+  name: ConfigStore
+  responsibilities:
+  - Read/write/reset one AsyncStorage JSON configuration object; persist a provenance-aware v2 user overlay; serialize config
+    mutations in-process; resolve bundled defaults on valid loads; validate private IPv4 endpoints.
+- id: CMP-CRED
+  name: CredentialStore
+  responsibilities:
+  - Read/write the protected HueBinding using SecureStore; expose absence separately from read error; no ordinary remove/switch
+    API.
+- id: CMP-LIFE
+  name: LifecycleController
+  responsibilities:
+  - Foreground generation token, immediate refresh, five-second scheduling, abandonment on background.
+internal_domain_interfaces:
+  types:
+    ResourceRef: '{kind, id} for Hue within the one permanent bridge; {plugEndpointId} for plugs.'
+    ResourceState: KNOWN(value) | UNKNOWN(reason); Pending is an orthogonal UI flag.
+    CommandResult: success | definite_failure | ambiguous | partial_failure.
+    AppConfig: 'resolved runtime {bridge:{ipv4?}, plugs:[{id,ipv4,port}], favorites:[ResourceRef], settings:{...}}'
+    BundledDefaults: '{bridge:{ipv4?}, plugs:[{stable id,ipv4,port}]}'
+    UserConfigOverlay: '{bridgeOverride?, plugOverrides:[...], removedPlugIds:[...], addedPlugs:[...], favorites:[...], settings:{...}}'
+    HueBinding: '{bridgeId, credential} stored only in protected storage.'
+  services:
+    ConfigStore:
+    - 'load(): Loaded|Absent|Corrupt|IoError; valid loads expose resolve(BundledDefaults, UserConfigOverlay)'
+    - 'save(config): Success|IoError; canonicalizes effective edits back into the user overlay'
+    - 'reset(): Success|IoError; replaces only the non-secret overlay with an empty overlay'
+    CredentialStore:
+    - 'getBinding(): Present(HueBinding)|Absent|IoError'
+    - 'setBinding(binding): Success|IoError'
+    - No ordinary in-app remove/switch operation is exposed.
+    HueV1Adapter:
+    - snapshot()
+    - getResource(kind,id)
+    - mutate(kind,id,operation,payload)
+    - create(kind,payload)
+    - delete(kind,id)
+    - startSearch(kind)
+    - getSearchStatus(kind)
+    - provision()
+    - getBridgeConfig()
+    TpLinkLegacyAdapter:
+    - getSysInfo(endpoint)
+    - getPower(endpoint)
+    - setPower(endpoint,on)
+    - setAlias(endpoint,alias)
+    - getEnergy(endpoint)
+    HueActionPolicy:
+    - 'validateImmediateAction(method,path,body): Allowed|Denied(reason)'
+hue_v1_design:
+  endpoint: http://<private-ip>/api/<credential>; no DNS/discovery/cloud runtime endpoint.
+  snapshot: Foreground Hue state refresh reads the bridge collections/config needed to populate current screens/store. Only
+    one Hue snapshot is in flight at a time.
+  full_management_strategy: HueV1ResourceCatalog enumerates documented V1 writable/read-only fields, Rule condition operators/action
+    forms, Schedule time patterns/command forms, Scene per-light state, and deployed fixture shapes. Editors use this catalog;
+    adapters preserve unknown/read-only fields but send only explicitly edited fields.
+  scene_activation:
+    GroupScene: PUT /groups/{scene.group}/action with scene id
+    LightScene: PUT /groups/0/action with scene id, as characterized on the deployed bridge
+  search: Before POST /lights or /sensors search, GET the corresponding /new status. If bridge indicates an active/recent
+    search, display it. Poll status only while foregrounded. No local durable journal.
+  provisioning: Persist the configured bridge IPv4 first. On a fresh installation with CredentialStore=Absent, link-button
+    create-user may run; use the returned credential to authenticate GET /config and obtain bridgeid, then store {bridgeId,
+    credential} together as one protected HueBinding. Completion is reported only after setBinding succeeds. If process/storage
+    failure occurs before setBinding succeeds, report incomplete setup and require explicit user retry; create-user is never
+    automatically repeated. If a HueBinding already exists, initial provisioning is disabled and the configured IPv4 is merely
+    an endpoint for that same binding.
+  reauthorization: When the binding credential is rejected, explicit link-button create-user is allowed only for the configured
+    IP. Authenticate /config with the returned credential; replace the protected HueBinding only when returned bridgeid equals
+    the existing binding.bridgeId. Different bridgeid is a hard mismatch. A CredentialStore IoError is never treated as Absent.
+  embedded_action_policy: Structured editor only. Immediate operation may target supported non-bridge resources and supported
+    fields. Deny bridge config/capabilities, user provisioning, firmware/reset/network admin, and DELETE. Existing automation
+    with a directly prohibited own action remains inspectable/disableable/deletable and must be edited to an allowed action
+    before it can be enabled. No recursive transitive graph analysis.
+  partial_updates: For updates, construct payload from changed fields only. Do not round-trip unrelated Schedule command addresses
+    or authorization IDs into an update unless the user explicitly edits/replaces the command. Provide an explicit Schedule-editor
+    'Rebuild command authorization' action that reconstructs the same structured command target with the current credential;
+    never do this automatically during reauthorization.
+supported_resource_semantics:
+  favorites: Heterogeneous ResourceRef list. Hue identity is kind+id on the permanent bridge. Missing target -> Missing/Unknown
+    and removable. Same-id reuse is accepted risk DG-002.
+  light: Primary tap toggles known on/off; editor exposes documented V1 writable state/metadata; Unknown tile cannot toggle.
+  group: Primary tap uses aggregate state; indeterminate -> absolute On. Group mutation and action followed by full Hue refresh.
+  scene: Primary tap activates. Editors support GroupScene/LightScene and documented per-light Scene state.
+  sensor: Read state/config; writable enabled state can toggle; supported create/config/search/delete.
+  rule: Read/create/update/delete/enable/disable using documented condition/action forms subject to immediate HueActionPolicy.
+  schedule: Read/create/update/delete/enable/disable using documented time-pattern/command forms subject to immediate HueActionPolicy.
+  resource_link: CRUD in Advanced/Bridge.
+  plug: Physical alias is the name; technical IPv4 label allowed only before first successful sysinfo; relay toggle and capability-based
+    energy display.
+plug_protocol_design:
+  connection: TCP to configured private IPv4, default 9999. No discovery or hostname resolution.
+  framing: 4-byte big-endian payload length followed by TP-Link legacy XOR-autokey ciphertext. Reject declared payloads above
+    64 KiB.
+  commands:
+    sysinfo: system.get_sysinfo
+    relay: system.set_relay_state
+    alias: system.set_dev_alias
+    energy: emeter/get_realtime or characterized equivalent when capability exists
+  result_rules: Explicit nonzero err_code -> definite failure. Truncated/malformed/timeout after possible send -> ambiguous
+    for writes.
+  capabilities: Derive from returned sysinfo/command support; do not infer energy capability solely from model string.
+state_and_concurrency:
+  lifecycle_generation: Increment when app foreground lifecycle changes. Every adapter call captures the generation; callback
+    results publish only if generation is still current and foreground.
+  hue_polling: At most one Hue snapshot read in flight. Five-second opportunities skip if a snapshot or Hue mutation is active.
+  hue_mutations: ApplicationService permits one Hue mutation at a time. A second mutation request while busy returns a local
+    Busy diagnostic rather than queueing. Starting a mutation increments hueStateGeneration so any earlier snapshot result
+    is discarded. After mutation result/read-back, issue one full Hue refresh before clearing final stable display.
+  plug_operations: Each plug has independent Pending flag. Poll for a plug is skipped while its command is pending. A write
+    attempts one read-back within the foreground deadline.
+  other_phone: No distributed lock or attempt to serialize with the second phone. External changes converge on the next successful
+    poll/refresh.
+state_machines:
+  resource: UNKNOWN --successful read--> KNOWN; KNOWN --failed current refresh--> UNKNOWN. Starting a refresh does not erase
+    the prior rendered KNOWN value until success/failure completes.
+  command: IDLE -> PENDING -> SUCCESS|DEFINITE_FAILURE|AMBIGUOUS; background -> ABANDONED -> IDLE after next foreground refresh.
+  lifecycle: FOREGROUND -> BACKGROUND abandons I/O and stops timers; BACKGROUND -> FOREGROUND increments generation and starts
+    immediate refresh.
+  hue_search: IDLE -> STATUS_CHECK -> ACTIVE_STATUS or STARTING -> SEARCHING; background/process loss forgets local state;
+    next foreground/status view begins at STATUS_CHECK.
+failure_and_deadline_architecture:
+  interactive_deadline_ms: 5000
+  retry_policy:
+    reads: At most one retry when budget permits and failure is clearly pre-response/transient; never extend Pending beyond
+      5s.
+    writes: No automatic network retry after bytes may have been transmitted. Ambiguous observable writes get at most one
+      read-back while foregrounded.
+    create_delete: Never automatically repeat after ambiguous outcome.
+  error_categories:
+  - Busy
+  - NetworkUnavailable
+  - Timeout
+  - ProtocolMalformed
+  - ProtocolRejected
+  - AuthenticationRejected
+  - BridgeIdentityMismatch
+  - PermissionDenied
+  - StorageError
+  - ConfigCorrupt
+  - Ambiguous
+  background: Local abandonment; ignore late callbacks; no durable recovery journal.
+persistence_architecture:
+  technology: AsyncStorage for one non-secret JSON user-overlay object; SecureStore for the protected Hue credential binding.
+  key: homeDashboard.config
+  schema_versions:
+    v1: "The current 2.0 materialized AppConfig: {schemaVersion:1, bridge, plugs, favorites, settings}."
+    v2: "The 2.1 provenance-aware overlay: {schemaVersion:2, bridgeOverride?, plugOverrides, removedPlugIds, addedPlugs, favorites, settings}."
+  config_shape: "Runtime AppConfig is resolved, not persisted: resolve(BundledDefaults, UserConfigOverlay)."
+  overlay_semantics:
+    bridge: "bridgeOverride is sparse; absent means the currently bundled bridge default is effective."
+    plugs: "Stable bundled IDs are matched by ID. A plug override changes endpoint/port without changing identity."
+    removals: "removedPlugIds are tombstones for bundled IDs and outrank defaults and overrides."
+    additions: "addedPlugs are independent user endpoints and remain across APK updates."
+    precedence: "explicit removal > explicit override > bundled default > absent"
+    canonicalization: "An override equal to the current bundled endpoint is omitted. A user edit back to a bundled value clears that override."
+  load: "Missing key means an empty overlay and resolves current bundled defaults without materializing them. Valid v2 resolves defaults plus overlay. Valid v1 is migrated to v2 and the canonical v2 overlay is persisted before load succeeds. Corrupt/unsupported data is not resolved as empty and is not overwritten."
+  save: "ConfigStore serializes mutations through one in-process queue. Each effective mutation is converted to a canonical overlay relative to the installed defaults, written once, and committed only after AsyncStorage success. No cross-record transaction semantics are claimed."
+  reset: "Explicit Reset Local Configuration writes an empty v2 overlay, so current APK bundled defaults become effective. It never reads, deletes, or changes SecureStore HueBinding."
+  migration: "v1 migration compares each persisted plug by stable ID with current bundled defaults: same endpoint is provenance-free, changed endpoint is an override, absent bundled endpoint is a tombstone, and other IDs are additions. Favorites/settings are copied unchanged. Malformed/unknown versions fail closed."
+  remote_operation_recovery: "None persisted for commands, deletes, searches, or provisioning. Ordinary refresh/manual retry handles app/process loss."
+preseed_architecture:
+  source: "Bundled TypeScript data containing only a validated optional bridge IPv4 and plug stable ID/IPv4/port metadata; no Hue credential or physical alias."
+  generation: "Each APK carries one immutable bundled-default generation. Stable plug IDs are permanent physical identities and are never reused for another plug."
+  resolution: "Every valid load resolves the current generation with the phone-local overlay. Defaults are not copied into storage as a materialized snapshot."
+  update: "New/changed defaults apply only where the overlay has no override or tombstone. User additions remain independent."
+  reset: "Reset writes an empty overlay and therefore reapplies the currently installed generation."
+  validation: "All bundled endpoints are validated as private/local IPv4 and ports 1..65535; duplicate IDs fail validation before runtime destinations are available."
+configuration_defaults_overlay_architecture:
+  purpose: "Change the 2.0 full-config persistence into an explicit user-intent model without changing remote protocols."
+  supported_fields: ['bridge.ipv4', 'plugs[].id', 'plugs[].ipv4', 'plugs[].port', favorites, settings]
+  forbidden: [HueBinding, credential, cloud/default retrieval, arbitrary dynamic keys, bridge switching]
+  phone_independence: "The overlay is stored only under the phone's local AsyncStorage key; no phone-to-phone synchronization, merge, lock, or cloud path exists."
+  failure_rule: "Corrupt/unreadable overlay and storage I/O failure remain distinct from an absent overlay and never authorize default resolution."
+security_architecture:
+  credentials: SecureStore only; one protected HueBinding stores bridgeId+credential. Adapters receive the credential through
+    CredentialStore/ApplicationService and redact token/authorization identifiers from errors/logs. There is no in-app delete/switch-binding
+    API.
+  endpoint_restriction: IPv4 validator accepts RFC1918 (10/8, 172.16/12, 192.168/16) and, if explicitly needed, IPv4 link-local
+    169.254/16 unicast; rejects loopback, unspecified, multicast, limited/directed broadcast, and public destinations. No
+    DNS resolver is used. The local bridge/plugs are trusted rather than treated as hostile redirect/proxy adversaries under
+    DG-004.
+  cleartext: Android cleartext is enabled only because frozen local protocols require it; application code has no arbitrary
+    URL/socket console and adapters construct destinations from validated config.
+  privacy: No analytics/cloud relay/sync. Disable Android backup/device-transfer.
+  fixture_sanitization: Retain evidence 1.1.0; CI scanner rejects live Hue authorization IDs/credentials.
+android_network_configuration:
+  internet_permission: Required for local IP sockets/HTTP.
+  cleartext: Configure release to permit required local HTTP.
+  access_local_network: Add/request only when target Android API requires it; current selected target API 36 does not require
+    the future API-37 flow.
+  backup: android.allowBackup=false plus data-extraction/backup rules excluding app data.
+  routing: Use normal Android/React Native networking and route selection. Do not bind sockets to a selected Network and do
+    not implement VPN/proxy bypass; this is deliberate DG-004.
+startup_and_readiness:
+  sequence:
+  - Initialize ConfigStore and CredentialStore.
+  - Load/validate homeDashboard.config; if corrupt, enter ConfigError shell without seeding.
+  - Load protected HueBinding; distinguish Present, Absent, and IoError. IoError disables provisioning/control until resolved.
+  - If bridge IPv4 + HueBinding exist, authenticate /config and require returned bridgeid == HueBinding.bridgeId before Hue
+    control. If HueBinding is Absent, first provisioning may be offered; if Present, a different bridge can never be adopted.
+  - Start UI immediately; unreachable devices become Unknown.
+  - When foreground, trigger immediate Hue/plug refresh.
+  readiness_states:
+  - Ready
+  - HueUnconfigured
+  - HueBindingAbsent
+  - HueAuthenticationRejected
+  - HueBridgeIdentityMismatch
+  - ConfigError
+  - StorageError
+  - LocalNetworkPermissionDenied
+  no_blocking_condition: Unreachable devices do not block application shell or independently reachable plug control.
+shutdown_and_backgrounding:
+  trigger: Android app leaves foreground.
+  actions:
+  - Cancel/close what can be cancelled; increment lifecycle generation so all late callbacks are ignored.
+  - Stop timers/search status polling.
+  - Clear local Pending presentation as abandoned.
+  persistence: Do not create remote-operation journals. User configuration is saved only by explicit configuration/Favorite
+    mutations, not as a background transaction.
+logging_and_diagnostics:
+  production_logging: No credentials, credential-bearing Hue addresses, device payload dumps, or household metadata beyond
+    minimal local diagnostic category.
+  diagnostic_record:
+  - category
+  - resource/endpoint technical identifier where non-secret
+  - operation kind
+  - bounded timing
+  - HTTP status or TP-Link err_code when safe
+  user_surface: Actionable short messages plus Unknown tile treatment; technical detail available in Advanced diagnostics
+    without secrets.
+repository_structure:
+  root:
+    src/app: ApplicationService/lifecycle/state
+    src/ui: navigation/screens/editors/components
+    src/protocol/hue: HueV1Adapter + resource catalog + action policy
+    src/protocol/tplink: legacy TCP adapter/cipher
+    src/storage: ConfigStore + CredentialStore
+    src/config: bundled defaults/overlay resolution/private IPv4 validation
+    android: only build/network-security configuration and optional TCP fallback module
+  legacy_migration_policy: Port reusable protocol/model behavior deliberately; do not retain duplicate old/new application
+    trees.
+verification_architecture:
+  satisfies:
+    CON-001:
+    - ADR-001
+    CON-002:
+    - ADR-002
+    CON-003:
+    - ADR-001
+    CON-004:
+    - ADR-001
+    CON-005:
+    - ADR-015
+    CON-006:
+    - ADR-007
+    - ADR-010
+    CON-007:
+    - ADR-003
+    CON-008:
+    - ADR-001
+    CON-009:
+    - ADR-004
+    CON-010:
+    - ADR-013
+    FR-001:
+    - ADR-007
+    FR-002:
+    - ADR-008
+    FR-003:
+    - ADR-007
+    FR-004:
+    - ADR-007
+    FR-005:
+    - ADR-007
+    FR-006:
+    - ADR-007
+    FR-007:
+    - ADR-014
+    FR-008:
+    - ADR-012
+    FR-009:
+    - ADR-007
+    FR-010:
+    - ADR-007
+    FR-011:
+    - ADR-007
+    FR-012:
+    - ADR-007
+    FR-013:
+    - ADR-007
+    FR-014:
+    - ADR-009
+    FR-015:
+    - ADR-009
+    - ADR-014
+    FR-016:
+    - ADR-007
+    HUE-001:
+    - ADR-013
+    - ADR-016
+    HUE-002:
+    - ADR-011
+    HUE-003:
+    - ADR-003
+    HUE-004:
+    - ADR-003
+    HUE-005:
+    - ADR-003
+    HUE-006:
+    - ADR-003
+    HUE-007:
+    - ADR-003
+    HUE-008:
+    - ADR-003
+    HUE-009:
+    - ADR-003
+    HUE-010:
+    - ADR-003
+    HUE-011:
+    - ADR-012
+    HUE-012:
+    - ADR-003
+    HUE-013:
+    - ADR-003
+    HUE-014:
+    - ADR-003
+    HUE-015:
+    - ADR-010
+    HUE-016:
+    - ADR-012
+    HUE-017:
+    - ADR-006
+    - ADR-011
+    HUE-018:
+    - ADR-002
+    - ADR-011
+    HUE-019:
+    - ADR-002
+    - ADR-006
+    - ADR-011
+    HUE-020:
+    - ADR-003
+    TPL-001:
+    - ADR-004
+    TPL-002:
+    - ADR-004
+    TPL-003:
+    - ADR-013
+    TPL-004:
+    - ADR-004
+    - ADR-013
+    TPL-005:
+    - ADR-004
+    TPL-006:
+    - ADR-004
+    TPL-007:
+    - ADR-004
+    TPL-008:
+    - ADR-004
+    TPL-009:
+    - ADR-004
+    - ADR-016
+    - ADR-017
+    TPL-010:
+    - ADR-004
+    TPL-011:
+    - ADR-004
+    UX-DEL-001:
+    - ADR-009
+    UX-DEL-002:
+    - ADR-009
+    UX-DEL-003:
+    - ADR-009
+    DATA-001:
+    - ADR-005
+    - ADR-016
+    - ADR-017
+    DATA-002:
+    - ADR-005
+    - ADR-016
+    - ADR-017
+    DATA-003:
+    - ADR-005
+    - ADR-016
+    - ADR-017
+    DATA-004:
+    - ADR-005
+    DATA-005:
+    - ADR-005
+    - ADR-016
+    PRIV-001:
+    - ADR-015
+    PRIV-002:
+    - ADR-013
+    PRIV-003:
+    - ADR-013
+    PRIV-004:
+    - ADR-015
+    SEC-001:
+    - ADR-006
+    - ADR-017
+    SEC-002:
+    - ADR-013
+    SEC-003:
+    - ADR-013
+    SEC-004:
+    - ADR-013
+    SEC-005:
+    - ADR-013
+    SEC-006:
+    - ADR-013
+    REL-001:
+    - ADR-008
+    REL-002:
+    - ADR-008
+    REL-003:
+    - ADR-008
+    REL-004:
+    - ADR-009
+    REL-005:
+    - ADR-008
+    REL-006:
+    - ADR-008
+    REL-007:
+    - ADR-007
+    QA-001:
+    - ADR-001
+    QA-002:
+    - ADR-001
+    QA-003:
+    - ADR-001
+    - ADR-003
+    - ADR-004
+  unit_tests:
+  - Hue response classifier and changed-field serializer
+  - HueActionPolicy immediate allow/deny matrix
+  - Hue V1 Rule/Schedule resource catalog parser/serializer forms
+  - TP-Link XOR/framing and error classification
+  - private IPv4/port validator
+  - poll/hueStateGeneration stale-result discard
+  - config JSON validation/preseed absence semantics
+  integration_tests:
+  - Frozen Hue/TP-Link fixtures
+  - foreground/background abandonment
+  - successful write followed by authoritative refresh
+  - ambiguous write read-back
+  - Hue search status-before-start and restart behavior without journal
+  - initial provisioning/same-bridge reauthorization/bridgeid mismatch
+  - AsyncStorage corrupt/read/write failure and explicit reset
+  - delete success with Favorite cleanup failure/stale Favorite handling
+  security_tests:
+  - No cloud/analytics traffic
+  - credential redaction
+  - fixture secret scanner
+  - public IP rejection
+  - Android backup/data-transfer exclusion
+  - read-only bridge configuration
+  end_to_end_tests:
+  - Both Pixel phones
+  - WAN-disabled Hue/plug control
+  - scrollable navigation/Favorites
+  - full resource editors and delete confirmations
+  - HS100/HS103/HS110 control
+  baseline_characterization:
+    artifact: home-dashboard-characterization-evidence-1.1.0.tar.gz
+    sha256: bf49e72a74b6cbf94992db369b6fc9a6214e604e5a45b85506808ab1ff9c9f25
+implementation_constraints:
+- Do not add bridge-switch/replacement/multi-bridge code without an explicit SRS change to DG-001/CON-002.
+- Do not add same-ID Favorite identity continuity machinery without an explicit SRS change to DG-002.
+- Do not add SQLite/durable remote-operation journals solely to solve stale UI/manual-retry consequences covered by DG-003.
+- Do not add DNS/mDNS or custom Android Network/VPN routing without an explicit SRS change to DG-004.
+- Do not weaken full Hue V1 management scope as a side effect of simplifying the architecture.
+- Validate react-native-tcp-socket on a Pixel 9 Pro / RN 0.86 build before implementing the wider TP-Link UI; if it fails,
+  substitute only the minimal TCP provider behind TpLinkLegacyAdapter.
+- Do not expose arbitrary raw Rule/Schedule method/address/body editing.
+- Do not automatically retry ambiguous Hue/TP-Link writes/create/delete operations.
+- Do not optimistic-publish command success without protocol/read-back evidence.
+accepted_architectural_risks:
+- id: RISK-001
+  status: accepted/mitigated
+  description: Frozen undocumented Hue V1 and TP-Link behavior may differ from references.
+  mitigation: Keep adapters isolated and regression-test against sanitized live fixtures.
+- id: RISK-002
+  status: accepted
+  description: A successful Hue create-user followed by process/storage failure may leave an unused API user on the bridge.
+  rationale: Rare setup/reauthorization event; durable provisioning transactions are intentionally omitted under DG-003.
+- id: RISK-003
+  status: accepted
+  description: An externally deleted Hue resource may later be recreated with the same kind/id and an old Favorite can resolve
+    to the replacement.
+  rationale: Explicit stakeholder acceptance under DG-002; household resources are exceptionally static.
+- id: RISK-004
+  status: accepted
+  description: After ambiguous delete/create or process loss, the app may require manual refresh/retry and may leave a stale
+    Favorite until ordinary refresh/user cleanup.
+  rationale: Consequence is low and deliberate under DG-003.
+- id: RISK-005
+  status: accepted
+  description: The application does not force private-IP traffic onto a particular Android Network, bypass user-configured
+    VPN/proxy routing, or defend against a malicious local bridge redirecting transport at the platform layer.
+  rationale: Explicit simplification under DG-004; the household bridge/plugs and phone networking environment are trusted,
+    endpoints remain private/static, and the app has no cloud control dependency.
+- id: RISK-006
+  status: accepted/operational
+  description: Hue Schedules can embed an API username in command addresses. Reauthorization does not automatically rewrite
+    existing Schedule commands; a Schedule using an invalid old user may require the explicit Rebuild command authorization
+    editor action.
+  rationale: Automatic rewriting could take ownership of schedules created by other API users; explicit repair is simpler
+    and safer.
+- id: RISK-007
+  status: accepted
+  description: A permitted Rule/Schedule can affect another pre-existing automation whose later/transitive behavior would
+    have been prohibited if authored directly by Home Dashboard.
+  rationale: DG-005 intentionally limits policy checks to the immediate operation in this trusted, static household; direct
+    dangerous actions remain blocked.
+- id: RISK-008
+  status: accepted/operational
+  description: Loss of the private APK signing key prevents in-place signed updates.
+  mitigation: Maintain signing key custody outside the runtime/source repository.
+baseline_issues: []
+open_architecture_questions: []
+adversarial_review_checklist:
+  bridge_scope: 'pass: permanent single bridge; replacement/switching explicitly non-goal.'
+  same_id_favorites: accepted risk DG-002; not a blocker.
+  recovery_complexity: 'pass: no durable delete/search/provisioning journals; ordinary refresh/manual retry selected.'
+  persistence: 'pass: one JSON config object + SecureStore, explicit corruption/reset semantics.'
+  concurrency: 'pass: one Hue mutation, generation invalidation, no distributed locking.'
+  networking: 'pass: private IPv4 validation with normal OS route selection under explicit accepted DG-004.'
+  action_policy: 'pass: immediate-operation policy only; transitive safety explicitly non-required DG-005.'
+  full_management: 'pass: remains binding and backed by HueV1ResourceCatalog + documented V1 forms/fixtures.'
+  deletion_confirmation: pass.
+  privacy: 'pass: no cloud/analytics/sync; backup disabled.'
+  testability: 'pass: all mandatory requirements mapped to objective ACs.'
+baseline_readiness:
+  current_recommendation: begin-detailed-implementation-planning
+  status: approved-implementation-baseline
+  permitted_work:
+  - detailed implementation planning
+  - implementation
+  - verification
+architecture_sources:
+- id: SRC-001
+  type: stakeholder
+  description: Conversation decisions through 2026-08-23.
+- id: SRC-002
+  type: existing-code
+  description: Original Home Dashboard source archive and screenshots.
+- id: SRC-003
+  type: characterization
+  artifact: home-dashboard-characterization-evidence-1.1.0.tar.gz
+  sha256: bf49e72a74b6cbf94992db369b6fc9a6214e604e5a45b85506808ab1ff9c9f25
+  description: Sanitized live Hue BSB002 API 1.38.0 and TP-Link HS100/HS103/HS110 characterization evidence.
+- id: SRC-004
+  type: reference
+  url: https://github.com/peter-murray/node-hue-api
+  description: Historical node-hue-api v4.x/typescript-branch documentation reference; the project states complete coverage
+    of the documented Hue REST API and provides Lights/Sensors/Scenes/Groups/Rules/ResourceLinks/Schedules/Configuration/Capabilities
+    models.
+- id: SRC-005
+  type: reference
+  url: https://github.com/plasticrake/tplink-smarthome-api
+  description: Legacy TP-Link protocol/library reference.
