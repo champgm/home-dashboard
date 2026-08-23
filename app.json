@@ -2,32 +2,48 @@
   "expo": {
     "name": "Home Dashboard",
     "slug": "home-dashboard",
-    "privacy": "public",
-    "sdkVersion": "35.0.0",
+    "version": "2.0.0",
+    "sdkVersion": "57.0.0",
     "platforms": [
-      "ios",
       "android",
+      "ios",
       "web"
     ],
-    "version": "1.0.0",
     "orientation": "portrait",
+    "userInterfaceStyle": "dark",
     "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "updates": {
       "fallbackToCacheTimeout": 0
     },
     "assetBundlePatterns": [
       "**/*"
     ],
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#002b36"
+        }
+      ],
+      "./plugins/withAndroidHardening"
+    ],
+    "android": {
+      "package": "com.zhna123.homedashboard",
+      "versionCode": 20000,
+      "allowBackup": false,
+      "permissions": [
+        "android.permission.INTERNET"
+      ]
+    },
     "ios": {
       "supportsTablet": true
     },
-    "android": {
-      "package": "com.champgm.homedashboard"
+    "extra": {
+      "eas": {
+        "projectId": "992bb950-c035-11e9-857e-3f8f34599000"
+      }
     }
   }
 }

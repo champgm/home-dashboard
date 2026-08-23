@@ -1,2 +1,3 @@
-import { AppContainerContainer } from "./src/App";
-export default AppContainerContainer;
+import { AppShell } from "./src/ui/App";
+
+export default AppShell;

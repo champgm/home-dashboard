@@ -1,0 +1,44 @@
+{
+  "lights": {
+    "1": {
+      "name": "Living Room",
+      "type": "Extended color light",
+      "state": { "on": false, "bri": 120, "reachable": true },
+      "config": { "reachable": true }
+    }
+  },
+  "groups": {
+    "1": {
+      "name": "Living Room",
+      "type": "Room",
+      "lights": ["1"],
+      "state": { "all_on": false, "any_on": false },
+      "action": { "on": false, "bri": 120 }
+    },
+    "2": {
+      "name": "Mixed",
+      "type": "Room",
+      "lights": ["1", "2"],
+      "state": { "all_on": false, "any_on": true },
+      "action": { "on": true, "bri": 120 }
+    }
+  },
+  "scenes": {
+    "group-scene": { "name": "Evening", "type": "GroupScene", "group": "1", "lights": ["1"] },
+    "light-scene": { "name": "Reading", "type": "LightScene", "lights": ["1"], "lightstates": { "1": { "on": true, "bri": 180 } } }
+  },
+  "sensors": {
+    "1": { "name": "Motion", "type": "ZLLPresence", "config": { "on": true }, "state": { "presence": false } }
+  },
+  "rules": {
+    "1": { "name": "Motion rule", "status": "disabled", "conditions": [], "actions": [{ "address": "/api/TEST_CREDENTIAL/lights/1/state", "method": "PUT", "body": { "on": true } }] }
+  },
+  "schedules": {
+    "1": { "name": "Morning", "status": "enabled", "timePattern": { "kind": "at", "time": "07:00:00" }, "command": { "address": "/api/TEST_CREDENTIAL/lights/1/state", "method": "PUT", "body": { "on": true } } }
+  },
+  "resourcelinks": {
+    "1": { "class": "HomeDashboard", "description": "Morning resources", "links": ["/lights/1"] }
+  },
+  "config": { "bridgeid": "TEST-BRIDGE-ID", "name": "Test Bridge", "apiversion": "1.38.0" },
+  "capabilities": { "lights": {}, "sensors": {}, "groups": {} }
+}

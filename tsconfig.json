@@ -1,11 +1,19 @@
 {
+  "extends": "expo/tsconfig.base",
   "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["dom", "es2020"],
+    "strict": true,
     "noEmit": true,
-    "lib": ["dom", "esnext"],
     "jsx": "react-native",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true
-  }
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["jest"]
+  },
+  "include": ["App.tsx", "src/app/**/*.ts", "src/config/**/*.ts", "src/protocol/**/*.ts", "src/storage/**/*.ts", "src/ui/**/*.ts", "src/ui/**/*.tsx", "src/types/**/*.d.ts", "test/**/*.ts", "test/**/*.tsx"],
+  "exclude": ["node_modules", "dist", "artifacts", "src/App.tsx", "src/common", "src/hue", "src/models", "src/tabs"]
 }

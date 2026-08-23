@@ -8,6 +8,7 @@ npm-debug.*
 *.orig.*
 web-build/
 web-report/
+dist/
 .DS_Store
 **/.google_token.json
 **/.recipients.json
