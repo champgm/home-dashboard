@@ -36,7 +36,7 @@ Every later phase depends on a modern, testable build and stable repository layo
 
 ## In scope
 
-- Upgrade the existing repository to Expo SDK 57 / React Native 0.86 and keep Android package `com.zhna123.homedashboard`.
+- Upgrade the existing repository to Expo SDK 57 / React Native 0.86 and use Android package `com.zhna123.homedashboard.v2`.
 - Establish the SAD root layout: `src/app`, `src/ui`, `src/protocol/hue`, `src/protocol/tplink`, `src/storage`, `src/config`, and `test`.
 - Make the root `App.tsx` enter only the modern runtime. Legacy trees may remain temporarily as migration reference but must not be imported by the new runtime.
 - Establish repeatable scripts named `typecheck`, `lint`, `test:ci`, and the normal Expo start/build scripts.

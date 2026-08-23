@@ -13,3 +13,26 @@ dist/
 **/.google_token.json
 **/.recipients.json
 **/configuration/**/*
+home-dashboard.tar.gz
+
+# Expo-generated native projects
+/android/
+/ios/
+
+# Build, test, and packaged output
+**/build/
+**/.gradle/
+**/.cxx/
+coverage/
+*.apk
+*.aab
+*.apks
+*.aar
+*.ipa
+*.dex
+*.class
+*.so
+*.hprof
+*.tar
+*.tar.gz
+*.tgz

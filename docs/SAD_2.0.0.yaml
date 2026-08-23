@@ -87,7 +87,7 @@ selected_platform:
     typescript: true
     rationale: Current modern Android/React Native baseline selected earlier in the project.
   android:
-    package: com.zhna123.homedashboard
+    package: com.zhna123.homedashboard.v2
     target_api: 36
     distribution: privately signed sideload APK
     backup: disabled

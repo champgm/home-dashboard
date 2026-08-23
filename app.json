@@ -30,7 +30,7 @@
       "./plugins/withAndroidHardening"
     ],
     "android": {
-      "package": "com.zhna123.homedashboard",
+      "package": "com.zhna123.homedashboard.v2",
       "versionCode": 20000,
       "allowBackup": false,
       "permissions": [
