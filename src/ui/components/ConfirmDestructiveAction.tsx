@@ -11,7 +11,7 @@ export interface ConfirmDestructiveActionProps {
 
 export function ConfirmDestructiveAction({ spec, visible, onCancel, onConfirmed }: ConfirmDestructiveActionProps): JSX.Element {
   const [submitting, setSubmitting] = useState(false);
-  useEffect(() => { if (!visible) setSubmitting(false); }, [visible]);
+  useEffect(() => { if (!visible && submitting) setSubmitting(false); }, [submitting, visible]);
   return (
     <Modal animationType="fade" onRequestClose={onCancel} transparent visible={visible}>
       <View style={styles.backdrop}>
@@ -19,8 +19,9 @@ export function ConfirmDestructiveAction({ spec, visible, onCancel, onConfirmed 
           <Text style={styles.title}>Confirm {spec?.objectType || "destructive action"}</Text>
           <Text style={styles.body}>{spec ? `${spec.objectName}: ${spec.consequence}` : "This action cannot be undone."}</Text>
           <View style={styles.actions}>
-            <Pressable accessibilityRole="button" onPress={onCancel} style={styles.cancel}><Text>Cancel</Text></Pressable>
+            <Pressable accessibilityLabel="Cancel" accessibilityRole="button" onPress={onCancel} style={styles.cancel}><Text>Cancel</Text></Pressable>
             <Pressable
+              accessibilityLabel="Confirm"
               accessibilityRole="button"
               disabled={submitting}
               onPress={async () => {

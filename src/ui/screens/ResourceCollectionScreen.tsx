@@ -4,8 +4,6 @@ import { ResourceRef, ResourceKind } from "../../app/types";
 import { ResourceTile } from "../components/ResourceTile";
 import { EmptyState, Screen } from "../components/Screen";
 import { useAppRuntime } from "../AppContext";
-import { ConfirmDestructiveAction } from "../components/ConfirmDestructiveAction";
-import { destructiveActionSpec, performConfirmedHueDelete } from "../../app/destructiveActions";
 
 export interface ResourceCollectionScreenProps {
   readonly kind: Exclude<ResourceKind, "plug">;
@@ -18,7 +16,6 @@ export interface ResourceCollectionScreenProps {
 export function ResourceCollectionScreen({ kind, title, navigation, canCreate, onSearch }: ResourceCollectionScreenProps): JSX.Element {
   const runtime = useAppRuntime();
   const [, setVersion] = useState(0);
-  const [deleteId, setDeleteId] = useState<string>();
   useEffect(() => {
     const unsubscribeState = runtime.service.stateStore.subscribe(() => setVersion((value) => value + 1));
     const unsubscribeConfig = runtime.configStore.subscribe(() => setVersion((value) => value + 1));
@@ -60,23 +57,11 @@ export function ResourceCollectionScreen({ kind, title, navigation, canCreate, o
                 favorite={favorites.some((favorite) => sameResourceRef(favorite, ref))}
                 onFavorite={() => void (favorites.some((favorite) => sameResourceRef(favorite, ref)) ? runtime.service.removeFavorite(ref) : runtime.service.addFavorite(ref))}
                 onEdit={() => navigation?.getParent?.()?.navigate(editorRoute, { id }) || navigation?.navigate?.(editorRoute, { id })}
-                onDelete={() => setDeleteId(id)}
               />
             );
           })}
         </View>
       )}
-      <ConfirmDestructiveAction
-        visible={Boolean(deleteId)}
-        onCancel={() => setDeleteId(undefined)}
-        onConfirmed={() => setDeleteId(undefined)}
-        spec={deleteId ? destructiveActionSpec(
-          `${title.slice(0, -1)} ${deleteId}`,
-          title.slice(0, -1),
-          "delete the Hue resource from the bridge and remove its matching local Favorite when possible",
-          () => performConfirmedHueDelete(runtime.service, runtime.configStore, kind, deleteId, () => runtime.service.deleteHue(kind, deleteId)),
-        ) : undefined}
-      />
     </Screen>
   );
 }

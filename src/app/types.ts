@@ -74,12 +74,15 @@ export type DiagnosticCategory =
   | "Unknown";
 
 export interface Diagnostic {
+  readonly key?: string;
   readonly category: DiagnosticCategory;
   readonly operation?: string;
   readonly resource?: string;
   readonly elapsedMs?: number;
   readonly statusCode?: number;
+  readonly protocolCode?: number | string;
   readonly message: string;
+  readonly detail?: string;
 }
 
 export interface KnownResourceState<T> {

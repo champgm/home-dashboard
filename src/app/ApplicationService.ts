@@ -9,7 +9,7 @@ import { rebuildScheduleCommandAuthorization } from "../protocol/hue/catalog/sch
 import { TpLinkLegacyAdapter } from "../protocol/tplink/TpLinkLegacyAdapter";
 import { automationCanBeEnabled, validateRulePayload, validateSchedulePayload } from "../protocol/hue/HueActionPolicy";
 import { ambiguous, definiteFailure, partialFailure, success } from "./commandResults";
-import { diagnostic, errorCategory, userMessage } from "./diagnostics";
+import { diagnostic, diagnosticForError, errorCategory, userMessage } from "./diagnostics";
 import { DeviceStateStore } from "./DeviceStateStore";
 import {
   AppConfig,
@@ -93,6 +93,18 @@ export class ApplicationService {
     return this.diagnostics;
   }
 
+  getDiagnostic(key: string): Diagnostic | undefined {
+    return this.diagnostics.get(key);
+  }
+
+  setDiagnostic(key: string, value: Diagnostic): void {
+    this.diagnostics.set(key, { ...value, key });
+  }
+
+  clearDiagnostic(key: string): void {
+    this.diagnostics.delete(key);
+  }
+
   setHueClient(hue: HueClient | undefined): void {
     this.hue = hue;
   }
@@ -133,8 +145,10 @@ export class ApplicationService {
       if (!this.foreground || generation !== this.lifecycleGeneration || hueGeneration !== this.hueStateGeneration) return;
       if (result.kind === "success" && result.value) {
         this.publishHueSnapshot(result.value as HueSnapshot);
+        this.clearDiagnostic("hue:bridge");
       } else if (result.diagnostic) {
         this.setHueUnknown(result.diagnostic);
+        this.setDiagnostic("hue:bridge", result.diagnostic);
       }
     }).finally(() => {
       if (generation === this.lifecycleGeneration) this.hueRefreshInFlight = undefined;
@@ -159,9 +173,9 @@ export class ApplicationService {
       if (!this.foreground || generation !== this.lifecycleGeneration) return;
       if (result.kind === "success") {
         this.stateStore.setKnown(ref, result.value);
-        this.diagnostics.delete(endpoint.id);
+        this.clearDiagnostic(`plug:${endpoint.id}`);
       } else if (result.diagnostic) {
-        this.diagnostics.set(endpoint.id, result.diagnostic);
+        this.setDiagnostic(`plug:${endpoint.id}`, result.diagnostic);
         this.stateStore.setUnknown(ref, result.diagnostic);
       }
     } finally {
@@ -483,12 +497,12 @@ export class ApplicationService {
       return value;
     } catch (error) {
       if (error && typeof error === "object" && (error as { responseKind?: unknown }).responseKind === "partial_failure") {
-        return partialFailure(diagnostic("ProtocolRejected", userMessage("ProtocolRejected"), { operation: operationName, resource }));
+        return partialFailure(diagnosticForError(error, operationName, resource));
       }
       const category = errorCategory(error);
       return category === "Ambiguous"
-        ? ambiguous(diagnostic(category, userMessage(category), { operation: operationName, resource, elapsedMs: Date.now() - started }))
-        : definiteFailure(diagnostic(category, userMessage(category), { operation: operationName, resource, elapsedMs: Date.now() - started }));
+        ? ambiguous({ ...diagnosticForError(error, operationName, resource), elapsedMs: Date.now() - started })
+        : definiteFailure({ ...diagnosticForError(error, operationName, resource), elapsedMs: Date.now() - started });
     } finally {
       if (timer !== undefined) clearTimeout(timer);
     }
@@ -523,9 +537,6 @@ export class ApplicationService {
         const id = key.slice(separator + 1);
         this.stateStore.setUnknown({ kind: kind as Exclude<ResourceKind, "plug">, id }, reason);
       }
-    });
-    ["light", "group", "scene", "sensor", "rule", "schedule", "resourcelink"].forEach((kind) => {
-      this.diagnostics.set(`hue:${kind}`, reason);
     });
   }
 

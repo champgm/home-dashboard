@@ -182,12 +182,14 @@ export class HueV1Adapter {
   }
 
   async provision(): Promise<string> {
-    const raw = await this.transport.requestUnauthenticated("/config", "POST", { devicetype: "home-dashboard" });
+    const raw = await this.transport.requestApiRoot("POST", { devicetype: "home-dashboard" });
     const classification = classifyHueResponse<{ username?: string }>(raw);
     if (classification.kind !== "success" || !classification.value?.username) {
       throw new HueResponseError(
         classification.kind === "partial_failure" ? "partial_failure" : "definite_failure",
-        "Hue did not create a local API user.",
+        classification.errors.length > 0
+          ? hueResponseErrorMessage(classification)
+          : "Hue did not create a local API user.",
         classification.errors,
       );
     }

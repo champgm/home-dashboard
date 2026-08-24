@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput } from "react-native";
 import { useAppRuntime } from "../AppContext";
+import { HueDeleteAction } from "../components/HueDeleteAction";
 import { Screen } from "../components/Screen";
 
-export function ResourceLinkEditor({ route }: { route?: any }): JSX.Element {
+export function ResourceLinkEditor({ route, navigation }: { route?: any; navigation?: any }): JSX.Element {
   const runtime = useAppRuntime();
   const id = route?.params?.id as string | undefined;
   const stored = id ? runtime.service.stateStore.get({ kind: "resourcelink", id }) : undefined;
@@ -24,6 +25,7 @@ export function ResourceLinkEditor({ route }: { route?: any }): JSX.Element {
       const result = id ? await runtime.service.mutateHue("resourcelink", id, "update", payload) : await runtime.service.createHue("resourcelink", payload);
       setMessage(result.kind === "success" ? "Resource Link saved and refreshed." : result.diagnostic?.message || "Resource Link was not saved.");
     }} style={styles.button}><Text style={styles.buttonText}>{id ? "Save changed fields" : "Create Resource Link"}</Text></Pressable>
+    {id && <HueDeleteAction kind="resourcelink" id={id} objectName={`Resource Link ${id}`} navigation={navigation} />}
     {message && <Text style={styles.message}>{message}</Text>}
   </Screen>;
 }

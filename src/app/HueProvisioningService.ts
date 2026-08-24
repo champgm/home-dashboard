@@ -2,7 +2,7 @@ import { ConfigStore } from "../storage/ConfigStore";
 import { CredentialStore } from "../storage/CredentialStore";
 import { HueV1Adapter } from "../protocol/hue/HueV1Adapter";
 import { AppConfig, CommandResult, HueBinding } from "./types";
-import { diagnostic } from "./diagnostics";
+import { diagnostic, diagnosticForError } from "./diagnostics";
 import { definiteFailure, success } from "./commandResults";
 import { validatePrivateIpv4 } from "../config/endpointValidation";
 
@@ -32,20 +32,20 @@ export class HueProvisioningService {
     let adapter: HueV1Adapter;
     try {
       adapter = this.adapterFactory(address.value!);
-    } catch (_error) {
-      return definiteFailure(diagnostic("ProtocolRejected", "The bridge address could not be configured."));
+    } catch (error) {
+      return definiteFailure(diagnosticForError(error, "Hue link-button provisioning", `bridge:${address.value}`));
     }
     let credential: string;
     try {
       credential = await adapter.provision();
-    } catch (_error) {
-      return definiteFailure(diagnostic("ProtocolRejected", "Hue did not authorize this application."));
+    } catch (error) {
+      return definiteFailure(diagnosticForError(error, "Hue link-button provisioning", `bridge:${address.value}`));
     }
     let config: Record<string, unknown>;
     try {
       config = await adapter.getConfigWithCredential(credential);
-    } catch (_error) {
-      return definiteFailure(diagnostic("AuthenticationRejected", "The new Hue authorization could not be verified."));
+    } catch (error) {
+      return definiteFailure(diagnosticForError(error, "Hue provisioning verification", `bridge:${address.value}`));
     }
     if (typeof config.bridgeid !== "string" || config.bridgeid.length === 0) {
       return definiteFailure(diagnostic("ProtocolMalformed", "Hue configuration did not identify the bridge."));

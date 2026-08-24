@@ -1,6 +1,7 @@
 import React, { ReactNode, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useAppRuntime } from "../AppContext";
+import { HueDeleteAction } from "../components/HueDeleteAction";
 import { Screen } from "../components/Screen";
 
 export interface EditorFormProps {
@@ -45,6 +46,7 @@ export function EditorForm({ title, kind, id, initialName, navigation, note, chi
           : await runtime.service.createHue(kind, { name });
         setMessage(result.kind === "success" ? "Saved and refreshed." : result.diagnostic?.message || "Not saved.");
       }} style={styles.button}><Text style={styles.buttonText}>{id ? "Save changed fields" : "Create resource"}</Text></Pressable>
+      {id && <HueDeleteAction kind={kind} id={id} objectName={`${kind} ${id}`} navigation={navigation} />}
       {children}
       {message && <Text style={styles.message}>{message}</Text>}
     </Screen>

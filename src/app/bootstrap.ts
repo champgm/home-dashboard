@@ -115,6 +115,7 @@ export async function bootstrapApplication(): Promise<ApplicationRuntime> {
     async provisionHue(bridgeIpv4) {
       const result = await provisioning.provision(bridgeIpv4);
       if (result.kind === "success" && result.value) {
+        service.clearDiagnostic("hue:provisioning");
         activeBinding = result.value;
         activeBindingResult = { status: "present", binding: result.value };
         activeReadiness = "Ready";
@@ -123,6 +124,8 @@ export async function bootstrapApplication(): Promise<ApplicationRuntime> {
           credential: result.value.credential,
           expectedBridgeId: result.value.bridgeId,
         }));
+      } else if (result.diagnostic) {
+        service.setDiagnostic("hue:provisioning", result.diagnostic);
       }
       return result;
     },

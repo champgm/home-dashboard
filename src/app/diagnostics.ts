@@ -1,16 +1,54 @@
+import { redactDiagnosticMessage } from "../protocol/hue/redaction";
 import { Diagnostic, DiagnosticCategory } from "./types";
+
+const MAX_DETAIL_LENGTH = 240;
 
 export function diagnostic(
   category: DiagnosticCategory,
   message: string,
   details: Omit<Diagnostic, "category" | "message"> = {},
 ): Diagnostic {
-  return { category, message, ...details };
+  return {
+    ...details,
+    category,
+    message: redactDiagnosticMessage(message),
+    ...(details.detail ? { detail: redactAndBound(details.detail) } : {}),
+    ...(details.resource ? { resource: redactAndBound(details.resource) } : {}),
+  };
 }
 
 export function diagnosticForError(error: unknown, operation?: string, resource?: string): Diagnostic {
   const category = errorCategory(error);
-  return diagnostic(category, userMessage(category), { operation, resource });
+  const record = asErrorRecord(error);
+  const protocolCode = firstHueProtocolCode(record?.errors);
+  const statusCode = typeof record?.status === "number"
+    ? record.status
+    : typeof record?.statusCode === "number" ? record.statusCode : undefined;
+  const detail = record?.message || record?.description;
+  return diagnostic(category, userMessage(category), {
+    operation,
+    resource,
+    statusCode,
+    protocolCode,
+    ...(detail ? { detail: redactAndBound(detail) } : {}),
+  });
+}
+
+function asErrorRecord(error: unknown): Record<string, any> | undefined {
+  return error && typeof error === "object" ? error as Record<string, any> : undefined;
+}
+
+function firstHueProtocolCode(errors: unknown): number | string | undefined {
+  if (!Array.isArray(errors)) return undefined;
+  const first = errors[0];
+  if (!first || typeof first !== "object") return undefined;
+  const code = (first as Record<string, unknown>).type;
+  return typeof code === "number" || typeof code === "string" ? code : undefined;
+}
+
+function redactAndBound(value: string): string {
+  const redacted = redactDiagnosticMessage(value);
+  return redacted.length > MAX_DETAIL_LENGTH ? `${redacted.slice(0, MAX_DETAIL_LENGTH - 1)}…` : redacted;
 }
 
 export function errorCategory(error: unknown): DiagnosticCategory {

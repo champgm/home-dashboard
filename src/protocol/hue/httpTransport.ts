@@ -81,6 +81,10 @@ export class HueHttpTransport {
     return this.requestInternal(path, method, body, { ...options, allowUnauthenticated: true });
   }
 
+  async requestApiRoot(method: string, body?: unknown, options: HueRequestOptions = {}): Promise<unknown> {
+    return this.requestInternal("", method, body, { ...options, allowUnauthenticated: true });
+  }
+
   private async requestInternal(
     path: string,
     method: string,
@@ -90,7 +94,7 @@ export class HueHttpTransport {
     if (!options.allowUnauthenticated && !this.credential) {
       throw new HueTransportError("AuthenticationRejected", "Hue credential is not available.", false);
     }
-    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    const normalizedPath = path.length === 0 ? "" : path.startsWith("/") ? path : `/${path}`;
     const apiPrefix = options.allowUnauthenticated ? "/api" : `/api/${this.credential}`;
     const url = `http://${this.bridgeIpv4}${apiPrefix}${normalizedPath}`;
     const controller = typeof AbortController !== "undefined" ? new AbortController() : undefined;
