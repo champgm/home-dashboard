@@ -36,3 +36,5 @@ coverage/
 *.tar
 *.tar.gz
 *.tgz
+
+notes.md
