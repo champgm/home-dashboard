@@ -1,12 +1,14 @@
 {
   "name": "home-dashboard",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "private": true,
   "main": "node_modules/expo/AppEntry.js",
   "expo": {
     "doctor": {
       "reactNativeDirectoryCheck": {
-        "exclude": ["react-native-tcp-socket"]
+        "exclude": [
+          "react-native-tcp-socket"
+        ]
       }
     }
   },
@@ -25,6 +27,7 @@
     "check:fixture-secrets": "node scripts/check-characterization-secrets.mjs",
     "doctor": "npx -y expo-doctor",
     "build": "npx eas-cli@latest build --platform android --profile release-apk",
+    "build:apk": "node scripts/build-local-apk.mjs",
     "export:android": "expo export --platform android"
   },
   "dependencies": {
