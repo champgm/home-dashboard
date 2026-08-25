@@ -73,4 +73,32 @@ describe("Hue V1 link-button provisioning transport", () => {
 
     await expect(adapter.provision()).rejects.toBeInstanceOf(HueResponseError);
   });
+
+  test("reads a complete snapshot from the authenticated aggregate API root", async () => {
+    const aggregate = {
+      lights: { "1": { name: "Kitchen" }, "2": { name: "Hall" } },
+      groups: { "1": { name: "Downstairs" } },
+      scenes: {},
+      sensors: {},
+      rules: {},
+      schedules: {},
+      resourcelinks: {},
+      config: { bridgeid: "BRIDGE-1" },
+    };
+    const client = new FakeHueHttpClient(response(aggregate));
+    const adapter = new HueV1Adapter({
+      bridgeIpv4: "192.168.1.2",
+      credential: "synthetic-credential",
+      httpClient: client,
+    });
+
+    await expect(adapter.snapshot()).resolves.toMatchObject({
+      lights: aggregate.lights,
+      groups: aggregate.groups,
+      config: aggregate.config,
+    });
+    expect(client.requests).toHaveLength(1);
+    expect(client.requests[0].url).toBe("http://192.168.1.2/api/synthetic-credential");
+    expect(client.requests[0].init.method).toBe("GET");
+  });
 });

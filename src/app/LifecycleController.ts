@@ -1,6 +1,7 @@
 import { AppState, AppStateStatus } from "react-native";
 import { ApplicationService } from "./ApplicationService";
 import { RefreshScheduler, MonotonicClock } from "./refreshScheduler";
+import { emitDevelopmentEvent } from "./developmentLogger";
 
 export interface LifecycleControllerOptions {
   readonly clock?: MonotonicClock;
@@ -27,15 +28,21 @@ export class LifecycleController {
     if (this.appState.currentState === "active") {
       void this.enterForeground();
     } else {
-      this.service.abandonOperations();
+      this.enterBackground();
     }
   }
 
   stop(): void {
+    const previousState = this.service.isForeground ? "active" : "background";
     this.subscription?.remove();
     this.subscription = undefined;
     this.scheduler.stop();
     this.service.abandonOperations();
+    emitDevelopmentEvent("info", "lifecycle.stopped", {
+      previousState,
+      nextState: "stopped",
+      generation: this.service.generation,
+    });
     this.started = false;
   }
 
@@ -52,7 +59,13 @@ export class LifecycleController {
   };
 
   private async enterForeground(): Promise<void> {
+    const previousState = this.service.isForeground ? "active" : "background";
     this.service.setForeground(true);
+    emitDevelopmentEvent("info", "lifecycle.foreground", {
+      previousState,
+      nextState: "active",
+      generation: this.service.generation,
+    });
     // FR-003: immediate refresh begins before the periodic scheduler.
     const immediateRefresh = this.service.refreshAll();
     this.scheduler.start();
@@ -61,7 +74,13 @@ export class LifecycleController {
   }
 
   private enterBackground(): void {
+    const previousState = this.service.isForeground ? "active" : "background";
     this.scheduler.stop();
     this.service.abandonOperations();
+    emitDevelopmentEvent("info", "lifecycle.background", {
+      previousState,
+      nextState: "background",
+      generation: this.service.generation,
+    });
   }
 }

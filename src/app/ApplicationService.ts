@@ -10,6 +10,7 @@ import { TpLinkLegacyAdapter } from "../protocol/tplink/TpLinkLegacyAdapter";
 import { automationCanBeEnabled, validateRulePayload, validateSchedulePayload } from "../protocol/hue/HueActionPolicy";
 import { ambiguous, definiteFailure, partialFailure, success } from "./commandResults";
 import { diagnostic, diagnosticForError, errorCategory, userMessage } from "./diagnostics";
+import { emitDevelopmentEvent } from "./developmentLogger";
 import { DeviceStateStore } from "./DeviceStateStore";
 import {
   AppConfig,
@@ -98,11 +99,20 @@ export class ApplicationService {
   }
 
   setDiagnostic(key: string, value: Diagnostic): void {
-    this.diagnostics.set(key, { ...value, key });
+    const replaced = this.diagnostics.has(key);
+    const next = { ...value, key };
+    this.diagnostics.set(key, next);
+    emitDevelopmentEvent("warn", "diagnostic.set", diagnosticEventContext(next, {
+      key,
+      transition: replaced ? "replaced" : "added",
+    }));
   }
 
   clearDiagnostic(key: string): void {
+    const previous = this.diagnostics.get(key);
+    if (!previous) return;
     this.diagnostics.delete(key);
+    emitDevelopmentEvent("info", "diagnostic.cleared", diagnosticEventContext(previous, { key }));
   }
 
   setHueClient(hue: HueClient | undefined): void {
@@ -473,8 +483,14 @@ export class ApplicationService {
   ): Promise<CommandResult<any>> {
     if (!this.foreground) return { kind: "abandoned", diagnostic: diagnostic("Unknown", "Operation abandoned outside foreground.") };
     const started = Date.now();
+    const operationGeneration = this.lifecycleGeneration;
+    emitDevelopmentEvent("info", "operation.started", {
+      operation: operationName,
+      ...(resource ? { resource } : {}),
+      mode: writeMayTransmit ? "write" : "read",
+    });
     let timer: ReturnType<typeof setTimeout> | undefined;
-    let timedOut = false;
+    let terminalResult: CommandResult<any> | undefined;
     const promise = Promise.resolve().then(() => operation());
     // A timed-out operation may reject after the local deadline. Consume that
     // late rejection; lifecycle/generation guards decide whether its value is
@@ -482,7 +498,6 @@ export class ApplicationService {
     void promise.catch(() => undefined);
     const deadline = new Promise<CommandResult<any>>((resolve) => {
       timer = setTimeout(() => {
-        timedOut = true;
         resolve(writeMayTransmit
           ? ambiguous(diagnostic("Ambiguous", userMessage("Ambiguous"), { operation: operationName, resource, elapsedMs: this.deadlineMs }))
           : definiteFailure(diagnostic("Timeout", userMessage("Timeout"), { operation: operationName, resource, elapsedMs: this.deadlineMs })));
@@ -493,18 +508,32 @@ export class ApplicationService {
         promise.then((result) => success(result)),
         deadline,
       ]);
-      if (timedOut) return value;
-      return value;
+      terminalResult = !this.foreground || operationGeneration !== this.lifecycleGeneration
+        ? { kind: "abandoned", diagnostic: diagnostic("Unknown", "Operation abandoned when the app left the foreground.") }
+        : value;
+      return terminalResult;
     } catch (error) {
+      if (!this.foreground || operationGeneration !== this.lifecycleGeneration) {
+        terminalResult = { kind: "abandoned", diagnostic: diagnostic("Unknown", "Operation abandoned when the app left the foreground.") };
+        return terminalResult;
+      }
       if (error && typeof error === "object" && (error as { responseKind?: unknown }).responseKind === "partial_failure") {
-        return partialFailure(diagnosticForError(error, operationName, resource));
+        terminalResult = partialFailure(diagnosticForError(error, operationName, resource));
+        return terminalResult;
       }
       const category = errorCategory(error);
-      return category === "Ambiguous"
+      terminalResult = category === "Ambiguous"
         ? ambiguous({ ...diagnosticForError(error, operationName, resource), elapsedMs: Date.now() - started })
         : definiteFailure({ ...diagnosticForError(error, operationName, resource), elapsedMs: Date.now() - started });
+      return terminalResult;
     } finally {
       if (timer !== undefined) clearTimeout(timer);
+      emitDevelopmentEvent("info", "operation.completed", operationEventContext(
+        operationName,
+        resource,
+        terminalResult || { kind: "definite_failure", diagnostic: diagnostic("Unknown", "Operation did not produce a result.") },
+        Math.max(0, Date.now() - started),
+      ));
     }
   }
 
@@ -526,6 +555,15 @@ export class ApplicationService {
         const value = collection[id] && typeof collection[id] === "object" ? collection[id] as Record<string, unknown> : {};
         this.stateStore.setKnown({ kind, id }, { ...value, id });
       });
+    });
+    emitDevelopmentEvent("info", "hue.snapshot.published", {
+      lights: Object.keys(snapshot.lights).length,
+      groups: Object.keys(snapshot.groups).length,
+      scenes: Object.keys(snapshot.scenes).length,
+      sensors: Object.keys(snapshot.sensors).length,
+      rules: Object.keys(snapshot.rules).length,
+      schedules: Object.keys(snapshot.schedules).length,
+      resourcelinks: Object.keys(snapshot.resourcelinks).length,
     });
   }
 
@@ -555,6 +593,37 @@ export class ApplicationService {
       ? success()
       : definiteFailure(diagnostic("StorageError", userMessage("StorageError")));
   }
+}
+
+function diagnosticEventContext(
+  value: Diagnostic,
+  additional: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return {
+    ...additional,
+    category: value.category,
+    ...(value.operation ? { operation: value.operation } : {}),
+    ...(value.resource ? { resource: value.resource } : {}),
+    ...(value.statusCode !== undefined ? { statusCode: value.statusCode } : {}),
+    ...(value.protocolCode !== undefined ? { protocolCode: value.protocolCode } : {}),
+    ...(value.detail || value.message ? { cause: value.detail || value.message } : {}),
+  };
+}
+
+function operationEventContext(
+  operation: string,
+  resource: string | undefined,
+  result: CommandResult,
+  elapsedMs: number,
+): Record<string, unknown> {
+  const value = result.diagnostic;
+  return {
+    operation,
+    ...(resource ? { resource } : {}),
+    resultKind: result.kind,
+    elapsedMs,
+    ...(value ? diagnosticEventContext(value) : {}),
+  };
 }
 
 function sameResourceRef(left: ResourceRef, right: ResourceRef): boolean {

@@ -209,17 +209,16 @@ export class HueV1Adapter {
   }
 
   private async readSnapshot(): Promise<HueSnapshot> {
-    // Verify the permanent bridge identity before reading any control
-    // collections. A mismatched bridge never becomes an adopted runtime.
-    const config = await this.requestJson("GET", "/config") as Record<string, unknown>;
-    const collectionNames = ["lights", "groups", "scenes", "sensors", "rules", "schedules", "resourcelinks"] as const;
-    const values: Record<string, unknown> = {};
-    for (const name of collectionNames) {
-      values[name] = await this.requestJson("GET", `/${name}`);
+    // Hue API v1's authenticated root returns the bridge configuration and
+    // all resource collections in one coherent response. This avoids trying
+    // to fit nine sequential HTTP round trips inside the application-level
+    // snapshot deadline. requestJson still performs the permanent bridge
+    // identity check before the aggregate read when one is configured.
+    const aggregate = await this.requestJson("GET", "");
+    if (!aggregate || typeof aggregate !== "object" || Array.isArray(aggregate)) {
+      throw new HueTransportError("ProtocolMalformed", "Hue returned a malformed aggregate snapshot.", false);
     }
-    values.config = config;
-    values.capabilities = await this.requestJson("GET", "/capabilities");
-    return parseHueSnapshot(values);
+    return parseHueSnapshot(aggregate as Record<string, unknown>);
   }
 
   private async requestJson(method: string, path: string, body?: unknown): Promise<unknown> {

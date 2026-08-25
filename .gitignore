@@ -24,6 +24,7 @@ home-dashboard.tar.gz
 **/.gradle/
 **/.cxx/
 coverage/
+logs/**
 *.apk
 *.aab
 *.apks

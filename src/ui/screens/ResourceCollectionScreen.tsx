@@ -15,7 +15,7 @@ export interface ResourceCollectionScreenProps {
 
 export function ResourceCollectionScreen({ kind, title, navigation, canCreate, onSearch }: ResourceCollectionScreenProps): JSX.Element {
   const runtime = useAppRuntime();
-  const [, setVersion] = useState(0);
+  const [version, setVersion] = useState(0);
   useEffect(() => {
     const unsubscribeState = runtime.service.stateStore.subscribe(() => setVersion((value) => value + 1));
     const unsubscribeConfig = runtime.configStore.subscribe(() => setVersion((value) => value + 1));
@@ -31,7 +31,7 @@ export function ResourceCollectionScreen({ kind, title, navigation, canCreate, o
       }
     });
     return result.sort((left, right) => String(left.value?.name || left.id).localeCompare(String(right.value?.name || right.id)));
-  }, [runtime, kind]);
+  }, [runtime, kind, version]);
   const editorRoute = `${title.slice(0, -1)}Editor`;
   const favorites = runtime.configStore.getCommitted()?.favorites || [];
   const navigateAdvanced = () => navigation?.getParent?.()?.navigate("Advanced") || navigation?.navigate?.("Advanced");

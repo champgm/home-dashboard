@@ -4,7 +4,7 @@ const AUTHORIZATION_FIELD = /(authorization|credential|username|user(name)?|toke
 export function redactHueCredential(value: string): string {
   return value
     .replace(HUE_PATH_CREDENTIAL, "/api/<redacted>")
-    .replace(AUTHORIZATION_FIELD, (_match, field: string, separator: string) => `${field}${separator}<redacted>`);
+    .replace(AUTHORIZATION_FIELD, (_match, field: string, _usernameSuffix: string | undefined, separator: string) => `${field}${separator}<redacted>`);
 }
 
 export function redactDiagnosticMessage(value: unknown): string {

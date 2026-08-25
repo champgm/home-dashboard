@@ -6,3 +6,4 @@ export * from "./DeviceStateStore";
 export * from "./LifecycleController";
 export * from "./refreshScheduler";
 export * from "./bootstrap";
+export * from "./developmentLogger";

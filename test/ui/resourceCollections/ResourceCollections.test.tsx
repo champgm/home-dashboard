@@ -1,10 +1,15 @@
 import React from "react";
-import { fireEvent, render, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
+
+let stateListener: (() => void) | undefined;
 
 const stateStore = {
   getAll: jest.fn(),
   get: jest.fn(),
-  subscribe: jest.fn(() => jest.fn()),
+  subscribe: jest.fn((listener: () => void) => {
+    stateListener = listener;
+    return jest.fn();
+  }),
 };
 const configStore = {
   getCommitted: jest.fn(),
@@ -39,6 +44,7 @@ const lightState = {
 describe("dashboard tile integration", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    stateListener = undefined;
     stateStore.getAll.mockReturnValue(new Map([["light:1", lightState]]));
     stateStore.get.mockImplementation((ref: { kind: string; id?: string; plugEndpointId?: string }) => {
       if (ref.kind === "light" && ref.id === "1") return lightState;
@@ -54,6 +60,18 @@ describe("dashboard tile integration", () => {
     expect(view.getByLabelText("Edit")).toBeTruthy();
     expect(view.queryByText("Delete")).toBeNull();
     expect(view.queryByLabelText(/Delete/i)).toBeNull();
+  });
+
+  test("Hue resources arriving after the initial render replace the empty state", () => {
+    stateStore.getAll.mockReturnValue(new Map());
+    const view = render(<ResourceCollectionScreen kind="light" title="Lights" />);
+    expect(view.getByText("No current resources. Refresh when the local bridge is reachable.")).toBeTruthy();
+
+    stateStore.getAll.mockReturnValue(new Map([["light:1", lightState]]));
+    act(() => stateListener?.());
+
+    expect(view.getByLabelText("Kitchen light")).toBeTruthy();
+    expect(view.queryByText("No current resources. Refresh when the local bridge is reachable.")).toBeNull();
   });
 
   test("missing Favorite is removable and has no actionable primary tile", () => {
