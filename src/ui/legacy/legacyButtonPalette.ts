@@ -15,7 +15,7 @@ export const legacyButtonPalette = {
   off: {
     face: base01,
     activeFace: base02,
-    darkerFace: base03,
+    darkerFace: base02,
     text: base1,
   },
   on: {
@@ -45,7 +45,7 @@ export const legacyButtonPalette = {
   favoriteInactive: {
     face: base01,
     activeFace: base02,
-    darkerFace: base03,
+    darkerFace: base02,
     text: base3,
   },
   favoriteActive: {

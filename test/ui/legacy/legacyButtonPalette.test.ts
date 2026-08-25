@@ -18,4 +18,9 @@ describe("legacy button palette", () => {
     expect(legacyButtonPalette.favoriteActive.face).toBe(legacyButtonPalette.on.face);
     expect(legacyButtonPalette.favoriteInactive.face).toBe(legacyButtonPalette.off.face);
   });
+
+  test("keeps the neutral lower face visible against the dashboard background", () => {
+    expect(legacyButtonPalette.off.darkerFace).not.toBe("#002b36");
+    expect(legacyButtonPalette.favoriteInactive.darkerFace).toBe(legacyButtonPalette.off.darkerFace);
+  });
 });

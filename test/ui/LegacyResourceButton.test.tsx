@@ -1,5 +1,6 @@
 import React from "react";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
+import { StyleSheet } from "react-native";
 import { LegacyResourceButton } from "../../src/ui/components/LegacyResourceButton";
 
 describe("LegacyResourceButton", () => {
@@ -40,6 +41,19 @@ describe("LegacyResourceButton", () => {
     expect(onPress).not.toHaveBeenCalled();
     expect(view.queryByLabelText(/Delete/i)).toBeNull();
     expect(view.queryByText(/[★☆✎⌫]/)).toBeNull();
+  });
+
+  test("anchors mini-button press targets at the legacy lower corners", () => {
+    const view = render(<LegacyResourceButton title="Lamp" onEdit={jest.fn()} onFavorite={jest.fn()} />);
+    expect(view.getByLabelText("Add Favorite").props.style).toEqual(expect.arrayContaining([
+      expect.objectContaining({ left: expect.any(Number), position: "absolute", top: expect.any(Number) }),
+    ]));
+    expect(view.getByLabelText("Edit").props.style).toEqual(expect.arrayContaining([
+      expect.objectContaining({ left: expect.any(Number), position: "absolute", top: expect.any(Number) }),
+    ]));
+    const [, favoriteSurface, editSurface] = view.getAllByTestId("aws-btn-content-2");
+    expect(StyleSheet.flatten(favoriteSurface.props.style)).not.toEqual(expect.objectContaining({ position: "absolute" }));
+    expect(StyleSheet.flatten(editSurface.props.style)).not.toEqual(expect.objectContaining({ position: "absolute" }));
   });
 
   test("hides optional mini controls for utility buttons", () => {

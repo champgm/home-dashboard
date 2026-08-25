@@ -48,7 +48,7 @@ export function LegacyResourceButton(props: LegacyResourceButtonProps): JSX.Elem
         backgroundColor={mainColors.face}
         backgroundDarker={mainColors.darkerFace}
         backgroundShadow={mainColors.darkerFace}
-        borderRadius={3}
+        borderRadius={5}
         disabled={primaryDisabled}
         height={geometry.mainDimension}
         paddingHorizontal={5}
@@ -59,7 +59,7 @@ export function LegacyResourceButton(props: LegacyResourceButtonProps): JSX.Elem
         dangerouslySetPressableProps={{
           accessibilityLabel: mainAccessibilityLabel,
           accessibilityState: { disabled: primaryDisabled },
-          style: [{ backgroundColor: mainColors.face }],
+          style: [{ backgroundColor: mainColors.face, borderRadius: 5 }],
           testID: props.testID ? `${props.testID}-primary` : "legacy-resource-primary",
         }}
         onPress={() => props.onPress?.()}
@@ -85,17 +85,17 @@ export function LegacyResourceButton(props: LegacyResourceButtonProps): JSX.Elem
         backgroundColor={favoriteColors.face}
         backgroundDarker={favoriteColors.darkerFace}
         backgroundShadow={favoriteColors.darkerFace}
-        borderRadius={2}
+        borderRadius={5}
         height={geometry.miniDimension}
         hitSlop={4}
         paddingHorizontal={0}
         raiseLevel={3}
         springRelease
         width={geometry.miniDimension}
-        style={[styles.miniButton, { height: geometry.miniDimension, left: geometry.favoritePosition.left, top: geometry.favoritePosition.top, width: geometry.miniDimension }]}
+        style={styles.miniButton}
         dangerouslySetPressableProps={{
           accessibilityLabel: favorite ? "Remove Favorite" : "Add Favorite",
-          style: [{ backgroundColor: favoriteColors.face, height: geometry.miniDimension, left: geometry.favoritePosition.left, position: "absolute", top: geometry.favoritePosition.top, width: geometry.miniDimension, zIndex: 20 }],
+          style: [{ backgroundColor: favoriteColors.face, borderRadius: 5, height: geometry.miniDimension, left: geometry.favoritePosition.left, position: "absolute", top: geometry.favoritePosition.top, width: geometry.miniDimension, zIndex: 20 }],
           testID: props.testID ? `${props.testID}-favorite` : "legacy-resource-favorite",
         }}
         onPress={() => props.onFavorite?.()}
@@ -114,17 +114,17 @@ export function LegacyResourceButton(props: LegacyResourceButtonProps): JSX.Elem
         backgroundColor={legacyButtonPalette.edit.face}
         backgroundDarker={legacyButtonPalette.edit.darkerFace}
         backgroundShadow={legacyButtonPalette.edit.darkerFace}
-        borderRadius={2}
+        borderRadius={5}
         height={geometry.miniDimension}
         hitSlop={4}
         paddingHorizontal={0}
         raiseLevel={3}
         springRelease
         width={geometry.miniDimension}
-        style={[styles.miniButton, { height: geometry.miniDimension, left: geometry.editPosition.left, top: geometry.editPosition.top, width: geometry.miniDimension }]}
+        style={styles.miniButton}
         dangerouslySetPressableProps={{
           accessibilityLabel: "Edit",
-          style: [{ backgroundColor: legacyButtonPalette.edit.face, height: geometry.miniDimension, left: geometry.editPosition.left, position: "absolute", top: geometry.editPosition.top, width: geometry.miniDimension, zIndex: 20 }],
+          style: [{ backgroundColor: legacyButtonPalette.edit.face, borderRadius: 5, height: geometry.miniDimension, left: geometry.editPosition.left, position: "absolute", top: geometry.editPosition.top, width: geometry.miniDimension, zIndex: 20 }],
           testID: props.testID ? `${props.testID}-edit` : "legacy-resource-edit",
         }}
         onPress={() => props.onEdit?.()}
@@ -148,6 +148,9 @@ const styles = StyleSheet.create({
   lightBulb: { height: "72%", opacity: 0.2, position: "absolute", width: "72%" },
   unknownOverlay: { alignItems: "center", backgroundColor: "rgba(0,0,0,0.16)", bottom: 0, justifyContent: "center", left: 0, position: "absolute", right: 0, top: 0 },
   questionMark: { height: "90%", opacity: 0.42, width: "90%" },
-  miniButton: { position: "absolute", zIndex: 20 },
+  // The package applies this style to its inner animated surface. Positioning
+  // belongs only on the outer Pressable above; applying the offsets here as
+  // well doubles the translation and detaches the mini button from its tile.
+  miniButton: { zIndex: 20 },
   actionImage: { height: "80%", width: "80%" },
 });

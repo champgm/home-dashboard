@@ -1,4 +1,6 @@
-export const LEGACY_TILE_WIDTH_RATIO = 0.2;
+// The original dashboard left enough room between its four columns for short
+// two-word names such as "Bedside Mac" to wrap instead of spanning one line.
+export const LEGACY_TILE_WIDTH_RATIO = 0.18;
 export const LEGACY_OUTER_MARGIN_RATIO = 0.01;
 export const LEGACY_MINI_BUTTON_RATIO = 1 / 3;
 export const LEGACY_OVERLAP_RATIO = 1 / 5.5;

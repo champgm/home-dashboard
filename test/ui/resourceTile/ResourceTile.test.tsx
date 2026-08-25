@@ -26,6 +26,11 @@ describe("legacy ResourceTile grammar", () => {
     expect(view.getByTestId("resource-edit-icon").props.source).toBeDefined();
   });
 
+  test("does not place a decorative bulb behind an On light title", () => {
+    const view = render(<ResourceTile ref={{ kind: "light", id: "1" }} title="Lamp" stored={{ state: { status: "known", value: { state: { on: true } } }, pending: false }} />);
+    expect(view.queryByLabelText("Light bulb")).toBeNull();
+  });
+
   test("corner actions do not invoke the primary action", async () => {
     const onPress = jest.fn();
     const onFavorite = jest.fn();
@@ -41,7 +46,7 @@ describe("legacy ResourceTile grammar", () => {
   });
 
   test("derives compact responsive geometry from the window width", () => {
-    expect(getLegacyTileMetrics(432).tile).toBe(86);
+    expect(getLegacyTileMetrics(432).tile).toBe(77);
     expect(getLegacyTileMetrics(432).tile).not.toBe(160);
   });
 

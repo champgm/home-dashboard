@@ -3,8 +3,8 @@ import { getLegacyButtonGeometry, getLegacyTileMetrics } from "../../../src/ui/l
 describe("legacy button geometry", () => {
   test("derives the compact Pixel portrait tile from the legacy ratios", () => {
     const metrics = getLegacyTileMetrics(432);
-    expect(metrics.tile).toBe(86);
-    expect(metrics.action).toBeCloseTo(86 / 3);
+    expect(metrics.tile).toBe(77);
+    expect(metrics.action).toBeCloseTo(77 / 3);
     expect(metrics.margin).toBe(4);
   });
 

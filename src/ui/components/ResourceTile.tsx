@@ -27,7 +27,6 @@ export function ResourceTile(props: ResourceTileProps): JSX.Element {
       onEdit={props.onEdit}
       onFavorite={props.onFavorite}
       onPress={props.onPress}
-      showLightBulb={resource?.kind === "light" && visualState === "on"}
       state={visualState}
       title={props.title}
       unknownAccessibilityLabel={props.missing ? "Missing resource" : "Unknown resource state"}
