@@ -20,7 +20,7 @@ export function diagnostic(
 export function diagnosticForError(error: unknown, operation?: string, resource?: string): Diagnostic {
   const category = errorCategory(error);
   const record = asErrorRecord(error);
-  const protocolCode = firstHueProtocolCode(record?.errors);
+  const protocolCode = firstHueProtocolCode(record?.errors) ?? primitiveProtocolCode(record?.errCode);
   const statusCode = typeof record?.status === "number"
     ? record.status
     : typeof record?.statusCode === "number" ? record.statusCode : undefined;
@@ -44,6 +44,10 @@ function firstHueProtocolCode(errors: unknown): number | string | undefined {
   if (!first || typeof first !== "object") return undefined;
   const code = (first as Record<string, unknown>).type;
   return typeof code === "number" || typeof code === "string" ? code : undefined;
+}
+
+function primitiveProtocolCode(value: unknown): number | string | undefined {
+  return typeof value === "number" || typeof value === "string" ? value : undefined;
 }
 
 function redactAndBound(value: string): string {

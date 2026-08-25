@@ -20,7 +20,7 @@ export interface TcpTransport {
 
 export interface TcpSocketLike {
   on(event: "data" | "error" | "close", listener: (...args: any[]) => void): void;
-  connect(options: { host: string; port: number }, callback?: () => void): void;
+  connect(options: { host: string; port: number; connectTimeout?: number }, callback?: () => void): void;
   write(data: Uint8Array | string): void;
   destroy(): void;
 }
@@ -30,18 +30,24 @@ export type TcpSocketFactory = (endpoint: PlugEndpoint, callbacks: {
   onData(data: Uint8Array): void;
   onError(error: unknown): void;
   onClose(): void;
-}) => TcpSocketLike;
+}, connectTimeoutMs: number) => TcpSocketLike;
+
+export const DEFAULT_NATIVE_CONNECT_TIMEOUT_MS = 1000;
 
 function defaultSocketFactory(endpoint: PlugEndpoint, callbacks: {
   onConnected(): void;
   onData(data: Uint8Array): void;
   onError(error: unknown): void;
   onClose(): void;
-}): TcpSocketLike {
+}, connectTimeoutMs: number): TcpSocketLike {
   // The require is kept inside the platform transport boundary so tests can
   // replace it with a deterministic fake and UI code never receives a socket.
   const tcpSocket = require("react-native-tcp-socket") as { createConnection(options: object, callback?: () => void): TcpSocketLike };
-  const socket = tcpSocket.createConnection({ host: endpoint.ipv4, port: endpoint.port }, callbacks.onConnected);
+  const socket = tcpSocket.createConnection({
+    host: endpoint.ipv4,
+    port: endpoint.port,
+    connectTimeout: connectTimeoutMs,
+  }, callbacks.onConnected);
   socket.on("data", callbacks.onData);
   socket.on("error", callbacks.onError);
   socket.on("close", callbacks.onClose);
@@ -69,6 +75,7 @@ export class ReactNativeTcpTransport implements TcpTransport {
       let writePending = false;
       const decoder = new TpLinkFrameDecoder();
       let socket: TcpSocketLike | undefined;
+      const connectTimeoutMs = Math.max(1, Math.min(timeoutMs, DEFAULT_NATIVE_CONNECT_TIMEOUT_MS));
       const timer = setTimeout(() => {
         if (settled) return;
         settled = true;
@@ -128,7 +135,7 @@ export class ReactNativeTcpTransport implements TcpTransport {
         },
       };
       try {
-        socket = this.socketFactory(endpoint, callbacks);
+        socket = this.socketFactory(endpoint, callbacks, connectTimeoutMs);
         if (!settled && this.factoryStartsConnection && writePending) {
           writePending = false;
           socket.write(frame);
@@ -142,7 +149,7 @@ export class ReactNativeTcpTransport implements TcpTransport {
       }
       try {
         if (!this.factoryStartsConnection) {
-          socket.connect({ host: endpoint.ipv4, port: endpoint.port }, callbacks.onConnected);
+          socket.connect({ host: endpoint.ipv4, port: endpoint.port, connectTimeout: connectTimeoutMs }, callbacks.onConnected);
         }
       } catch (error) {
         if (settled) return;

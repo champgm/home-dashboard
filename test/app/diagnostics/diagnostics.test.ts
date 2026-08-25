@@ -21,6 +21,30 @@ const emptySnapshot = (): HueSnapshot => ({
 });
 
 describe("current diagnostics", () => {
+  test("preserves a TP-Link rejection code without exposing a response payload", async () => {
+    const service = new ApplicationService({
+      plugs: {
+        getSysInfo: async () => {
+          throw Object.assign(new Error("TP-Link rejected the operation."), {
+            category: "ProtocolRejected",
+            errCode: -1010,
+          });
+        },
+        getPower: async () => false,
+        setPower: async () => undefined,
+      },
+    });
+    const endpoint: PlugEndpoint = { id: "plug", ipv4: "192.168.2.226", port: 9999 };
+
+    await service.refreshPlug(endpoint);
+
+    expect(service.getDiagnostic("plug:plug")).toMatchObject({
+      category: "ProtocolRejected",
+      protocolCode: -1010,
+      resource: "plug",
+    });
+  });
+
   test("uses one Hue bridge diagnostic for a failed snapshot and clears it on success", async () => {
     let fail = true;
     const state = new DeviceStateStore();

@@ -52,6 +52,19 @@ export interface ApplicationServiceOptions {
   readonly plugs?: PlugClient;
   readonly stateStore?: DeviceStateStore;
   readonly deadlineMs?: number;
+  readonly now?: () => number;
+}
+
+export interface PlugRefreshOptions {
+  readonly ignoreBackoff?: boolean;
+}
+
+const PLUG_BACKOFF_INITIAL_MS = 10_000;
+const PLUG_BACKOFF_MAX_MS = 60 * 60 * 1000;
+
+interface PlugBackoffState {
+  readonly consecutiveFailures: number;
+  readonly nextAttemptAt: number;
 }
 
 export class ApplicationService {
@@ -61,12 +74,14 @@ export class ApplicationService {
   private hue?: HueClient;
   private readonly plugs?: PlugClient;
   private readonly deadlineMs: number;
+  private readonly now: () => number;
   private foreground = true;
   private lifecycleGeneration = 0;
   private hueStateGeneration = 0;
   private hueRefreshInFlight?: Promise<void>;
   private hueMutationBusy = false;
   private readonly plugRefreshes = new Map<string, number>();
+  private readonly plugBackoffs = new Map<string, PlugBackoffState>();
   private readonly diagnostics = new Map<string, Diagnostic>();
 
   constructor(options: ApplicationServiceOptions = {}) {
@@ -76,6 +91,7 @@ export class ApplicationService {
     this.hue = options.hue;
     this.plugs = options.plugs;
     this.deadlineMs = options.deadlineMs || 5000;
+    this.now = options.now || (() => globalThis.performance?.now?.() ?? Date.now());
   }
 
   get isForeground(): boolean {
@@ -138,11 +154,11 @@ export class ApplicationService {
     this.hueMutationBusy = false;
   }
 
-  async refreshAll(): Promise<void> {
+  async refreshAll(options: PlugRefreshOptions = {}): Promise<void> {
     if (!this.foreground) return;
     await Promise.all([
       this.refreshHue(),
-      this.refreshConfiguredPlugs(),
+      this.refreshConfiguredPlugs(options),
     ]);
   }
 
@@ -166,15 +182,23 @@ export class ApplicationService {
     await this.hueRefreshInFlight;
   }
 
-  async refreshConfiguredPlugs(): Promise<void> {
+  async refreshConfiguredPlugs(options: PlugRefreshOptions = {}): Promise<void> {
     if (!this.foreground || !this.plugs || !this.configStore) return;
     const config = this.configStore.getCommitted();
     if (!config) return;
-    await Promise.all(config.plugs.map((endpoint) => this.refreshPlug(endpoint)));
+    const configuredIds = new Set(config.plugs.map((endpoint) => endpoint.id));
+    for (const id of this.plugBackoffs.keys()) {
+      if (!configuredIds.has(id)) this.plugBackoffs.delete(id);
+    }
+    await Promise.all(config.plugs.map((endpoint) => this.refreshPlug(endpoint, {
+      ignoreBackoff: options.ignoreBackoff ?? false,
+    })));
   }
 
-  async refreshPlug(endpoint: AppConfig["plugs"][number]): Promise<void> {
+  async refreshPlug(endpoint: AppConfig["plugs"][number], options: PlugRefreshOptions = { ignoreBackoff: true }): Promise<void> {
     if (!this.foreground || !this.plugs || this.plugRefreshes.has(endpoint.id)) return;
+    const backoff = this.plugBackoffs.get(endpoint.id);
+    if (!options.ignoreBackoff && backoff && this.now() < backoff.nextAttemptAt) return;
     const generation = this.lifecycleGeneration;
     this.plugRefreshes.set(endpoint.id, generation);
     const ref: ResourceRef = { kind: "plug", plugEndpointId: endpoint.id };
@@ -184,9 +208,11 @@ export class ApplicationService {
       if (result.kind === "success") {
         this.stateStore.setKnown(ref, result.value);
         this.clearDiagnostic(`plug:${endpoint.id}`);
+        this.clearPlugBackoff(endpoint.id);
       } else if (result.diagnostic) {
         this.setDiagnostic(`plug:${endpoint.id}`, result.diagnostic);
         this.stateStore.setUnknown(ref, result.diagnostic);
+        this.schedulePlugBackoff(endpoint.id, result.diagnostic.category);
       }
     } finally {
       if (this.plugRefreshes.get(endpoint.id) === generation) {
@@ -354,7 +380,7 @@ export class ApplicationService {
         if (!this.foreground || generation !== this.lifecycleGeneration) {
           return { kind: "abandoned", diagnostic: diagnostic("Unknown", "Operation abandoned when the app left the foreground.") };
         }
-        await this.refreshPlug(endpoint);
+        await this.refreshPlug(endpoint, { ignoreBackoff: true });
       }
       return result;
     } finally {
@@ -409,6 +435,7 @@ export class ApplicationService {
     }));
     if (result.status === "success") {
       this.stateStore.remove({ kind: "plug", plugEndpointId: endpointId });
+      this.plugBackoffs.delete(endpointId);
       return success();
     }
     return definiteFailure(diagnostic("StorageError", userMessage("StorageError")));
@@ -581,6 +608,35 @@ export class ApplicationService {
   private async findPlug(id?: string): Promise<AppConfig["plugs"][number] | undefined> {
     if (!id || !this.configStore) return undefined;
     return this.configStore.getCommitted()?.plugs.find((endpoint) => endpoint.id === id);
+  }
+
+  private schedulePlugBackoff(endpointId: string, category: Diagnostic["category"]): void {
+    const previousFailures = this.plugBackoffs.get(endpointId)?.consecutiveFailures || 0;
+    const consecutiveFailures = previousFailures + 1;
+    const delayMs = Math.min(
+      PLUG_BACKOFF_MAX_MS,
+      PLUG_BACKOFF_INITIAL_MS * (2 ** Math.min(consecutiveFailures - 1, 20)),
+    );
+    this.plugBackoffs.set(endpointId, {
+      consecutiveFailures,
+      nextAttemptAt: this.now() + delayMs,
+    });
+    emitDevelopmentEvent("info", "plug.backoff.scheduled", {
+      resource: endpointId,
+      category,
+      consecutiveFailures,
+      delayMs,
+    });
+  }
+
+  private clearPlugBackoff(endpointId: string): void {
+    const previous = this.plugBackoffs.get(endpointId);
+    if (!previous) return;
+    this.plugBackoffs.delete(endpointId);
+    emitDevelopmentEvent("info", "plug.backoff.cleared", {
+      resource: endpointId,
+      consecutiveFailures: previous.consecutiveFailures,
+    });
   }
 
   private async mutateFavorites(mutator: (favorites: readonly ResourceRef[]) => readonly ResourceRef[]): Promise<CommandResult> {

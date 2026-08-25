@@ -17,6 +17,7 @@ export function PlugsScreen({ navigation }: { navigation?: any }): JSX.Element {
   return (
     <Screen title="Plugs">
       <View style={styles.toolbar}>
+        <Pressable onPress={() => void runtime.service.refreshConfiguredPlugs({ ignoreBackoff: true })} style={styles.button}><Text style={styles.buttonText}>Refresh</Text></Pressable>
         <Pressable onPress={() => navigation?.navigate("PlugAdministration")} style={styles.button}><Text style={styles.buttonText}>Manage endpoints</Text></Pressable>
       </View>
       {plugs.length === 0 ? <EmptyState message="No configured plugs. Add one from Advanced." /> : <View style={styles.grid}>
@@ -33,7 +34,7 @@ export function PlugsScreen({ navigation }: { navigation?: any }): JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  toolbar: { flexDirection: "row", marginBottom: 8 },
+  toolbar: { flexDirection: "row", gap: 8, marginBottom: 8 },
   button: { backgroundColor: "#268bd2", borderRadius: 8, padding: 10 },
   buttonText: { color: "#fff", fontWeight: "700" },
   grid: { flexDirection: "row", flexWrap: "wrap" },

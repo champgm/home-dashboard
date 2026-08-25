@@ -19,6 +19,7 @@ const mockRuntime = {
   service: {
     stateStore,
     refreshHue: jest.fn(),
+    refreshConfiguredPlugs: jest.fn(),
     performPrimary: jest.fn(),
     addFavorite: jest.fn(async () => ({ kind: "success" })),
     removeFavorite: jest.fn(async () => ({ kind: "success" })),
@@ -101,5 +102,11 @@ describe("dashboard tile integration", () => {
     fireEvent.press(admin.getByText("Remove"));
     fireEvent.press(admin.getByLabelText("Confirm"));
     await waitFor(() => expect(mockRuntime.service.removePlugEndpoint).toHaveBeenCalledWith("plug-1"));
+  });
+
+  test("plug Refresh bypasses endpoint backoff", () => {
+    const view = render(<PlugsScreen />);
+    fireEvent.press(view.getByText("Refresh"));
+    expect(mockRuntime.service.refreshConfiguredPlugs).toHaveBeenCalledWith({ ignoreBackoff: true });
   });
 });

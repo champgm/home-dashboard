@@ -67,7 +67,7 @@ export class LifecycleController {
       generation: this.service.generation,
     });
     // FR-003: immediate refresh begins before the periodic scheduler.
-    const immediateRefresh = this.service.refreshAll();
+    const immediateRefresh = this.service.refreshAll({ ignoreBackoff: true });
     this.scheduler.start();
     await immediateRefresh;
     if (!this.service.isForeground) this.scheduler.stop();
