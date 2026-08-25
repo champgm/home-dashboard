@@ -453,6 +453,12 @@ requirements:
       corner and image-based Edit control overlapping the lower-right corner where applicable; a full-tile translucent
       question-mark image for Unknown/Missing; and no destructive Delete affordance on the normal dashboard tile. Deletion
       shall remain available from the editor/administration flow under UX-DEL-001..003.
+  - id: UX-VIS-002
+    statement: >-
+      Normal configured resource collections shall use the established compact wrapping dashboard composition on supported
+      Pixel 9 Pro portrait displays: tile geometry shall be derived from the legacy approximately-20%-of-window main-button
+      sizing and shall fit a four-column-equivalent portrait grid without clipping or collision of the independent corner
+      controls.
 external_interface_contracts:
   hue_v1:
     transport: HTTP over configured private IPv4 bridge endpoint; local credential in /api/{username} path.
@@ -1066,6 +1072,15 @@ acceptance_criteria:
     compact square raised tiles, lower-left Favorite and lower-right Edit image controls, Solarized state mapping, full-tile
     question-mark asset for Unknown/Missing, no inline Delete, and no Unicode action-glyph substitution; complete visual
     confirmation on both supported Pixel 9 Pro portrait displays.
+- id: AC-UX-VIS-002
+  requirement_ids:
+  - UX-VIS-002
+  type: e2e
+  criterion: >-
+    Render representative configured collections, including four, five, twenty, and the full characterized resource count,
+    on both supported Pixel 9 Pro phones in portrait orientation; verify the legacy-derived responsive tile width produces a
+    dense four-column-equivalent wrapping grid, preserves vertical spacing for the overlapping Favorite/Edit controls, and
+    introduces no clipping or horizontal overflow.
 traceability:
   CON-001:
   - AC-CON-001
@@ -1241,6 +1256,8 @@ traceability:
   - AC-QA-003
   UX-VIS-001:
   - AC-UX-VIS-001
+  UX-VIS-002:
+  - AC-UX-VIS-002
 risks:
 - id: RISK-001
   status: accepted/mitigated

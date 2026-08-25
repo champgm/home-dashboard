@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render } from "@testing-library/react-native";
+import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { ResourceTile } from "../../../src/ui/components/ResourceTile";
 import { getLegacyTileMetrics } from "../../../src/ui/theme/legacyDashboard";
 
@@ -26,15 +26,17 @@ describe("legacy ResourceTile grammar", () => {
     expect(view.getByTestId("resource-edit-icon").props.source).toBeDefined();
   });
 
-  test("corner actions do not invoke the primary action", () => {
+  test("corner actions do not invoke the primary action", async () => {
     const onPress = jest.fn();
     const onFavorite = jest.fn();
     const onEdit = jest.fn();
     const view = render(<ResourceTile title="Lamp" onPress={onPress} onFavorite={onFavorite} onEdit={onEdit} />);
     fireEvent.press(view.getByLabelText("Add Favorite"));
     fireEvent.press(view.getByLabelText("Edit"));
-    expect(onFavorite).toHaveBeenCalledTimes(1);
-    expect(onEdit).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(onFavorite).toHaveBeenCalledTimes(1);
+      expect(onEdit).toHaveBeenCalledTimes(1);
+    });
     expect(onPress).not.toHaveBeenCalled();
   });
 

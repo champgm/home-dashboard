@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
 import { ResourceRef, ResourceKind } from "../../app/types";
+import { LegacyResourceButton } from "../components/LegacyResourceButton";
 import { ResourceTile } from "../components/ResourceTile";
 import { EmptyState, Screen } from "../components/Screen";
+import { LegacyDashboardGrid } from "../legacy/LegacyDashboardGrid";
 import { useAppRuntime } from "../AppContext";
 
 export interface ResourceCollectionScreenProps {
@@ -36,42 +37,32 @@ export function ResourceCollectionScreen({ kind, title, navigation, canCreate, o
   const favorites = runtime.configStore.getCommitted()?.favorites || [];
   const navigateAdvanced = () => navigation?.getParent?.()?.navigate("Advanced") || navigation?.navigate?.("Advanced");
   return (
-    <Screen title={title}>
-      <View style={styles.toolbar}>
-        <Pressable onPress={() => void runtime.service.refreshHue()} style={styles.button}><Text style={styles.buttonText}>Refresh</Text></Pressable>
-        {canCreate && <Pressable onPress={() => navigation?.getParent?.()?.navigate(editorRoute) || navigation?.navigate?.(editorRoute)} style={styles.button}><Text style={styles.buttonText}>New</Text></Pressable>}
-        {onSearch && <Pressable onPress={onSearch} style={styles.button}><Text style={styles.buttonText}>Search</Text></Pressable>}
-        <Pressable onPress={navigateAdvanced} style={styles.button}><Text style={styles.buttonText}>Advanced</Text></Pressable>
-      </View>
-      {entries.length === 0 ? <EmptyState message="No current resources. Refresh when the local bridge is reachable." /> : (
-        <View style={styles.grid}>
-          {entries.map(({ id, value, stored }) => {
-            const ref: ResourceRef = { kind, id };
-            return (
-              <ResourceTile
-                key={id}
-                ref={ref}
-                title={value?.name || `${title.slice(0, -1)} ${id}`}
-                stored={stored}
-                onPress={() => void runtime.service.performPrimary(ref)}
-                favorite={favorites.some((favorite) => sameResourceRef(favorite, ref))}
-                onFavorite={() => void (favorites.some((favorite) => sameResourceRef(favorite, ref)) ? runtime.service.removeFavorite(ref) : runtime.service.addFavorite(ref))}
-                onEdit={() => navigation?.getParent?.()?.navigate(editorRoute, { id }) || navigation?.navigate?.(editorRoute, { id })}
-              />
-            );
-          })}
-        </View>
-      )}
+    <Screen showTitle={false} title={title}>
+      <LegacyDashboardGrid testID={`${kind}-dashboard-grid`}>
+        <LegacyResourceButton hideEdit hideFavorite onPress={() => void runtime.service.refreshHue()} state="known" title="Refresh" />
+        {canCreate && <LegacyResourceButton hideEdit hideFavorite onPress={() => navigation?.getParent?.()?.navigate(editorRoute) || navigation?.navigate?.(editorRoute)} state="known" title={`New ${title.slice(0, -1)}`} />}
+        {onSearch && <LegacyResourceButton hideEdit hideFavorite onPress={onSearch} state="known" title={kind === "light" ? "Scan for new lights" : kind === "sensor" ? "Scan for new sensors" : "Search"} />}
+        <LegacyResourceButton hideEdit hideFavorite onPress={navigateAdvanced} state="known" title="Advanced" />
+        {entries.map(({ id, value, stored }) => {
+          const ref: ResourceRef = { kind, id };
+          return (
+            <ResourceTile
+              key={id}
+              ref={ref}
+              title={value?.name || `${title.slice(0, -1)} ${id}`}
+              stored={stored}
+              onPress={() => void runtime.service.performPrimary(ref)}
+              favorite={favorites.some((favorite) => sameResourceRef(favorite, ref))}
+              onFavorite={() => void (favorites.some((favorite) => sameResourceRef(favorite, ref)) ? runtime.service.removeFavorite(ref) : runtime.service.addFavorite(ref))}
+              onEdit={() => navigation?.getParent?.()?.navigate(editorRoute, { id }) || navigation?.navigate?.(editorRoute, { id })}
+            />
+          );
+        })}
+      </LegacyDashboardGrid>
+      {entries.length === 0 && <EmptyState message="No current resources. Refresh when the local bridge is reachable." />}
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  toolbar: { flexDirection: "row", flexWrap: "wrap", marginBottom: 8 },
-  button: { backgroundColor: "#268bd2", borderRadius: 8, margin: 4, paddingHorizontal: 12, paddingVertical: 9 },
-  buttonText: { color: "#fff", fontWeight: "700" },
-  grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-start" },
-});
 
 function sameResourceRef(left: ResourceRef, right: ResourceRef): boolean {
   return left.kind === right.kind && left.id === right.id && left.plugEndpointId === right.plugEndpointId;

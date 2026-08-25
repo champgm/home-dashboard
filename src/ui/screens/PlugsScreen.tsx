@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
 import { ResourceRef } from "../../app/types";
+import { LegacyResourceButton } from "../components/LegacyResourceButton";
 import { useAppRuntime } from "../AppContext";
 import { ResourceTile } from "../components/ResourceTile";
 import { EmptyState, Screen } from "../components/Screen";
+import { LegacyDashboardGrid } from "../legacy/LegacyDashboardGrid";
 
 export function PlugsScreen({ navigation }: { navigation?: any }): JSX.Element {
   const runtime = useAppRuntime();
@@ -14,28 +15,24 @@ export function PlugsScreen({ navigation }: { navigation?: any }): JSX.Element {
     return () => { unsubscribeState(); unsubscribeConfig(); };
   }, [runtime]);
   const plugs = runtime.configStore.getCommitted()?.plugs || [];
+  const favorites = runtime.configStore.getCommitted()?.favorites || [];
   return (
-    <Screen title="Plugs">
-      <View style={styles.toolbar}>
-        <Pressable onPress={() => void runtime.service.refreshConfiguredPlugs({ ignoreBackoff: true })} style={styles.button}><Text style={styles.buttonText}>Refresh</Text></Pressable>
-        <Pressable onPress={() => navigation?.navigate("PlugAdministration")} style={styles.button}><Text style={styles.buttonText}>Manage endpoints</Text></Pressable>
-      </View>
-      {plugs.length === 0 ? <EmptyState message="No configured plugs. Add one from Advanced." /> : <View style={styles.grid}>
+    <Screen showTitle={false} title="Plugs">
+      <LegacyDashboardGrid testID="plugs-dashboard-grid">
+        <LegacyResourceButton hideEdit hideFavorite onPress={() => void runtime.service.refreshConfiguredPlugs({ ignoreBackoff: true })} state="known" title="Refresh" />
+        <LegacyResourceButton hideEdit hideFavorite onPress={() => navigation?.navigate("PlugAdministration")} state="known" title="Manage endpoints" />
         {plugs.map((endpoint) => {
           const ref: ResourceRef = { kind: "plug", plugEndpointId: endpoint.id };
           const stored = runtime.service.stateStore.get(ref);
           const value = stored?.state.status === "known" ? stored.state.value as any : undefined;
-          const subtitle = value ? [value.model, typeof value.relayState === "boolean" ? (value.relayState ? "On" : "Off") : "State unknown", value.hasEnergy && value.energy?.powerMw !== undefined ? `${value.energy.powerMw} mW` : undefined].filter(Boolean).join(" · ") : `${endpoint.ipv4}:${endpoint.port}`;
-          return <ResourceTile key={endpoint.id} ref={ref} title={value?.alias || endpoint.ipv4} subtitle={subtitle} stored={stored} onPress={() => void runtime.service.performPrimary(ref)} onEdit={() => navigation?.navigate("PlugEditor", { id: endpoint.id })} />;
+          return <ResourceTile key={endpoint.id} ref={ref} title={value?.alias || endpoint.ipv4} stored={stored} favorite={favorites.some((favorite) => sameResourceRef(favorite, ref))} onPress={() => void runtime.service.performPrimary(ref)} onFavorite={() => void (favorites.some((favorite) => sameResourceRef(favorite, ref)) ? runtime.service.removeFavorite(ref) : runtime.service.addFavorite(ref))} onEdit={() => navigation?.navigate("PlugEditor", { id: endpoint.id })} />;
         })}
-      </View>}
+      </LegacyDashboardGrid>
+      {plugs.length === 0 && <EmptyState message="No configured plugs. Add one from Advanced." />}
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  toolbar: { flexDirection: "row", gap: 8, marginBottom: 8 },
-  button: { backgroundColor: "#268bd2", borderRadius: 8, padding: 10 },
-  buttonText: { color: "#fff", fontWeight: "700" },
-  grid: { flexDirection: "row", flexWrap: "wrap" },
-});
+function sameResourceRef(left: ResourceRef, right: ResourceRef): boolean {
+  return left.kind === right.kind && left.id === right.id && left.plugEndpointId === right.plugEndpointId;
+}

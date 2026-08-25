@@ -75,14 +75,35 @@ describe("dashboard tile integration", () => {
     expect(view.queryByText("No current resources. Refresh when the local bridge is reachable.")).toBeNull();
   });
 
-  test("missing Favorite is removable and has no actionable primary tile", () => {
+  test("renders search and navigation utilities with the same AwesomeButton primitive", async () => {
+    const onSearch = jest.fn();
+    const view = render(<ResourceCollectionScreen kind="light" title="Lights" onSearch={onSearch} />);
+    expect(view.getByLabelText("Refresh")).toBeTruthy();
+    expect(view.getByLabelText("Advanced")).toBeTruthy();
+    fireEvent.press(view.getByLabelText("Scan for new lights"));
+    await waitFor(() => expect(onSearch).toHaveBeenCalledTimes(1));
+  });
+
+  test.each([4, 5, 20, 216])("wraps a representative %s-resource collection in the compact grid", (count) => {
+    const entries = new Map(Array.from({ length: count }, (_, index) => [
+      `light:${index + 1}`,
+      { state: { status: "known", value: { name: `Light ${index + 1}`, state: { on: index % 2 === 0 } } }, pending: false },
+    ]));
+    stateStore.getAll.mockReturnValue(entries);
+    const view = render(<ResourceCollectionScreen kind="light" title="Lights" />);
+    expect(view.getByTestId("light-dashboard-grid")).toBeTruthy();
+    expect(view.getAllByTestId("legacy-resource-primary")).toHaveLength(count + 2);
+    view.unmount();
+  });
+
+  test("missing Favorite is removable and has no actionable primary tile", async () => {
     configStore.getCommitted.mockReturnValue({ bridge: {}, plugs: [], favorites: [{ kind: "light", id: "missing" }] });
     stateStore.get.mockReturnValue(undefined);
     const view = render(<FavoritesScreen navigation={{ navigate: jest.fn() }} />);
     expect(view.getByLabelText("Missing resource")).toBeTruthy();
     expect(view.getByLabelText("Remove Favorite")).toBeTruthy();
     fireEvent.press(view.getByLabelText("Remove Favorite"));
-    expect(mockRuntime.service.removeFavorite).toHaveBeenCalledWith({ kind: "light", id: "missing" });
+    await waitFor(() => expect(mockRuntime.service.removeFavorite).toHaveBeenCalledWith({ kind: "light", id: "missing" }));
   });
 
   test("plug tile has no inline Delete while administration keeps confirmed removal", async () => {
@@ -106,7 +127,7 @@ describe("dashboard tile integration", () => {
 
   test("plug Refresh bypasses endpoint backoff", () => {
     const view = render(<PlugsScreen />);
-    fireEvent.press(view.getByText("Refresh"));
-    expect(mockRuntime.service.refreshConfiguredPlugs).toHaveBeenCalledWith({ ignoreBackoff: true });
+    fireEvent.press(view.getByLabelText("Refresh"));
+    return waitFor(() => expect(mockRuntime.service.refreshConfiguredPlugs).toHaveBeenCalledWith({ ignoreBackoff: true }));
   });
 });

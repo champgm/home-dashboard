@@ -18,23 +18,25 @@ authoritative.
 | Diagnostic flood | One current Hue bridge diagnostic and one per plug endpoint; success clears the relevant entry | Defined in `REL-008`, `AC-REL-008`, and ADR-019 |
 | Status-bar overlap | Dashboard applies the top system inset once; native-stack headers are not double-inset | Defined in `QA-001`, `AC-QA-001`, and ADR-020 |
 | Legacy tile contract | Responsive square raised tiles, Solarized states, retained image assets, full-tile Unknown image, and no inline Delete | Defined in `UX-VIS-001`, `AC-UX-VIS-001`, and ADR-021 |
+| Legacy dense composition | Configured collections use legacy-derived compact wrapping geometry with independent corner controls remaining unclipped | Defined in `UX-VIS-002`, `AC-UX-VIS-002`, and ADR-021 |
 | Delete capability | Dashboard tiles have no destructive action; existing Hue editors and plug administration retain confirmation-gated deletion | Preserved under `UX-DEL-001..003` |
 | Security boundary | No credential, username, raw payload, or credential-bearing URL is rendered or logged | Preserved and strengthened by bounded diagnostics |
 
 ## Architecture decision
 
 The selected implementation uses the existing `HueHttpTransport`, `ApplicationService`, React Navigation 7 stack/top-tabs,
-`react-native-safe-area-context`, and modern React Native primitives. It does not reintroduce the obsolete
-`react-native-really-awesome-button` package, add cloud diagnostics, add persistence history, or change the accepted device
-protocol/persistence architecture.
+`react-native-safe-area-context`, and a single `LegacyResourceButton` wrapper around the maintained
+`@rcaferati/react-native-awesome-button` package, subject to the target compatibility gate. It does not reintroduce the obsolete
+`react-native-really-awesome-button` package, create a parallel custom 3D clone, add cloud diagnostics, add persistence history,
+or change the accepted device protocol/persistence architecture.
 
 ## Validation
 
 ```text
 python3 docs/validate_home_dashboard_docs_2.2.0.py
-requirements=87
-acceptance=87
-sad_covered_requirements=87
+requirements=88
+acceptance=88
+sad_covered_requirements=88
 errors=0
 ```
 
