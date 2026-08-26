@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Text } from "react-native";
-import { EditorChoice, EditorNumberField, EditorSection, EditorTextField, EditorToggle, ReadOnlyField, editorStyles } from "./editorControls";
+import { EditorCatalogNumberField, EditorChoice, EditorSection, EditorTextField, EditorToggle, ReadOnlyField, editorStyles } from "./editorControls";
 import { EditorForm } from "./EditorForm";
 import { useAppRuntime } from "../AppContext";
 import { getHueSensorConfigFields, HUE_SENSOR_TYPES, HueCatalogField } from "../../protocol/hue/catalog/resourceCatalog";
@@ -62,19 +62,24 @@ export function SensorEditor({ route, navigation }: { route?: any; navigation?: 
     onSave={save}
     title="Sensor Editor"
   >
-    <EditorSection title="Sensor identity and capabilities">
-      {id ? <>
+    <EditorSection title="Editable sensor fields">
+      {!id && <>
+        <EditorChoice label="Sensor type" onChange={setSensorType} options={HUE_SENSOR_TYPES} testID="sensor-type" value={sensorType} />
+        <EditorTextField label="Manufacturer" onChangeText={setManufacturer} testID="sensor-manufacturer" value={manufacturer} />
+        <EditorTextField label="Model ID" onChangeText={setModel} testID="sensor-model" value={model} />
+        <EditorTextField label="Unique ID (optional)" onChangeText={setUniqueId} testID="sensor-uniqueid" value={uniqueId} />
+      </>}
+      {configFields.map((field) => <React.Fragment key={field.path}>{renderConfigField(field, config, updateConfig)}</React.Fragment>)}
+      <Text style={editorStyles.readOnlyValue}>Unsupported or read-only configuration is not rendered as an edit control.</Text>
+    </EditorSection>
+    <EditorSection title="Sensor details">
+      {id && <>
         <ReadOnlyField label="Sensor ID" value={id} />
         <ReadOnlyField label="Type" value={value?.type} />
         <ReadOnlyField label="Manufacturer" value={value?.manufacturername} />
         <ReadOnlyField label="Model" value={value?.modelid} />
         <ReadOnlyField label="Unique ID" value={value?.uniqueid} />
         <ReadOnlyField label="Software version" value={value?.swversion} />
-      </> : <>
-        <EditorChoice label="Sensor type" onChange={setSensorType} options={HUE_SENSOR_TYPES} testID="sensor-type" value={sensorType} />
-        <EditorTextField label="Manufacturer" onChangeText={setManufacturer} testID="sensor-manufacturer" value={manufacturer} />
-        <EditorTextField label="Model ID" onChangeText={setModel} testID="sensor-model" value={model} />
-        <EditorTextField label="Unique ID (optional)" onChangeText={setUniqueId} testID="sensor-uniqueid" value={uniqueId} />
       </>}
       <ReadOnlyField label="Capabilities" value={value?.capabilities} />
       <ReadOnlyField label="Reachable" value={value?.config?.reachable} />
@@ -82,10 +87,6 @@ export function SensorEditor({ route, navigation }: { route?: any; navigation?: 
       <ReadOnlyField label="Button event" value={value?.state?.buttonevent} />
       <ReadOnlyField label="Last updated" value={value?.state?.lastupdated} />
       <ReadOnlyField label="Current sensor state" value={value?.state} />
-    </EditorSection>
-    <EditorSection title="Supported configuration">
-      {configFields.map((field) => <React.Fragment key={field.path}>{renderConfigField(field, config, updateConfig)}</React.Fragment>)}
-      <Text style={editorStyles.readOnlyValue}>Unsupported or read-only configuration is not rendered as an edit control.</Text>
     </EditorSection>
     <EditorSection title="Automation references">
       {references.length === 0 ? <ReadOnlyField label="Rules and schedules" value="No current automation references this Sensor." /> : references.map((reference) => <ReadOnlyField key={reference} label="Referenced by" value={reference} />)}
@@ -109,7 +110,7 @@ function renderConfigField(field: HueCatalogField, config: Record<string, unknow
   const key = field.path.slice("config.".length);
   const label = field.description;
   if (field.type === "boolean") return <EditorToggle label={label} onValueChange={(value) => update(key, value)} testID={`sensor-config-${key}`} value={config[key] === true} />;
-  if (field.type === "number") return <EditorNumberField label={label} onChange={(value) => update(key, value)} testID={`sensor-config-${key}`} value={numberValue(config[key])} />;
+  if (field.type === "number") return <EditorCatalogNumberField fieldKey={key} label={label} onChange={(value) => update(key, value)} testID={`sensor-config-${key}`} value={numberValue(config[key])} />;
   return <ReadOnlyField label={label} value={config[key]} />;
 }
 

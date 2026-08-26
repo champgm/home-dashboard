@@ -4,6 +4,8 @@ export interface StoredResourceState<T = unknown> {
   readonly state: ResourceState<T>;
   readonly pending: boolean;
   readonly diagnostic?: Diagnostic;
+  /** Presentation-only value retained across Unknown transitions; never establishes current control state. */
+  readonly lastKnownValue?: T;
 }
 
 type Listener = () => void;
@@ -36,6 +38,7 @@ export class DeviceStateStore {
       state: { status: "known", value },
       pending: current?.pending || false,
       diagnostic: undefined,
+      lastKnownValue: value,
     });
     this.publish();
   }
@@ -47,6 +50,7 @@ export class DeviceStateStore {
       state: unknown,
       pending: current?.pending || false,
       diagnostic: reason,
+      lastKnownValue: current?.state.status === "known" ? current.state.value : current?.lastKnownValue,
     });
     this.publish();
   }

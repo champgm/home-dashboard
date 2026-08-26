@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { EditorChoice, EditorNumberField, EditorSection, EditorTextField, EditorToggle, ReadOnlyField } from "./editorControls";
+import { EditorCatalogNumberField, EditorChoice, EditorHueField, EditorSection, EditorTextField, EditorToggle, EditorXyColorField, ReadOnlyField } from "./editorControls";
 import { EditorForm } from "./EditorForm";
 import { useAppRuntime } from "../AppContext";
 import { definiteFailure } from "../../app/commandResults";
@@ -33,6 +33,7 @@ export function GroupEditor({ route, navigation }: { route?: any; navigation?: a
   const [sat, setSat] = useState(numberValue(initialAction.sat));
   const [xy, setXy] = useState(pairValue(initialAction.xy));
   const [ct, setCt] = useState(numberValue(initialAction.ct));
+  const [transitiontime, setTransitiontime] = useState(numberValue(initialAction.transitiontime));
   const [alert, setAlert] = useState(stringValue(initialAction.alert, "none"));
   const [effect, setEffect] = useState(stringValue(initialAction.effect, "none"));
   const actionHas = (key: string): boolean => {
@@ -55,6 +56,7 @@ export function GroupEditor({ route, navigation }: { route?: any; navigation?: a
         ...(actionHas("sat") && sat !== undefined ? { sat } : {}),
         ...(actionHas("xy") && xyValue ? { xy: xyValue } : {}),
         ...(actionHas("ct") && ct !== undefined ? { ct } : {}),
+        ...(actionHas("transitiontime") && transitiontime !== undefined ? { transitiontime } : {}),
         ...(actionHas("alert") ? { alert } : {}),
         ...(actionHas("effect") ? { effect } : {}),
       },
@@ -69,24 +71,27 @@ export function GroupEditor({ route, navigation }: { route?: any; navigation?: a
     onSave={save}
     title="Group Editor"
   >
-    <EditorSection title="Group membership and metadata">
+    <EditorSection title="Editable group membership">
       <EditorTextField label="Light IDs (comma or space separated)" onChangeText={setLights} placeholder="1, 2, 3" testID="group-lights" value={lights} />
       <EditorChoice label="Group class" onChange={setGroupClass} options={classOptions} testID="group-class" value={groupClass} />
+    </EditorSection>
+    {id && <EditorSection title="Supported group action">
+      {actionHas("on") && <EditorToggle label="Action power" onValueChange={setOn} testID="group-action-on" value={on} />}
+      {actionHas("bri") && <EditorCatalogNumberField fieldKey="bri" label="Action brightness" onChange={setBri} testID="group-action-bri" value={bri} />}
+      {actionHas("hue") && <EditorHueField label="Action hue color" onChange={setHue} testID="group-action-hue" value={hue} />}
+      {actionHas("sat") && <EditorCatalogNumberField fieldKey="sat" label="Action saturation" onChange={setSat} testID="group-action-sat" value={sat} />}
+      {actionHas("xy") && <EditorXyColorField label="Action XY color" onChangeText={setXy} testID="group-action-xy" value={xy} />}
+      {actionHas("ct") && <EditorCatalogNumberField fieldKey="ct" label="Action color temperature" onChange={setCt} testID="group-action-ct" value={ct} />}
+      {actionHas("alert") && <EditorChoice label="Action alert" onChange={setAlert} options={["none", "select", "lselect"]} testID="group-action-alert" value={alert} />}
+      {actionHas("effect") && <EditorChoice label="Action effect" onChange={setEffect} options={["none", "colorloop"]} testID="group-action-effect" value={effect} />}
+      {actionHas("transitiontime") && <EditorCatalogNumberField fieldKey="transitiontime" label="Action transition duration" onChange={setTransitiontime} testID="group-action-transitiontime" value={transitiontime} />}
+    </EditorSection>}
+    <EditorSection title="Group details">
       <ReadOnlyField label="Group type" value={value?.type} />
       <ReadOnlyField label="Recycle" value={value?.recycle} />
       <ReadOnlyField label="Associated sensors" value={value?.sensors} />
       <ReadOnlyField label="Aggregate state" value={aggregateLabel(value?.state)} />
     </EditorSection>
-    {id && <EditorSection title="Supported group action">
-      {actionHas("on") && <EditorToggle label="Action power" onValueChange={setOn} testID="group-action-on" value={on} />}
-      {actionHas("bri") && <EditorNumberField label="Action brightness (1–254)" onChange={setBri} testID="group-action-bri" value={bri} />}
-      {actionHas("hue") && <EditorNumberField label="Action hue (0–65535)" onChange={setHue} testID="group-action-hue" value={hue} />}
-      {actionHas("sat") && <EditorNumberField label="Action saturation (0–254)" onChange={setSat} testID="group-action-sat" value={sat} />}
-      {actionHas("xy") && <EditorTextField label="Action XY color (x,y)" onChangeText={setXy} placeholder="0.5,0.5" testID="group-action-xy" value={xy} />}
-      {actionHas("ct") && <EditorNumberField label="Action color temperature" onChange={setCt} testID="group-action-ct" value={ct} />}
-      {actionHas("alert") && <EditorChoice label="Action alert" onChange={setAlert} options={["none", "select", "lselect"]} testID="group-action-alert" value={alert} />}
-      {actionHas("effect") && <EditorChoice label="Action effect" onChange={setEffect} options={["none", "colorloop"]} testID="group-action-effect" value={effect} />}
-    </EditorSection>}
   </EditorForm>;
 }
 

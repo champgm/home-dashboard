@@ -11,7 +11,8 @@ describe("legacy button palette", () => {
       legacyButtonPalette.off.face,
       legacyButtonPalette.indeterminate.face,
       legacyButtonPalette.known.face,
-    ]).size).toBe(4);
+      legacyButtonPalette.utility.face,
+    ]).size).toBe(5);
   });
 
   test("uses the yellow active palette only for an active Favorite", () => {

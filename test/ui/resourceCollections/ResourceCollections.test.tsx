@@ -1,5 +1,5 @@
 import React from "react";
-import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, waitFor, within } from "@testing-library/react-native";
 
 let stateListener: (() => void) | undefined;
 
@@ -88,8 +88,11 @@ describe("dashboard tile integration", () => {
   test("renders search and navigation utilities with the same AwesomeButton primitive", async () => {
     const onSearch = jest.fn();
     const view = render(<ResourceCollectionScreen kind="light" title="Lights" onSearch={onSearch} />);
-    expect(view.getByLabelText("Refresh")).toBeTruthy();
-    expect(view.getByLabelText("Advanced")).toBeTruthy();
+    const utilityRow = within(view.getByTestId("light-dashboard-utilities"));
+    expect(utilityRow.getByLabelText("Refresh")).toBeTruthy();
+    expect(utilityRow.getByLabelText("Config")).toBeTruthy();
+    expect(utilityRow.getByLabelText("Scan for new lights")).toBeTruthy();
+    expect(utilityRow.queryByLabelText("Kitchen light")).toBeNull();
     fireEvent.press(view.getByLabelText("Scan for new lights"));
     await waitFor(() => expect(onSearch).toHaveBeenCalledTimes(1));
   });
@@ -123,6 +126,8 @@ describe("dashboard tile integration", () => {
     const tile = render(<PlugsScreen navigation={{ navigate: jest.fn() }} />);
     expect(tile.getByLabelText("Edit")).toBeTruthy();
     expect(tile.queryByLabelText(/Delete/i)).toBeNull();
+    expect(tile.queryByText(/Technical locator/i)).toBeNull();
+    expect(tile.queryByText(/Device ID/i)).toBeNull();
     tile.unmount();
 
     const admin = render(<PlugAdministrationScreen />);
@@ -139,6 +144,21 @@ describe("dashboard tile integration", () => {
     const view = render(<PlugsScreen />);
     fireEvent.press(view.getByLabelText("Refresh"));
     return waitFor(() => expect(mockRuntime.service.refreshConfiguredPlugs).toHaveBeenCalledWith({ ignoreBackoff: true }));
+  });
+
+  test("keeps a plug's last known alias while its current state is Unknown", () => {
+    const endpoint = { id: "plug-1", ipv4: "192.168.1.20", port: 9999 };
+    configStore.getCommitted.mockReturnValue({ bridge: {}, plugs: [endpoint], favorites: [] });
+    stateStore.get.mockReturnValue({
+      state: { status: "unknown", reason: { category: "NetworkUnavailable", message: "offline" } },
+      pending: false,
+      lastKnownValue: { alias: "Bedroom plug", relayState: true },
+    });
+
+    const view = render(<PlugsScreen />);
+    expect(view.getByLabelText("Bedroom plug")).toBeTruthy();
+    expect(view.queryByLabelText("192.168.1.20")).toBeNull();
+    expect(view.getByLabelText("Bedroom plug").props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
   });
 
   test("lists reachable plugs before unknown plugs while preserving configured order", () => {
@@ -162,7 +182,7 @@ describe("dashboard tile integration", () => {
     const labels = view.getAllByTestId("legacy-resource-primary").map((tile) => tile.props.accessibilityLabel);
     expect(labels).toEqual([
       "Refresh",
-      "Manage endpoints",
+      "Manage plugs",
       "Known one",
       "Known two",
       "192.168.1.11",

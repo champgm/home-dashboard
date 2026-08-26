@@ -2,6 +2,7 @@
 
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -50,7 +51,16 @@ if (!Number.isInteger(appJson.expo?.android?.versionCode)) {
 const nextVersion = `${versionMatch[1]}.${versionMatch[2]}.${Number(versionMatch[3]) + 1}`;
 const nextVersionCode = appJson.expo.android.versionCode + 1;
 const apkSource = join(repoRoot, "android/app/build/outputs/apk/release/app-release.apk");
-const apkDestination = join(repoRoot, `dist/home-dashboard-v${nextVersion}.apk`);
+const apkFilename = `home-dashboard-v${nextVersion}.apk`;
+const apkDestination = join(repoRoot, "dist", apkFilename);
+const syncedApkDestination = join(
+  homedir(),
+  "Insync",
+  "gilbertmccoy@gmail.com",
+  "Google Drive",
+  "APKs",
+  apkFilename,
+);
 let metadataChanged = false;
 
 try {
@@ -75,6 +85,10 @@ try {
   mkdirSync(dirname(apkDestination), { recursive: true });
   copyFileSync(apkSource, apkDestination);
   console.log(`APK created: ${apkDestination}`);
+
+  mkdirSync(dirname(syncedApkDestination), { recursive: true });
+  copyFileSync(apkDestination, syncedApkDestination);
+  console.log(`APK copied to: ${syncedApkDestination}`);
 } catch (error) {
   if (metadataChanged) {
     for (const [path, content] of originals) writeFileSync(path, content);

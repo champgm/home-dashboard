@@ -16,8 +16,17 @@ export function PlugEditor({ route }: { route?: any }): JSX.Element {
     if (value?.alias && !alias) setAlias(value.alias);
   }, [value?.alias]);
   return <Screen title="Plug Editor">
-    <Text style={styles.locator}>{endpoint ? `${endpoint.ipv4}:${endpoint.port}` : "Plug endpoint not found"}</Text>
-    <EditorSection title="Returned plug information">
+    <EditorSection title="Editable plug fields">
+      <Text style={styles.label}>Physical alias</Text>
+      <TextInput accessibilityLabel="Physical alias" onChangeText={setAlias} placeholder="Physical plug alias" placeholderTextColor="#93a1a1" style={styles.input} value={alias} />
+      <Pressable onPress={async () => {
+        if (!endpoint) { setMessage("Plug is not currently available."); return; }
+        const result = await runtime.service.setPlugAlias(endpoint, alias);
+        setMessage(result.kind === "success" ? "Alias updated on the physical plug." : result.diagnostic?.message || "Alias not updated.");
+      }} style={styles.button}><Text style={styles.buttonText}>Save physical alias</Text></Pressable>
+    </EditorSection>
+    <EditorSection title="Returned plug details">
+      <Text style={styles.locator}>{endpoint ? `${endpoint.ipv4}:${endpoint.port}` : "Plug endpoint not found"}</Text>
       <ReadOnlyField label="Physical alias" value={value?.alias} />
       <ReadOnlyField label="Model" value={value?.model} />
       <ReadOnlyField label="Device ID" value={value?.deviceId} />
@@ -38,13 +47,6 @@ export function PlugEditor({ route }: { route?: any }): JSX.Element {
       </>}
       {!value?.hasEnergy && <ReadOnlyField label="Energy" value="Not reported by this plug" />}
     </EditorSection>
-    <Text style={styles.label}>Physical alias</Text>
-    <TextInput accessibilityLabel="Physical alias" onChangeText={setAlias} placeholder="Physical plug alias" placeholderTextColor="#93a1a1" style={styles.input} value={alias} />
-    <Pressable onPress={async () => {
-      if (!endpoint) { setMessage("Plug is not currently available."); return; }
-      const result = await runtime.service.setPlugAlias(endpoint, alias);
-      setMessage(result.kind === "success" ? "Alias updated on the physical plug." : result.diagnostic?.message || "Alias not updated.");
-    }} style={styles.button}><Text style={styles.buttonText}>Save physical alias</Text></Pressable>
     {message && <Text style={styles.message}>{message}</Text>}
   </Screen>;
 }

@@ -36,6 +36,12 @@ export const legacyButtonPalette = {
     darkerFace: "#15517f",
     text: base3,
   },
+  utility: {
+    face: "#6c71c4",
+    activeFace: "#565aa0",
+    darkerFace: "#414579",
+    text: base3,
+  },
   edit: {
     face: "#268bd2",
     activeFace: "#1d6caa",

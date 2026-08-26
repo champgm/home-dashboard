@@ -4,7 +4,7 @@ import { LegacyResourceButton } from "../components/LegacyResourceButton";
 import { useAppRuntime } from "../AppContext";
 import { ResourceTile } from "../components/ResourceTile";
 import { EmptyState, Screen } from "../components/Screen";
-import { LegacyDashboardGrid } from "../legacy/LegacyDashboardGrid";
+import { LegacyDashboardGrid, LegacyDashboardUtilityRow } from "../legacy/LegacyDashboardGrid";
 
 export function FavoritesScreen({ navigation }: { navigation?: any }): JSX.Element {
   const runtime = useAppRuntime();
@@ -18,10 +18,13 @@ export function FavoritesScreen({ navigation }: { navigation?: any }): JSX.Eleme
   return (
     <Screen showTitle={false} title="Favorites">
       <LegacyDashboardGrid testID="favorites-dashboard-grid">
-        <LegacyResourceButton hideEdit hideFavorite onPress={() => navigation?.navigate("Advanced")} state="known" title="Advanced" />
+        <LegacyDashboardUtilityRow testID="favorites-dashboard-utilities">
+          <LegacyResourceButton hideEdit hideFavorite onPress={() => navigation?.navigate("Advanced")} state="known" title="Config" utility />
+        </LegacyDashboardUtilityRow>
           {favorites.map((ref, index) => {
             const state = runtime.service.stateStore.get(ref);
-            const title = state?.state.status === "known" ? String((state.state.value as any)?.name || (state.state.value as any)?.alias || ref.id || ref.plugEndpointId) : `${ref.kind} ${ref.id || ref.plugEndpointId}`;
+            const titleValue = state?.state.status === "known" ? state.state.value : state?.lastKnownValue;
+            const title = titleValue ? String((titleValue as any)?.name || (titleValue as any)?.alias || ref.id || ref.plugEndpointId) : `${ref.kind} ${ref.id || ref.plugEndpointId}`;
             const editorRoute = ref.kind === "plug" ? "PlugEditor" : ref.kind === "resourcelink" ? "ResourceLinkEditor" : `${ref.kind[0].toUpperCase()}${ref.kind.slice(1)}Editor`;
             return (
               <ResourceTile

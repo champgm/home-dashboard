@@ -1,9 +1,11 @@
 import React, { PropsWithChildren } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export function Screen({ children, showTitle = true, title }: PropsWithChildren<{ title: string; showTitle?: boolean }>): JSX.Element {
+  const insets = useSafeAreaInsets();
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
+    <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 12 }]} style={styles.screen} testID="screen-scroll">
       {showTitle && <Text style={styles.title}>{title}</Text>}
       {children}
     </ScrollView>

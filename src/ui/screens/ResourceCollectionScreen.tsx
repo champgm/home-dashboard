@@ -4,7 +4,7 @@ import { ResourceRef, ResourceKind } from "../../app/types";
 import { LegacyResourceButton } from "../components/LegacyResourceButton";
 import { ResourceTile } from "../components/ResourceTile";
 import { EmptyState, Screen } from "../components/Screen";
-import { LegacyDashboardGrid } from "../legacy/LegacyDashboardGrid";
+import { LegacyDashboardGrid, LegacyDashboardUtilityRow } from "../legacy/LegacyDashboardGrid";
 import { useAppRuntime } from "../AppContext";
 
 export interface ResourceCollectionScreenProps {
@@ -61,10 +61,12 @@ export function ResourceCollectionScreen({ kind, title, navigation, canCreate, o
     <Screen showTitle={false} title={title}>
       {searchMessage && <Text accessibilityRole="alert" style={styles.searchMessage}>{searchMessage}</Text>}
       <LegacyDashboardGrid testID={`${kind}-dashboard-grid`}>
-        <LegacyResourceButton hideEdit hideFavorite onPress={() => void runtime.service.refreshHue()} state="known" title="Refresh" />
-        {canCreate && <LegacyResourceButton hideEdit hideFavorite onPress={() => navigation?.getParent?.()?.navigate(editorRoute) || navigation?.navigate?.(editorRoute)} state="known" title={`New ${title.slice(0, -1)}`} />}
-        {onSearch && <LegacyResourceButton hideEdit hideFavorite onPress={() => void startSearch()} state="known" title={kind === "light" ? "Scan for new lights" : kind === "sensor" ? "Scan for new sensors" : "Search"} />}
-        <LegacyResourceButton hideEdit hideFavorite onPress={navigateAdvanced} state="known" title="Advanced" />
+        <LegacyDashboardUtilityRow testID={`${kind}-dashboard-utilities`}>
+          <LegacyResourceButton hideEdit hideFavorite onPress={() => void runtime.service.refreshHue()} state="known" title="Refresh" utility />
+          {canCreate && <LegacyResourceButton hideEdit hideFavorite onPress={() => navigation?.getParent?.()?.navigate(editorRoute) || navigation?.navigate?.(editorRoute)} state="known" title={`New ${title.slice(0, -1)}`} utility />}
+          {onSearch && <LegacyResourceButton hideEdit hideFavorite onPress={() => void startSearch()} state="known" title={kind === "light" ? "Scan for new lights" : kind === "sensor" ? "Scan for new sensors" : "Search"} utility />}
+          <LegacyResourceButton hideEdit hideFavorite onPress={navigateAdvanced} state="known" title="Config" utility />
+        </LegacyDashboardUtilityRow>
         {entries.map(({ id, value, stored }) => {
           const ref: ResourceRef = { kind, id };
           return (

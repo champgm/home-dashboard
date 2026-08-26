@@ -63,11 +63,30 @@ describe("LegacyResourceButton", () => {
     expect(view.queryByLabelText("Edit")).toBeNull();
   });
 
+  test("allows resource titles to wrap across three lines", () => {
+    const view = render(<LegacyResourceButton title="Sunroom Lightstrip" />);
+    expect(view.getByText("Sunroom Lightstrip").props.numberOfLines).toBe(3);
+  });
+
+  test("uses a distinct violet palette for utility actions", () => {
+    const view = render(<LegacyResourceButton hideEdit hideFavorite onPress={jest.fn()} state="known" title="Refresh" utility />);
+    expect(view.getByLabelText("Refresh").props.style).toEqual(expect.arrayContaining([
+      expect.objectContaining({ backgroundColor: "#6c71c4" }),
+    ]));
+  });
+
   test("uses the yellow Favorite face when active and retains the light-bulb asset", () => {
     const view = render(<LegacyResourceButton favorite showLightBulb title="Kitchen" onFavorite={jest.fn()} />);
     expect(view.getByLabelText("Remove Favorite").props.style).toEqual(expect.arrayContaining([
       expect.objectContaining({ backgroundColor: "#b58900" }),
     ]));
     expect(view.getByLabelText("Light bulb").props.source).toBeDefined();
+  });
+
+  test.each(["on", "off", "known", "indeterminate"] as const)("uses the grey Favorite face when %s is not a Favorite", (state) => {
+    const view = render(<LegacyResourceButton state={state} title="Kitchen" onFavorite={jest.fn()} />);
+    expect(view.getByLabelText("Add Favorite").props.style).toEqual(expect.arrayContaining([
+      expect.objectContaining({ backgroundColor: "#586e75" }),
+    ]));
   });
 });

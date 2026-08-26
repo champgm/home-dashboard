@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { ReadOnlyField, EditorChoice, EditorNumberField, EditorSection, EditorTextField } from "./editorControls";
+import { ReadOnlyField, EditorChoice, EditorHueField, EditorRangeField, EditorSection, EditorXyColorField } from "./editorControls";
 import { EditorForm } from "./EditorForm";
 import { useAppRuntime } from "../AppContext";
 import { definiteFailure } from "../../app/commandResults";
@@ -35,6 +35,8 @@ export function LightEditor({ route, navigation }: { route?: any; navigation?: a
   const [alert, setAlert] = useState(stringValue(initialState.alert, "none"));
   const [effect, setEffect] = useState(stringValue(initialState.effect, "none"));
   const capabilities = value?.capabilities?.control || {};
+  const ctMinimum = numberValue(capabilities.ct?.min) ?? 153;
+  const ctMaximum = numberValue(capabilities.ct?.max) ?? 500;
   const stateHas = (key: string): boolean => {
     const descriptor = catalogField("light", `state.${key}`);
     const advertised = Object.prototype.hasOwnProperty.call(initialState, key) || Object.prototype.hasOwnProperty.call(capabilities, key) || (key === "ct" && Boolean(capabilities.ct));
@@ -67,7 +69,17 @@ export function LightEditor({ route, navigation }: { route?: any; navigation?: a
     onSave={save}
     title="Light Editor"
   >
-    <EditorSection title="Identity and current state">
+    <EditorSection title="Editable light state">
+      {visibleFields.bri && <EditorRangeField label="Brightness" maximumValue={254} minimumValue={1} onChange={setBri} testID="light-bri" value={bri} />}
+      {visibleFields.hue && <EditorHueField label="Hue color" onChange={setHue} testID="light-hue" value={hue} />}
+      {visibleFields.sat && <EditorRangeField label="Saturation" maximumValue={254} minimumValue={0} onChange={setSat} testID="light-sat" value={sat} />}
+      {visibleFields.xy && <EditorXyColorField label="XY color" onChangeText={setXy} testID="light-xy" value={xy} />}
+      {visibleFields.ct && <EditorRangeField label="Color temperature (warm–cool)" maximumValue={ctMaximum} minimumValue={ctMinimum} onChange={setCt} testID="light-ct" value={ct} />}
+      {visibleFields.alert && <EditorChoice label="Alert" onChange={setAlert} options={["none", "select", "lselect"]} testID="light-alert" value={alert} />}
+      {visibleFields.effect && <EditorChoice label="Effect" onChange={setEffect} options={["none", "colorloop"]} testID="light-effect" value={effect} />}
+      {visibleFields.transitiontime && <EditorRangeField displayScale={0.1} label="Transition duration" maximumValue={600} minimumValue={0} onChange={setTransitiontime} testID="light-transitiontime" unit="seconds" value={transitiontime} />}
+    </EditorSection>
+    <EditorSection title="Light details">
       <ReadOnlyField label="Light ID" value={id} />
       <ReadOnlyField label="Type" value={value?.type} />
       <ReadOnlyField label="Manufacturer" value={value?.manufacturername} />
@@ -77,14 +89,6 @@ export function LightEditor({ route, navigation }: { route?: any; navigation?: a
       <ReadOnlyField label="Software version" value={value?.swversion} />
       <ReadOnlyField label="Reachable" value={value?.state?.reachable} />
       <ReadOnlyField label="Color mode" value={value?.state?.colormode} />
-      {visibleFields.bri && <EditorNumberField label="Brightness (1–254)" onChange={setBri} testID="light-bri" value={bri} />}
-      {visibleFields.hue && <EditorNumberField label="Hue (0–65535)" onChange={setHue} testID="light-hue" value={hue} />}
-      {visibleFields.sat && <EditorNumberField label="Saturation (0–254)" onChange={setSat} testID="light-sat" value={sat} />}
-      {visibleFields.xy && <EditorTextField label="XY color (x,y)" onChangeText={setXy} placeholder="0.5,0.5" testID="light-xy" value={xy} />}
-      {visibleFields.ct && <EditorNumberField label="Color temperature" onChange={setCt} testID="light-ct" value={ct} />}
-      {visibleFields.alert && <EditorChoice label="Alert" onChange={setAlert} options={["none", "select", "lselect"]} testID="light-alert" value={alert} />}
-      {visibleFields.effect && <EditorChoice label="Effect" onChange={setEffect} options={["none", "colorloop"]} testID="light-effect" value={effect} />}
-      {visibleFields.transitiontime && <EditorNumberField label="Transition time (0–65535)" onChange={setTransitiontime} testID="light-transitiontime" value={transitiontime} />}
     </EditorSection>
   </EditorForm>;
 }

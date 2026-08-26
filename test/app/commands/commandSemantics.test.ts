@@ -93,4 +93,27 @@ describe("ApplicationService command semantics", () => {
     expect(service.stateStore.get({ kind: "plug", plugEndpointId: "good" })?.state.status).toBe("known");
     expect(service.stateStore.get({ kind: "plug", plugEndpointId: "bad" })?.state.status).toBe("unknown");
   });
+
+  test("preserves known plug identity metadata across a power write read-back", async () => {
+    const storage = new Store();
+    const configStore = new ConfigStore(storage);
+    const endpoint: PlugEndpoint = { id: "bedroom", ipv4: "192.168.1.20", port: 9999 };
+    await configStore.save({ bridge: {}, plugs: [endpoint], favorites: [], settings: {} });
+    const service = new ApplicationService({
+      configStore,
+      plugs: {
+        getSysInfo: async () => ({ alias: "Bedroom plug", model: "HS103", relayState: true }),
+        getPower: async () => false,
+        setPower: async () => undefined,
+      },
+    });
+    service.stateStore.setKnown({ kind: "plug", plugEndpointId: endpoint.id }, { alias: "Bedroom plug", model: "HS103", relayState: true });
+
+    expect((await service.performPrimary({ kind: "plug", plugEndpointId: endpoint.id })).kind).toBe("success");
+    expect(service.stateStore.getValue<{ alias: string; model: string; relayState: boolean }>({ kind: "plug", plugEndpointId: endpoint.id })).toEqual({
+      alias: "Bedroom plug",
+      model: "HS103",
+      relayState: false,
+    });
+  });
 });

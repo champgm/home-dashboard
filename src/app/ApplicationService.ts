@@ -576,7 +576,7 @@ export class ApplicationService {
         }
         const readback = await this.withDeadline(() => this.plugs!.getPower(endpoint), false, "plug read-back", endpoint.id);
         if (readback.kind === "success" && readback.value === desiredOn) {
-          this.stateStore.setKnown(ref, { relayState: desiredOn });
+          this.setKnownPlugPower(ref, desiredOn);
           return success();
         }
         return ambiguous(readback.diagnostic || diagnostic("Ambiguous", userMessage("Ambiguous"), { resource: endpoint.id }));
@@ -586,7 +586,7 @@ export class ApplicationService {
       }
       const readback = await this.withDeadline(() => this.plugs!.getPower(endpoint), false, "plug read-back", endpoint.id);
       if (readback.kind === "success" && readback.value === desiredOn) {
-        if (generation === this.lifecycleGeneration && this.foreground) this.stateStore.setKnown(ref, { relayState: desiredOn });
+        if (generation === this.lifecycleGeneration && this.foreground) this.setKnownPlugPower(ref, desiredOn);
         return success();
       }
       return readback.kind === "ambiguous"
@@ -595,6 +595,14 @@ export class ApplicationService {
     } finally {
       if (generation === this.lifecycleGeneration) this.stateStore.setPending(ref, false);
     }
+  }
+
+  private setKnownPlugPower(ref: ResourceRef, relayState: boolean): void {
+    const stored = this.stateStore.get(ref);
+    const previous = stored?.state.status === "known"
+      ? stored.state.value as PlugSysInfo
+      : stored?.lastKnownValue as PlugSysInfo | undefined;
+    this.stateStore.setKnown(ref, { ...previous, relayState });
   }
 
   private async withDeadline(

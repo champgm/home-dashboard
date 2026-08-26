@@ -43,6 +43,7 @@ export function EditorForm({ title, kind, id, initialName, navigation, note, onS
         <Pressable onPress={async () => setMessage((await runtime.service.mutateHue(kind, id, "status", { status: "disabled" })).kind === "success" ? "Disabled and refreshed." : "Disable request was not completed.")} style={styles.secondary}><Text style={styles.secondaryText}>Disable</Text></Pressable>
         {currentValue?.status && <Text style={styles.current}>Currently {currentValue.status}</Text>}
       </View>}
+      {children}
       {!existingResourceUnavailable && <Pressable onPress={async () => {
           const result = onSave
             ? await onSave(name)
@@ -54,7 +55,6 @@ export function EditorForm({ title, kind, id, initialName, navigation, note, onS
           setMessage(result.kind === "success" ? "Saved and refreshed." : result.diagnostic?.message || "Not saved.");
         }} style={styles.button} testID="editor-save"><Text style={styles.buttonText}>{saveLabel || (id ? "Save changed fields" : "Create resource")}</Text></Pressable>}
       {!existingResourceUnavailable && id && <HueDeleteAction kind={kind} id={id} objectName={`${kind} ${id}`} navigation={navigation} />}
-      {children}
       {message && <Text style={styles.message}>{message}</Text>}
     </Screen>
   );

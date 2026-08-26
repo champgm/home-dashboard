@@ -30,6 +30,19 @@ import { ResourceLinkEditor } from "../editors/ResourceLinkEditor";
 const Tabs = createMaterialTopTabNavigator();
 const Stack = createNativeStackNavigator();
 
+const DASHBOARD_TABS = [
+  ["Favorites", FavoritesScreen],
+  ["Lights", LightsScreen],
+  ["Plugs", PlugsScreen],
+  ["Groups", GroupsScreen],
+  ["Scenes", ScenesScreen],
+  ["Sensors", SensorsScreen],
+  ["Rules", RulesScreen],
+  ["Schedules", SchedulesScreen],
+] as const;
+
+export const DASHBOARD_TAB_ORDER = DASHBOARD_TABS.map(([name]) => name);
+
 export function DashboardSurface({ children }: PropsWithChildren<{}>): JSX.Element {
   const insets = useSafeAreaInsets();
   return <View testID="dashboard-surface" style={[styles.dashboardSurface, { paddingTop: insets.top }]}>{children}</View>;
@@ -49,14 +62,7 @@ function DashboardTabs(): JSX.Element {
           tabBarInactiveTintColor: "#93a1a1",
         }}
       >
-        <Tabs.Screen name="Favorites" component={FavoritesScreen} />
-        <Tabs.Screen name="Lights" component={LightsScreen} />
-        <Tabs.Screen name="Groups" component={GroupsScreen} />
-        <Tabs.Screen name="Scenes" component={ScenesScreen} />
-        <Tabs.Screen name="Sensors" component={SensorsScreen} />
-        <Tabs.Screen name="Rules" component={RulesScreen} />
-        <Tabs.Screen name="Schedules" component={SchedulesScreen} />
-        <Tabs.Screen name="Plugs" component={PlugsScreen} />
+        {DASHBOARD_TABS.map(([name, component]) => <Tabs.Screen component={component} key={name} name={name} />)}
       </Tabs.Navigator>
     </DashboardSurface>
   );

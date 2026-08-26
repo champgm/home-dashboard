@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { EditorAction, EditorChoice, EditorNumberField, EditorSection, EditorTextField, EditorToggle, ReadOnlyField } from "./editorControls";
+import { EditorAction, EditorCatalogNumberField, EditorChoice, EditorHueField, EditorNumberField, EditorSection, EditorTextField, EditorToggle, EditorXyColorField, ReadOnlyField } from "./editorControls";
 import { EditorForm } from "./EditorForm";
 import { useAppRuntime } from "../AppContext";
 import { buildScheduleCommandFromTarget, getHueActionFields, getHueSensorConfigFields, HueCatalogField, validateHueCatalogPayload } from "../../protocol/hue/catalog/resourceCatalog";
@@ -101,9 +101,6 @@ export function ScheduleEditor({ route, navigation }: { route?: any; navigation?
       {patternKind === "randomized" && <EditorNumberField label="Randomization window (seconds)" onChange={setRandomSeconds} placeholder="300" testID="schedule-random-seconds" value={randomSeconds} />}
       <EditorToggle disabled={patternKind !== "timer" && patternKind !== "randomized"} label="Recurring" onValueChange={setRecurring} testID="schedule-recurring" value={patternKind === "recurring-daily" || patternKind === "recurring-weekly" || ((patternKind === "timer" || patternKind === "randomized") && recurring)} />
       <EditorToggle label="Autodelete" onValueChange={setAutodelete} testID="schedule-autodelete" value={autodelete} />
-      <ReadOnlyField label="Created" value={value?.created} />
-      <ReadOnlyField label="Last triggered" value={value?.lasttriggered} />
-      <ReadOnlyField label="Times triggered" value={value?.timestriggered} />
     </EditorSection>
     <EditorSection title="Structured command">
       {commandEditable ? <>
@@ -114,9 +111,14 @@ export function ScheduleEditor({ route, navigation }: { route?: any; navigation?
           {commandFields.map((field) => renderCommandField(field, commandBody, updateCommandField))}
         </EditorSection>}
       </> : <ReadOnlyField label="Command editing" value="This existing command is not represented by a supported structured form. Disable or delete it instead." />}
+      {id && commandEditable && <EditorAction label="Rebuild command authorization" onPress={() => void runtime.service.rebuildScheduleCommand(id)} testID="schedule-rebuild-command" />}
+    </EditorSection>
+    <EditorSection title="Schedule details">
       <ReadOnlyField label="Existing command" value={initialCommand ? `${initialCommand.method} ${initialCommand.resourceKind}/${initialCommand.resourceId || ""}/${initialCommand.subpath || ""}` : "Not available"} />
       {unsupportedTimePattern && <ReadOnlyField label="Time pattern" value="This existing pattern is not represented by the typed editor." />}
-      {id && commandEditable && <EditorAction label="Rebuild command authorization" onPress={() => void runtime.service.rebuildScheduleCommand(id)} testID="schedule-rebuild-command" />}
+      <ReadOnlyField label="Created" value={value?.created} />
+      <ReadOnlyField label="Last triggered" value={value?.lasttriggered} />
+      <ReadOnlyField label="Times triggered" value={value?.timestriggered} />
     </EditorSection>
   </EditorForm>;
 }
@@ -203,8 +205,10 @@ function renderCommandField(
   const label = `Command ${field.description}`;
   const value = body[key];
   if (field.type === "boolean") return <EditorToggle key={field.path} label={label} onValueChange={(next) => onChange(key, next)} testID={`schedule-command-${key}`} value={value === true} />;
-  if (field.type === "number") return <EditorNumberField key={field.path} label={label} onChange={(next) => onChange(key, next)} testID={`schedule-command-${key}`} value={typeof value === "number" ? value : undefined} />;
+  if (field.type === "number" && key === "hue") return <EditorHueField key={field.path} label={label} onChange={(next) => onChange(key, next)} testID={`schedule-command-${key}`} value={typeof value === "number" ? value : undefined} />;
+  if (field.type === "number") return <EditorCatalogNumberField fieldKey={key} key={field.path} label={label} onChange={(next) => onChange(key, next)} testID={`schedule-command-${key}`} value={typeof value === "number" ? value : undefined} />;
   if (field.type === "enum") return <EditorChoice key={field.path} label={label} onChange={(next) => onChange(key, next)} options={field.enumValues || []} testID={`schedule-command-${key}`} value={typeof value === "string" ? value : field.enumValues?.[0] || ""} />;
+  if (field.type === "number[]" && key === "xy") return <EditorXyColorField key={field.path} label={label} onChangeText={(next) => onChange(key, parseNumberArray(next))} testID={`schedule-command-${key}`} value={Array.isArray(value) ? value.join(",") : ""} />;
   if (field.type === "number[]") return <EditorTextField key={field.path} label={`${label} (comma-separated)`} onChangeText={(next) => onChange(key, parseNumberArray(next))} placeholder="0.4,0.5" testID={`schedule-command-${key}`} value={Array.isArray(value) ? value.join(",") : ""} />;
   return <ReadOnlyField key={field.path} label={label} value={value} />;
 }

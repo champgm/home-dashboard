@@ -60,8 +60,11 @@ describe("typed management editors", () => {
   test("exposes resource-specific fields and keeps inspection data read-only", () => {
     const light = render(<LightEditor route={{ params: { id: "1" } }} />);
     expect(light.getByTestId("light-bri")).toBeTruthy();
+    expect(light.getByTestId("light-bri-slider")).toBeTruthy();
     expect(light.getByTestId("light-hue")).toBeTruthy();
+    expect(light.getByLabelText("Hue color picker")).toBeTruthy();
     expect(light.getByTestId("light-xy")).toBeTruthy();
+    expect(light.getByLabelText("XY color picker")).toBeTruthy();
     light.unmount();
 
     const group = render(<GroupEditor route={{ params: { id: "2" } }} />);
@@ -103,6 +106,14 @@ describe("typed management editors", () => {
     expect(plug.getByLabelText("MAC: 00:11:22:33:44:66")).toBeTruthy();
     expect(plug.getByLabelText("Energy: Not reported by this plug")).toBeTruthy();
     plug.unmount();
+  });
+
+  test("lists editable item fields before inspection-only details", () => {
+    const light = render(<LightEditor route={{ params: { id: "1" } }} />);
+    const rendered = JSON.stringify(light.toJSON());
+    expect(rendered.indexOf('"testID":"light-bri"')).toBeGreaterThanOrEqual(0);
+    expect(rendered.indexOf('"accessibilityLabel":"Type: Extended color light"')).toBeGreaterThanOrEqual(0);
+    expect(rendered.indexOf('"testID":"light-bri"')).toBeLessThan(rendered.indexOf('"accessibilityLabel":"Type: Extended color light"'));
   });
 
   test("saves structured rule controls through the service boundary", async () => {

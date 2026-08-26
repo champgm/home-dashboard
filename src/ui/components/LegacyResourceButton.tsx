@@ -21,6 +21,7 @@ export interface LegacyResourceButtonProps {
   readonly hideFavoriteButton?: boolean;
   readonly hideEditButton?: boolean;
   readonly showLightBulb?: boolean;
+  readonly utility?: boolean;
   readonly unknownAccessibilityLabel?: string;
   readonly testID?: string;
 }
@@ -30,14 +31,12 @@ export function LegacyResourceButton(props: LegacyResourceButtonProps): JSX.Elem
   const geometry = getLegacyButtonGeometry(width);
   const visualState = props.visualState || props.state || "known";
   const unknown = visualState === "unknown";
-  const mainColors = getLegacyButtonColors(unknown ? "off" : visualState);
+  const mainColors = props.utility ? legacyButtonPalette.utility : getLegacyButtonColors(unknown ? "off" : visualState);
   const favorite = props.favorite ?? props.isFavorite ?? false;
   const primaryDisabled = unknown || !props.onPress;
   const favoriteHidden = props.hideFavorite || props.hideFavoriteButton || !props.onFavorite;
   const editHidden = props.hideEdit || props.hideEditButton || !props.onEdit;
-  // Legacy ItemButton used the resource face for an inactive Favorite and the
-  // dedicated yellow role once the Favorite was active.
-  const favoriteColors = favorite ? legacyButtonPalette.favoriteActive : mainColors;
+  const favoriteColors = favorite ? legacyButtonPalette.favoriteActive : legacyButtonPalette.favoriteInactive;
 
   const mainAccessibilityLabel = props.title;
 
@@ -65,7 +64,7 @@ export function LegacyResourceButton(props: LegacyResourceButtonProps): JSX.Elem
         onPress={() => props.onPress?.()}
       >
         <View style={styles.mainContent}>
-          <Text numberOfLines={2} style={[styles.title, { color: mainColors.text }]}>{props.title}</Text>
+          <Text numberOfLines={3} style={[styles.title, { color: mainColors.text }]}>{props.title}</Text>
           {props.showLightBulb && !unknown && <Image accessibilityLabel="Light bulb" source={legacyButtonAssets.lightBulb} style={styles.lightBulb} />}
           {unknown && <View pointerEvents="none" style={styles.unknownOverlay} testID="resource-unknown-overlay">
             <Image
