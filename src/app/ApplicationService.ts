@@ -6,6 +6,8 @@ import { HueScene } from "../protocol/hue/resources/scenes";
 import { HueRule } from "../protocol/hue/resources/rules";
 import { HueSchedule } from "../protocol/hue/resources/schedules";
 import { rebuildScheduleCommandAuthorization } from "../protocol/hue/catalog/schedules";
+import { prepareHueMutationPayload, validateHueCatalogPayload } from "../protocol/hue/catalog/resourceCatalog";
+import { HueSearchStatus } from "../protocol/hue/search";
 import { TpLinkLegacyAdapter } from "../protocol/tplink/TpLinkLegacyAdapter";
 import { automationCanBeEnabled, validateRulePayload, validateSchedulePayload } from "../protocol/hue/HueActionPolicy";
 import { ambiguous, definiteFailure, partialFailure, success } from "./commandResults";
@@ -17,6 +19,7 @@ import {
   CommandResult,
   Diagnostic,
   HueSnapshot,
+  PlugSysInfo,
   ResourceRef,
   ResourceKind,
 } from "./types";
@@ -27,12 +30,14 @@ export interface HueClient {
   getBridgeConfig?(): Promise<Record<string, unknown>>;
   getCapabilities?(): Promise<Record<string, unknown>>;
   getBridgeRead?(): Promise<{ config: Record<string, unknown>; capabilities?: Record<string, unknown> }>;
+  getResource?(kind: Exclude<ResourceKind, "plug">, id: string): Promise<Record<string, unknown>>;
   setLightState?(id: string, payload: Record<string, unknown>): Promise<unknown>;
   setGroupAction?(id: string, payload: Record<string, unknown>): Promise<unknown>;
   activateScene?(scene: HueScene): Promise<unknown>;
-  mutate?(kind: Exclude<ResourceKind, "plug">, id: string, operation: "update" | "action" | "status", payload: Record<string, unknown>): Promise<unknown>;
+  mutate?(kind: Exclude<ResourceKind, "plug">, id: string, operation: "update" | "action" | "status" | "config", payload: Record<string, unknown>): Promise<unknown>;
   create?(kind: Exclude<ResourceKind, "plug">, payload: Record<string, unknown>): Promise<unknown>;
   delete?(kind: Exclude<ResourceKind, "plug">, id: string): Promise<unknown>;
+  setSceneLightState?(sceneId: string, lightId: string, payload: Record<string, unknown>): Promise<unknown>;
   getSearchStatus?(kind: "lights" | "sensors"): Promise<unknown>;
   startSearch?(kind: "lights" | "sensors", status?: unknown): Promise<unknown>;
 }
@@ -59,6 +64,11 @@ export interface PlugRefreshOptions {
   readonly ignoreBackoff?: boolean;
 }
 
+export interface HueSearchResult {
+  readonly started: boolean;
+  readonly status: HueSearchStatus;
+}
+
 const PLUG_BACKOFF_INITIAL_MS = 10_000;
 const PLUG_BACKOFF_MAX_MS = 60 * 60 * 1000;
 
@@ -83,6 +93,7 @@ export class ApplicationService {
   private readonly plugRefreshes = new Map<string, number>();
   private readonly plugBackoffs = new Map<string, PlugBackoffState>();
   private readonly diagnostics = new Map<string, Diagnostic>();
+  private readonly lifecycleListeners = new Set<() => void>();
 
   constructor(options: ApplicationServiceOptions = {}) {
     this.stateStore = options.stateStore || new DeviceStateStore();
@@ -131,6 +142,11 @@ export class ApplicationService {
     emitDevelopmentEvent("info", "diagnostic.cleared", diagnosticEventContext(previous, { key }));
   }
 
+  subscribeLifecycle(listener: () => void): () => void {
+    this.lifecycleListeners.add(listener);
+    return () => this.lifecycleListeners.delete(listener);
+  }
+
   setHueClient(hue: HueClient | undefined): void {
     this.hue = hue;
   }
@@ -144,6 +160,7 @@ export class ApplicationService {
       this.hueRefreshInFlight = undefined;
       this.hueMutationBusy = false;
     }
+    this.lifecycleListeners.forEach((listener) => listener());
   }
 
   abandonOperations(): void {
@@ -152,6 +169,7 @@ export class ApplicationService {
     this.stateStore.clearPending();
     this.hueRefreshInFlight = undefined;
     this.hueMutationBusy = false;
+    this.lifecycleListeners.forEach((listener) => listener());
   }
 
   async refreshAll(options: PlugRefreshOptions = {}): Promise<void> {
@@ -206,7 +224,15 @@ export class ApplicationService {
       const result = await this.withDeadline(() => this.plugs!.getSysInfo(endpoint), false, "Plug refresh", endpoint.id);
       if (!this.foreground || generation !== this.lifecycleGeneration) return;
       if (result.kind === "success") {
-        this.stateStore.setKnown(ref, result.value);
+        let value = result.value as PlugSysInfo;
+        if (value.hasEnergy && this.plugs.getEnergy) {
+          const energy = await this.withDeadline(() => this.plugs!.getEnergy!(endpoint), false, "Plug energy refresh", endpoint.id);
+          if (energy.kind === "success" && energy.value) {
+            value = { ...value, energy: energy.value as PlugSysInfo["energy"], hasEnergy: true };
+          }
+        }
+        if (!this.foreground || generation !== this.lifecycleGeneration) return;
+        this.stateStore.setKnown(ref, value);
         this.clearDiagnostic(`plug:${endpoint.id}`);
         this.clearPlugBackoff(endpoint.id);
       } else if (result.diagnostic) {
@@ -242,6 +268,7 @@ export class ApplicationService {
         return this.executeHueMutation(
           () => this.hue?.setLightState?.(ref.id!, { on: !(knownValue as { state?: { on?: boolean } }).state?.on }),
           "light state", ref,
+          { observablePayload: { on: !(knownValue as { state?: { on?: boolean } }).state?.on } },
         );
       case "group": {
         const groupValue = knownValue as HueGroup;
@@ -253,6 +280,7 @@ export class ApplicationService {
         return this.executeHueMutation(
           () => this.hue?.setGroupAction?.(ref.id!, { on: state !== "on" }),
           "group action", ref,
+          { observablePayload: { on: state !== "on" } },
         );
       }
       case "sensor": {
@@ -260,8 +288,9 @@ export class ApplicationService {
         if (typeof sensor.config?.on !== "boolean") return definiteFailure(diagnostic("Unknown", "This sensor has no binary action."));
         if (!this.hue?.mutate) return definiteFailure(diagnostic("NetworkUnavailable", "Hue sensor control is unavailable."));
         return this.executeHueMutation(
-          () => this.hue?.mutate?.("sensor", ref.id!, "update", { config: { on: !sensor.config!.on } }),
+          () => this.hue?.mutate?.("sensor", ref.id!, "config", { config: { on: !sensor.config!.on } }),
           "sensor state", ref,
+          { observablePayload: { config: { on: !sensor.config!.on } } },
         );
       }
       case "rule":
@@ -282,6 +311,7 @@ export class ApplicationService {
         return this.executeHueMutation(
           () => this.hue?.mutate?.(ref.kind as "rule" | "schedule", ref.id!, "status", { status: value.status === "enabled" ? "disabled" : "enabled" }),
           `${ref.kind} status`, ref,
+          { observablePayload: { status: value.status === "enabled" ? "disabled" : "enabled" } },
         );
       }
       case "plug": {
@@ -300,15 +330,15 @@ export class ApplicationService {
     if (!this.foreground) return definiteFailure(diagnostic("Unknown", "The app is not in the foreground."));
     if (ref.kind === "light") {
       if (!this.hue?.setLightState) return definiteFailure(diagnostic("NetworkUnavailable", "Hue light control is unavailable."));
-      return this.executeHueMutation(() => this.hue?.setLightState?.(ref.id!, { on }), "light absolute state", ref);
+      return this.executeHueMutation(() => this.hue?.setLightState?.(ref.id!, { on }), "light absolute state", ref, { observablePayload: { on } });
     }
     if (ref.kind === "group") {
       if (!this.hue?.setGroupAction) return definiteFailure(diagnostic("NetworkUnavailable", "Hue group control is unavailable."));
-      return this.executeHueMutation(() => this.hue?.setGroupAction?.(ref.id!, { on }), "group absolute state", ref);
+      return this.executeHueMutation(() => this.hue?.setGroupAction?.(ref.id!, { on }), "group absolute state", ref, { observablePayload: { on } });
     }
     if (ref.kind === "sensor") {
       if (!this.hue?.mutate) return definiteFailure(diagnostic("NetworkUnavailable", "Hue sensor control is unavailable."));
-      return this.executeHueMutation(() => this.hue?.mutate?.("sensor", ref.id!, "update", { config: { on } }), "sensor absolute state", ref);
+      return this.executeHueMutation(() => this.hue?.mutate?.("sensor", ref.id!, "config", { config: { on } }), "sensor absolute state", ref, { observablePayload: { config: { on } } });
     }
     if (ref.kind === "plug") {
       const endpoint = await this.findPlug(ref.plugEndpointId || ref.id);
@@ -320,41 +350,79 @@ export class ApplicationService {
   async mutateHue(
     kind: Exclude<ResourceKind, "plug">,
     id: string,
-    operation: "update" | "action" | "status",
+    operation: "update" | "action" | "status" | "config",
     payload: Record<string, unknown>,
   ): Promise<CommandResult> {
     if (!this.hue?.mutate) return definiteFailure(diagnostic("NetworkUnavailable", "Hue resource mutation is unavailable."));
+    const current = this.stateStore.get({ kind, id });
+    const original = current?.state.status === "known" && current.state.value && typeof current.state.value === "object"
+      ? current.state.value as Record<string, unknown>
+      : undefined;
+    if ((operation === "update" || operation === "config") && !original) {
+      return definiteFailure(diagnostic("Unknown", "This Hue resource has no known original state; refresh it before updating." , { resource: `${kind}:${id}` }));
+    }
+    if (operation === "status" && payload.status === "enabled" && !original) {
+      return definiteFailure(diagnostic("Unknown", "This automation has no known original state; refresh it before enabling.", { resource: `${kind}:${id}` }));
+    }
+    const prepared = operation === "update" || operation === "config"
+      ? prepareHueMutationPayload(kind, "update", original, payload)
+      : { allowed: true as const, payload };
+    if (!prepared.allowed) return definiteFailure(diagnostic("ProtocolRejected", prepared.reason, { resource: `${kind}:${id}` }));
+    const validation = validateHueCatalogPayload(kind, operation === "config" ? "config" : operation, prepared.payload);
+    if (!validation.allowed) return definiteFailure(diagnostic("ProtocolRejected", validation.reason, { resource: `${kind}:${id}` }));
+    if (Object.keys(prepared.payload).length === 0) return success();
     if (kind === "rule") {
-      const decision = validateRulePayload(payload);
+      const decision = validateRulePayload(prepared.payload);
       if (!decision.allowed) return definiteFailure(diagnostic("ProtocolRejected", decision.reason));
-      if (operation === "status" && payload.status === "enabled") {
-        const current = this.stateStore.get({ kind, id });
+      if (operation === "status" && prepared.payload.status === "enabled") {
         const actions = current?.state.status === "known" ? (current.state.value as HueRule).actions || [] : [];
+        if (actions.length === 0) return definiteFailure(diagnostic("ProtocolRejected", "A Rule with no actions cannot be enabled."));
+        const catalog = validateHueCatalogPayload("rule", "update", { actions });
+        if (!catalog.allowed) return definiteFailure(diagnostic("ProtocolRejected", catalog.reason));
         const enabled = automationCanBeEnabled(actions);
         if (!enabled.allowed) return definiteFailure(diagnostic("ProtocolRejected", enabled.reason));
       }
     }
     if (kind === "schedule") {
-      const decision = validateSchedulePayload(payload);
+      const decision = validateSchedulePayload(prepared.payload);
       if (!decision.allowed) return definiteFailure(diagnostic("ProtocolRejected", decision.reason));
-      if (operation === "status" && payload.status === "enabled") {
-        const current = this.stateStore.get({ kind, id });
+      if (operation === "status" && prepared.payload.status === "enabled") {
         const command = current?.state.status === "known" ? (current.state.value as HueSchedule).command : undefined;
+        if (command) {
+          const catalog = validateHueCatalogPayload("schedule", "update", { command });
+          if (!catalog.allowed) return definiteFailure(diagnostic("ProtocolRejected", catalog.reason));
+        }
         const enabled = command ? automationCanBeEnabled([command]) : { allowed: true as const };
         if (!enabled.allowed) return definiteFailure(diagnostic("ProtocolRejected", enabled.reason));
       }
     }
-    return this.executeHueMutation(() => this.hue?.mutate?.(kind, id, operation, payload), `${kind} ${operation}`, { kind, id });
+    return this.executeHueMutation(() => this.hue?.mutate?.(kind, id, operation, prepared.payload), `${kind} ${operation}`, { kind, id }, {
+      observablePayload: operation === "update" || operation === "config" || operation === "status" ? prepared.payload : undefined,
+    });
   }
 
   async createHue(kind: Exclude<ResourceKind, "plug">, payload: Record<string, unknown>): Promise<CommandResult> {
     if (!this.hue?.create) return definiteFailure(diagnostic("NetworkUnavailable", "Hue resource creation is unavailable."));
+    const validation = validateHueCatalogPayload(kind, "create", payload);
+    if (!validation.allowed) return definiteFailure(diagnostic("ProtocolRejected", validation.reason, { resource: kind }));
     return this.executeHueMutation(() => this.hue?.create?.(kind, payload), `${kind} create`, { kind });
   }
 
   async deleteHue(kind: Exclude<ResourceKind, "plug">, id: string): Promise<CommandResult> {
     if (!this.hue?.delete) return definiteFailure(diagnostic("NetworkUnavailable", "Hue resource deletion is unavailable."));
     return this.executeHueMutation(() => this.hue?.delete?.(kind, id), `${kind} delete`, { kind, id });
+  }
+
+  async mutateSceneLightState(sceneId: string, lightId: string, payload: Record<string, unknown>): Promise<CommandResult> {
+    if (!this.hue?.setSceneLightState) return definiteFailure(diagnostic("NetworkUnavailable", "Scene light-state editing is unavailable."));
+    const validation = validateHueCatalogPayload("scene", "update", { lightstates: { [lightId]: payload } });
+    if (!validation.allowed) return definiteFailure(diagnostic("ProtocolRejected", validation.reason, { resource: `scene:${sceneId}` }));
+    return this.executeHueMutation(
+      () => this.hue?.setSceneLightState?.(sceneId, lightId, payload),
+      "scene light state",
+      { kind: "scene", id: sceneId },
+      { observablePayload: { lightstates: { [lightId]: payload } } },
+    );
   }
 
   async rebuildScheduleCommand(id: string): Promise<CommandResult> {
@@ -388,14 +456,14 @@ export class ApplicationService {
     }
   }
 
-  async getHueSearchStatus(kind: "lights" | "sensors"): Promise<unknown> {
+  async getHueSearchStatus(kind: "lights" | "sensors"): Promise<HueSearchStatus | undefined> {
     if (!this.foreground || !this.hue?.getSearchStatus) return undefined;
-    return this.hue.getSearchStatus(kind);
+    return await this.hue.getSearchStatus(kind) as HueSearchStatus;
   }
 
-  async startHueSearch(kind: "lights" | "sensors", status?: unknown): Promise<unknown> {
+  async startHueSearch(kind: "lights" | "sensors", status?: HueSearchStatus): Promise<HueSearchResult | undefined> {
     if (!this.foreground || !this.hue?.startSearch) return undefined;
-    return this.hue.startSearch(kind, status);
+    return await this.hue.startSearch(kind, status) as HueSearchResult;
   }
 
   async readHueAdministration(): Promise<CommandResult<{ config: Record<string, unknown>; capabilities?: Record<string, unknown> }>> {
@@ -445,6 +513,7 @@ export class ApplicationService {
     operation: (() => Promise<unknown> | undefined) | undefined,
     operationName: string,
     ref: ResourceRef,
+    reconciliation: { readonly observablePayload?: Record<string, unknown> } = {},
   ): Promise<CommandResult> {
     if (!operation || !this.hue) return definiteFailure(diagnostic("NetworkUnavailable", "Hue is not configured."));
     if (this.hueMutationBusy) return definiteFailure(diagnostic("Busy", userMessage("Busy"), { operation: operationName }));
@@ -453,6 +522,9 @@ export class ApplicationService {
     const generation = this.lifecycleGeneration;
     try {
       const result = await this.withDeadline(operation, true, operationName, `${ref.kind}:${ref.id || ref.plugEndpointId || ""}`);
+      if (result.kind === "ambiguous" && reconciliation.observablePayload && ref.id && this.hue.getResource) {
+        return this.reconcileHueMutation(ref, reconciliation.observablePayload, result.diagnostic);
+      }
       if (result.kind !== "success") return result;
       if (!this.foreground || generation !== this.lifecycleGeneration) return { kind: "abandoned", diagnostic: diagnostic("Unknown", "Operation abandoned when the app left the foreground.") };
       this.hueMutationBusy = false;
@@ -461,6 +533,29 @@ export class ApplicationService {
     } finally {
       this.hueMutationBusy = false;
     }
+  }
+
+  private async reconcileHueMutation(ref: ResourceRef, intended: Record<string, unknown>, originalDiagnostic?: Diagnostic): Promise<CommandResult> {
+    if (!this.foreground || !this.hue?.getResource || !ref.id) return ambiguous(originalDiagnostic || diagnostic("Ambiguous", userMessage("Ambiguous")));
+    const generation = this.lifecycleGeneration;
+    const read = await this.withDeadline(
+      () => this.hue!.getResource!(ref.kind as Exclude<ResourceKind, "plug">, ref.id!),
+      false,
+      "Hue write read-back",
+      `${ref.kind}:${ref.id}`,
+    );
+    if (!this.foreground || generation !== this.lifecycleGeneration) {
+      return { kind: "abandoned", diagnostic: diagnostic("Unknown", "Operation abandoned when the app left the foreground.") };
+    }
+    if (read.kind !== "success" || !read.value) {
+      return ambiguous(read.diagnostic || originalDiagnostic || diagnostic("Ambiguous", userMessage("Ambiguous"), { resource: `${ref.kind}:${ref.id}` }));
+    }
+    const observed = read.value as Record<string, unknown>;
+    if (!matchesHueIntendedState(ref.kind as Exclude<ResourceKind, "plug">, observed, intended)) {
+      return ambiguous(diagnostic("Ambiguous", "Hue write outcome remains unresolved after one read-back.", { resource: `${ref.kind}:${ref.id}` }));
+    }
+    this.stateStore.setKnown(ref, { ...observed, id: ref.id });
+    return success(observed);
   }
 
   private async executePlugMutation(
@@ -680,6 +775,42 @@ function operationEventContext(
     elapsedMs,
     ...(value ? diagnosticEventContext(value) : {}),
   };
+}
+
+function matchesHueIntendedState(
+  kind: Exclude<ResourceKind, "plug">,
+  observed: Record<string, unknown>,
+  intended: Record<string, unknown>,
+): boolean {
+  const stateKeys = new Set(["on", "bri", "hue", "sat", "xy", "ct", "alert", "effect", "transitiontime"]);
+  const groupAction = Object.prototype.hasOwnProperty.call(intended, "action")
+    ? intended.action
+    : kind === "group" && Object.keys(intended).every((key) => stateKeys.has(key)) ? intended : undefined;
+  const lightState = Object.prototype.hasOwnProperty.call(intended, "state")
+    ? intended.state
+    : kind === "light" && Object.keys(intended).every((key) => stateKeys.has(key)) ? intended : undefined;
+  const sensorConfig = Object.prototype.hasOwnProperty.call(intended, "config") ? intended.config : undefined;
+  const sceneLightstates = Object.prototype.hasOwnProperty.call(intended, "lightstates") ? intended.lightstates : undefined;
+  if (sceneLightstates && observed.lightstates && typeof observed.lightstates === "object" && !Array.isArray(observed.lightstates)) {
+    return Object.entries(sceneLightstates as Record<string, unknown>).every(([lightId, state]) => {
+      const actual = (observed.lightstates as Record<string, unknown>)[lightId];
+      return actual && typeof actual === "object" && state && typeof state === "object"
+        && Object.entries(state as Record<string, unknown>).every(([key, value]) => JSON.stringify((actual as Record<string, unknown>)[key]) === JSON.stringify(value));
+    });
+  }
+  const candidate = lightState && observed.state && typeof observed.state === "object"
+    ? observed.state as Record<string, unknown>
+    : groupAction && observed.action && typeof observed.action === "object"
+      ? observed.action as Record<string, unknown>
+      : sensorConfig && observed.config && typeof observed.config === "object"
+        ? observed.config as Record<string, unknown>
+        : observed;
+  const expected = lightState || groupAction || sensorConfig || intended;
+  if (!expected || typeof expected !== "object" || Array.isArray(expected)) return false;
+  return Object.entries(expected as Record<string, unknown>).every(([key, value]) => {
+    const actual = candidate[key];
+    return JSON.stringify(actual) === JSON.stringify(value);
+  });
 }
 
 function sameResourceRef(left: ResourceRef, right: ResourceRef): boolean {

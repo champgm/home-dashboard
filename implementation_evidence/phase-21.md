@@ -1,24 +1,29 @@
 # Phase 21 — Rules and Schedules UI
 
-- Status: **COMPLETE**
+- Status: **SUPERSEDED — LOCAL GAPS RECTIFIED; TARGET ACCEPTANCE PENDING**
 - Revision under review: working tree (no commit created by this task).
-- Date: 2026-08-23.
+- Date: 2026-08-25.
+
+Rectification update: the pre-rectification Rule/Schedule gaps are closed by [rectification phases 06 and 07](./nonconformance_rectification_plan/final-traceability-status.md). The original baseline text below is retained as audit history; disposable live-bridge acceptance remains pending.
 
 ## Work completed
 
-- Implemented the phase slice in the modern Expo/RN architecture; primary requirement owners: none.
-- Tests were implemented with the feature and the shared local suite is green.
+- Implemented Rule/Schedule list, generic name, status, and delete wiring in the modern Expo/RN architecture.
+- A 2026-08-25 source audit found that the Rule editor does not render structured condition/action controls and the Schedule editor does not render time-pattern/command controls. See [Hue management nonconformance](../docs/nonconformance/hue-resource-management.md).
 
 ## Requirement IDs addressed
 
-- Primary: none
-- Supporting/acceptance handoff: none
+- Primary: `HUE-008`, `HUE-009`
+- Supporting: `FR-008`, `FR-013`, `HUE-016`, `QA-001`
 
 ## Acceptance criteria exercised
 
 | Criterion | Result | Evidence |
 |---|---|---|
 | phase-local checks | PASS — LOCAL | shared suite and source inspection |
+| `AC-FR-013` | PASS — LOCAL; TARGET PENDING | [rectification phases 06 and 07](./nonconformance_rectification_plan/final-traceability-status.md) |
+| `AC-HUE-008` | PASS — LOCAL; TARGET PENDING | [rectification phase 06](./nonconformance_rectification_plan/phase-06.md) |
+| `AC-HUE-009` | PASS — LOCAL; TARGET PENDING | [rectification phase 07](./nonconformance_rectification_plan/phase-07.md) |
 
 ## Tests and checks executed
 
@@ -49,11 +54,11 @@
 
 ## Target-dependent checks not yet performed
 
-- None beyond final target acceptance.
+- Disposable live-bridge Rule create/update/enable/disable/delete acceptance remains pending, after the local editor gap is closed.
 
 ## Deviations or discovered specification problems
 
-- No SRS ambiguity or SAD contradiction was discovered.
+- No SRS/SAD contradiction was found. The Rule/Schedule editors do not yet meet existing `HUE-008`, `HUE-009`, and `FR-013`; see the canonical nonconformance register.
 
 ## Scope check
 
@@ -64,5 +69,5 @@
 
 - Modern runtime entry is `App.tsx` → `src/ui/App.tsx` → `src/ui/navigation/AppNavigation.tsx`.
 - Protocols remain isolated behind `ApplicationService`; local persistence is `ConfigStore`, protected Hue state is `CredentialStore`.
-- Pending target work: None beyond final target acceptance.
-
+- Pending local work: none for `NC-HUE-006` or `NC-HUE-007`; see the rectification handoffs.
+- Pending target work: disposable live-bridge Rule acceptance after local completion.

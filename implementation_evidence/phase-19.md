@@ -1,24 +1,29 @@
 # Phase 19 — Lights and Groups UI
 
-- Status: **COMPLETE**
+- Status: **SUPERSEDED — LOCAL GAPS RECTIFIED; TARGET ACCEPTANCE PENDING**
 - Revision under review: working tree (no commit created by this task).
-- Date: 2026-08-23.
+- Date: 2026-08-25.
+
+Rectification update: the pre-rectification Light/Group gaps are closed by [rectification phase 03](./nonconformance_rectification_plan/phase-03.md). The original baseline text below is retained as audit history; disposable live-bridge acceptance remains pending.
 
 ## Work completed
 
-- Implemented the phase slice in the modern Expo/RN architecture; primary requirement owners: none.
-- Tests were implemented with the feature and the shared local suite is green.
+- Implemented Light/Group lists, primary toggles, Name updates, delete, and limited explicit state actions.
+- The required Light state/metadata fields and Group membership/class/action editor controls are absent. See `NC-HUE-002` and `NC-HUE-003` in [Hue management nonconformance](../docs/nonconformance/hue-resource-management.md).
 
 ## Requirement IDs addressed
 
-- Primary: none
-- Supporting/acceptance handoff: none
+- Primary: `HUE-004`, `HUE-005`
+- Supporting: `FR-008`, `FR-010`, `FR-011`, `FR-012`, `FR-013`, `FR-016`, `QA-001`
 
 ## Acceptance criteria exercised
 
 | Criterion | Result | Evidence |
 |---|---|---|
 | phase-local checks | PASS — LOCAL | shared suite and source inspection |
+| `AC-FR-013` | PASS — LOCAL; TARGET PENDING | [rectification phase 03](./nonconformance_rectification_plan/phase-03.md) covers Light/Group editor controls and boundary tests |
+| `AC-HUE-004` | PASS — LOCAL; TARGET PENDING | [rectification phase 03](./nonconformance_rectification_plan/phase-03.md) covers Light fields and capability gating |
+| `AC-HUE-005` | PASS — LOCAL; TARGET PENDING | [rectification phase 03](./nonconformance_rectification_plan/phase-03.md) covers Group membership/class/action management |
 
 ## Tests and checks executed
 
@@ -49,11 +54,11 @@
 
 ## Target-dependent checks not yet performed
 
-- None beyond final target acceptance.
+- Live Light and disposable Group acceptance remains pending after local editor completion.
 
 ## Deviations or discovered specification problems
 
-- No SRS ambiguity or SAD contradiction was discovered.
+- No SRS/SAD contradiction was found. Existing implementation does not meet `FR-013`, `HUE-004`, or `HUE-005`.
 
 ## Scope check
 
@@ -64,5 +69,5 @@
 
 - Modern runtime entry is `App.tsx` → `src/ui/App.tsx` → `src/ui/navigation/AppNavigation.tsx`.
 - Protocols remain isolated behind `ApplicationService`; local persistence is `ConfigStore`, protected Hue state is `CredentialStore`.
-- Pending target work: None beyond final target acceptance.
-
+- Pending local work: none for `NC-HUE-002` or `NC-HUE-003`; see the rectification handoff.
+- Pending target work: `AC-HUE-004` and `AC-HUE-005` after local completion.

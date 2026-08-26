@@ -16,7 +16,7 @@ export function ResourceLinksScreen({ navigation }: { navigation?: any }): JSX.E
       <Pressable onPress={() => navigation?.navigate("ResourceLinkEditor")} style={styles.button}><Text style={styles.buttonText}>New Resource Link</Text></Pressable>
       {links.length === 0 ? <EmptyState message="No Resource Links are currently available." /> : links.map(([id, state]) => {
         const value = state.state.status === "known" ? state.state.value : undefined;
-        return <View key={id} style={styles.row}><Text style={styles.text}>{value?.description || id}</Text><View style={styles.actions}><Pressable onPress={() => navigation?.navigate("ResourceLinkEditor", { id })}><Text style={styles.edit}>Edit</Text></Pressable></View></View>;
+        return <View key={id} style={styles.row}><Text style={styles.text}>{value?.description || id}</Text><View style={styles.actions}>{state.state.status === "known" && <Pressable onPress={() => navigation?.navigate("ResourceLinkEditor", { id })}><Text style={styles.edit}>Edit</Text></Pressable>}</View></View>;
       })}
     </Screen>
   );

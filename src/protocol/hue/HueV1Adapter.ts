@@ -8,6 +8,8 @@ import { buildSceneActivation, HueScene } from "./resources/scenes";
 import { canStartSearch, HueSearchKind, HueSearchStatus, parseSearchStatus } from "./search";
 import { toBridgeReadDto } from "./bridgeReads";
 import { redactDiagnosticMessage } from "./redaction";
+import { validateHueCatalogPayload } from "./catalog/resourceCatalog";
+import { HueScheduleTimePattern, serializeScheduleTimePattern, serializeStructuredScheduleCommand, StructuredScheduleCommand } from "./catalog/schedules";
 
 export interface HueAdapterOptions {
   readonly bridgeIpv4: string;
@@ -105,26 +107,59 @@ export class HueV1Adapter {
   async mutate(
     kind: Exclude<ResourceKind, "plug">,
     id: string,
-    operation: "update" | "action" | "status",
+    operation: "update" | "action" | "status" | "config",
     payload: Record<string, unknown>,
   ): Promise<unknown> {
+    const catalogOperation = operation === "config" ? "config" : operation;
+    const catalogValidation = validateHueCatalogPayload(kind, catalogOperation, payload);
+    if (!catalogValidation.allowed) {
+      throw new HueResponseError("definite_failure", catalogValidation.reason, []);
+    }
     const policy: HueActionDecision = kind === "rule" ? validateRulePayload(payload) : kind === "schedule" ? validateSchedulePayload(payload) : { allowed: true };
     if (!policy.allowed) {
       throw new HueResponseError("definite_failure", policy.reason, []);
     }
     const path = operation === "action"
       ? `/${kindPath(kind)}/${encodeURIComponent(id)}/action`
+      : operation === "config"
+        ? `/${kindPath(kind)}/${encodeURIComponent(id)}/config`
       : `/${kindPath(kind)}/${encodeURIComponent(id)}`;
+    if (operation === "update" && (kind === "light" || kind === "group" || kind === "sensor")) {
+      const nestedKey = kind === "light" ? "state" : kind === "group" ? "action" : "config";
+      const nested = payload[nestedKey];
+      const rootPayload = { ...payload };
+      delete rootPayload[nestedKey];
+      const responses: unknown[] = [];
+      if (Object.keys(rootPayload).length > 0) {
+        responses.push(await this.mutationRequest("PUT", path, this.normalizeAutomationPayload(kind, rootPayload)));
+      }
+      if (nested && typeof nested === "object" && !Array.isArray(nested)) {
+        responses.push(await this.mutationRequest(
+          "PUT",
+          `/${kindPath(kind)}/${encodeURIComponent(id)}/${nestedKey}`,
+          nested as Record<string, unknown>,
+          kind === "light" ? "light-state" : kind === "group" ? "group-action" : undefined,
+        ));
+      }
+      return responses.length === 1 ? responses[0] : responses;
+    }
     const channel = kind === "light" && operation === "action" ? "light-state" : kind === "group" && operation === "action" ? "group-action" : undefined;
-    return this.mutationRequest("PUT", path, payload, channel);
+    const mutationPayload = operation === "config" && payload.config && typeof payload.config === "object"
+      ? payload.config as Record<string, unknown>
+      : payload;
+    return this.mutationRequest("PUT", path, this.normalizeAutomationPayload(kind, mutationPayload), channel);
   }
 
   async create(kind: Exclude<ResourceKind, "plug">, payload: Record<string, unknown>): Promise<unknown> {
+    const catalogValidation = validateHueCatalogPayload(kind, "create", payload);
+    if (!catalogValidation.allowed) {
+      throw new HueResponseError("definite_failure", catalogValidation.reason, []);
+    }
     const policy: HueActionDecision = kind === "rule" ? validateRulePayload(payload) : kind === "schedule" ? validateSchedulePayload(payload) : { allowed: true };
     if (!policy.allowed) {
       throw new HueResponseError("definite_failure", policy.reason, []);
     }
-    return this.mutationRequest("POST", `/${kindPath(kind)}`, payload);
+    return this.mutationRequest("POST", `/${kindPath(kind)}`, this.normalizeAutomationPayload(kind, payload));
   }
 
   async delete(kind: Exclude<ResourceKind, "plug">, id: string): Promise<unknown> {
@@ -132,11 +167,21 @@ export class HueV1Adapter {
   }
 
   async setLightState(id: string, payload: Record<string, unknown>): Promise<unknown> {
+    const validation = validateHueCatalogPayload("light", "action", payload);
+    if (!validation.allowed) throw new HueResponseError("definite_failure", validation.reason, []);
     return this.mutationRequest("PUT", `/lights/${encodeURIComponent(id)}/state`, payload, "light-state");
   }
 
   async setGroupAction(id: string, payload: Record<string, unknown>): Promise<unknown> {
+    const validation = validateHueCatalogPayload("group", "action", payload);
+    if (!validation.allowed) throw new HueResponseError("definite_failure", validation.reason, []);
     return this.mutationRequest("PUT", `/groups/${encodeURIComponent(id)}/action`, payload, "group-action");
+  }
+
+  async setSceneLightState(sceneId: string, lightId: string, payload: Record<string, unknown>): Promise<unknown> {
+    const validation = validateHueCatalogPayload("scene", "update", { lightstates: { [lightId]: payload } });
+    if (!validation.allowed) throw new HueResponseError("definite_failure", validation.reason, []);
+    return this.mutationRequest("PUT", `/scenes/${encodeURIComponent(sceneId)}/lightstates/${encodeURIComponent(lightId)}`, payload, "light-state");
   }
 
   async activateScene(scene: HueScene): Promise<unknown> {
@@ -279,6 +324,34 @@ export class HueV1Adapter {
       return raw;
     };
     return channel ? this.rateLimiter.dispatch(channel, operation) : operation();
+  }
+
+  private normalizeAutomationPayload(kind: Exclude<ResourceKind, "plug">, payload: Record<string, unknown>): Record<string, unknown> {
+    if (kind !== "rule" && kind !== "schedule") return payload;
+    const clone = JSON.parse(JSON.stringify(payload)) as Record<string, unknown>;
+    if (kind === "rule" && this.transport.credential && Array.isArray(clone.actions)) {
+      clone.actions = clone.actions.map((entry) => {
+        if (!entry || typeof entry !== "object") return entry;
+        const action = entry as Record<string, unknown>;
+        if (typeof action.address !== "string") return action;
+        const relative = action.address.replace(/^\/api\/[^/]+/i, "") || action.address;
+        return { ...action, address: `/api/${this.transport.credential}${relative.startsWith("/") ? relative : `/${relative}`}` };
+      });
+    }
+    if (kind === "schedule" && clone.timePattern && typeof clone.timePattern === "object") {
+      const pattern = clone.timePattern as Record<string, unknown>;
+      delete clone.timePattern;
+      Object.assign(clone, serializeScheduleTimePattern(pattern as unknown as HueScheduleTimePattern));
+    }
+    if (kind === "schedule" && clone.command && typeof clone.command === "object") {
+      const command = clone.command as Record<string, unknown>;
+      if (typeof command.resourceKind === "string" && typeof command.method === "string") {
+        clone.command = serializeStructuredScheduleCommand(command as unknown as StructuredScheduleCommand, this.transport.credential);
+      } else if (this.transport.credential && typeof command.address === "string" && command.address.includes("/api/<redacted>")) {
+        clone.command = { ...command, address: command.address.replace("/api/<redacted>", `/api/${this.transport.credential}`) };
+      }
+    }
+    return clone;
   }
 }
 

@@ -9,7 +9,9 @@ export interface HueSceneLightState {
   readonly sat?: number;
   readonly xy?: readonly number[];
   readonly ct?: number;
+  readonly alert?: string;
   readonly effect?: string;
+  readonly transitiontime?: number;
   readonly [key: string]: unknown;
 }
 

@@ -1,0 +1,16 @@
+{
+  "system": {
+    "get_sysinfo": {
+      "sw_ver": "1.0.8",
+      "hw_ver": "2.0",
+      "model": "HS103",
+      "mac": "00:11:22:33:44:66",
+      "deviceId": "TEST-HS103-ID",
+      "alias": "Hallway Plug",
+      "relay_state": 0,
+      "feature": "TIM",
+      "rssi": -52,
+      "signal_level": 2
+    }
+  }
+}

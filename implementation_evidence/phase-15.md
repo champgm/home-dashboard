@@ -1,13 +1,15 @@
 # Phase 15 — Command Orchestration and Device State
 
-- Status: **COMPLETE**
+- Status: **SUPERSEDED — LOCAL GAP RECTIFIED; TARGET ACCEPTANCE PENDING**
 - Revision under review: working tree (no commit created by this task).
-- Date: 2026-08-23.
+- Date: 2026-08-25.
+
+Rectification update: the pre-rectification Hue ambiguous-write gap is closed by [rectification phase 09](./nonconformance_rectification_plan/phase-09.md). The original baseline text below is retained as audit history; controlled target interruption remains pending.
 
 ## Work completed
 
-- Implemented the phase slice in the modern Expo/RN architecture; primary requirement owners: `FR-002`, `FR-008`, `FR-011`, `FR-012`, `FR-016`, `REL-001`, `REL-002`, `REL-003`, `REL-005`, `REL-006`.
-- Tests were implemented with the feature and the shared local suite is green.
+- Implemented command deadlines, state generation, Hue/plug orchestration, TP-Link ambiguous read-back, primary semantics, and diagnostic classification.
+- Ambiguous Hue writes do not attempt the `REL-003` read-back required when the resulting state is observable. See [runtime nonconformance](../docs/nonconformance/runtime-and-failure-semantics.md).
 
 ## Requirement IDs addressed
 
@@ -25,7 +27,7 @@
 | `AC-FR-016` | PASS — LOCAL | local source/tests; final target status in [final-traceability-status.md](./final-traceability-status.md) |
 | `AC-REL-001` | PASS — LOCAL | local source/tests; final target status in [final-traceability-status.md](./final-traceability-status.md) |
 | `AC-REL-002` | PASS — LOCAL | local source/tests; final target status in [final-traceability-status.md](./final-traceability-status.md) |
-| `AC-REL-003` | PASS — LOCAL | local source/tests; final target status in [final-traceability-status.md](./final-traceability-status.md) |
+| `AC-REL-003` | PASS — LOCAL; TARGET PENDING | [rectification phase 09](./nonconformance_rectification_plan/phase-09.md) covers one read-back and no write retry |
 | `AC-REL-005` | PASS — LOCAL | local source/tests; final target status in [final-traceability-status.md](./final-traceability-status.md) |
 | `AC-REL-006` | PASS — LOCAL | local source/tests; final target status in [final-traceability-status.md](./final-traceability-status.md) |
 
@@ -58,11 +60,11 @@
 
 ## Target-dependent checks not yet performed
 
-- None beyond final target acceptance.
+- Target acceptance remains pending as listed in final traceability after local `REL-003` closure.
 
 ## Deviations or discovered specification problems
 
-- No SRS ambiguity or SAD contradiction was discovered.
+- No SRS/SAD contradiction was found. Existing Hue mutation orchestration does not meet `REL-003`.
 
 ## Scope check
 
@@ -73,5 +75,5 @@
 
 - Modern runtime entry is `App.tsx` → `src/ui/App.tsx` → `src/ui/navigation/AppNavigation.tsx`.
 - Protocols remain isolated behind `ApplicationService`; local persistence is `ConfigStore`, protected Hue state is `CredentialStore`.
-- Pending target work: None beyond final target acceptance.
-
+- Pending local work: none for `NC-REL-001`; see the rectification handoff.
+- Pending target work: final target acceptance after local completion.

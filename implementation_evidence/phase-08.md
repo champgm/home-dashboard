@@ -1,13 +1,15 @@
 # Phase 08 — Hue Sensors and Search Protocol
 
-- Status: **COMPLETE**
+- Status: **SUPERSEDED — LOCAL GAPS RECTIFIED; TARGET ACCEPTANCE PENDING**
 - Revision under review: working tree (no commit created by this task).
-- Date: 2026-08-23.
+- Date: 2026-08-25.
+
+Rectification update: the pre-rectification local gaps are closed by [rectification phase 05](./nonconformance_rectification_plan/phase-05.md). The original baseline text below is retained as audit history; physical sensor/search acceptance remains pending.
 
 ## Work completed
 
-- Implemented the phase slice in the modern Expo/RN architecture; primary requirement owners: `HUE-007`, `HUE-015`.
-- Tests were implemented with the feature and the shared local suite is green.
+- Implemented Sensor collection parsing, basic enabled-state intent, and search status-before-start protocol checks.
+- Sensor field/configuration routing and create/update serializers are incomplete; foreground active-search polling/feedback is absent. See [Sensor/dimmer nonconformance](../docs/nonconformance/sensor-and-dimmer.md).
 
 ## Requirement IDs addressed
 
@@ -18,8 +20,8 @@
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| `AC-HUE-007` | BLOCKED — TARGET | local source/tests; final target status in [final-traceability-status.md](./final-traceability-status.md) |
-| `AC-HUE-015` | BLOCKED — TARGET | local source/tests; final target status in [final-traceability-status.md](./final-traceability-status.md) |
+| `AC-HUE-007` | PASS — LOCAL; TARGET PENDING | [rectification phase 05](./nonconformance_rectification_plan/phase-05.md) covers typed Sensor forms/configuration and focused tests |
+| `AC-HUE-015` | PASS — LOCAL; TARGET PENDING | [rectification phase 05](./nonconformance_rectification_plan/phase-05.md) covers feedback, status gating, and lifecycle polling |
 
 ## Tests and checks executed
 
@@ -50,11 +52,11 @@
 
 ## Target-dependent checks not yet performed
 
-- None beyond final target acceptance.
+- Live Sensor CRUD/configuration and foreground/background search acceptance remain pending after local completion.
 
 ## Deviations or discovered specification problems
 
-- No SRS ambiguity or SAD contradiction was discovered.
+- No SRS/SAD contradiction was found. Local implementation is incomplete for existing `HUE-007` and `HUE-015`.
 
 ## Scope check
 
@@ -65,5 +67,5 @@
 
 - Modern runtime entry is `App.tsx` → `src/ui/App.tsx` → `src/ui/navigation/AppNavigation.tsx`.
 - Protocols remain isolated behind `ApplicationService`; local persistence is `ConfigStore`, protected Hue state is `CredentialStore`.
-- Pending target work: None beyond final target acceptance.
-
+- Pending local work: none for `NC-HUE-005` or `NC-HUE-009`; see the rectification handoff.
+- Pending target work: `AC-HUE-007` and `AC-HUE-015` after local completion.

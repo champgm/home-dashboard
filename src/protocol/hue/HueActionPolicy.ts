@@ -7,7 +7,6 @@ export type HueActionDecision =
   | { readonly allowed: false; readonly reason: string };
 
 const forbiddenPathFragments = [
-  "/config",
   "/capabilities",
   "/users",
   "/update",
@@ -23,7 +22,7 @@ export function validateImmediateAction(method: string, path: string, body?: unk
   if (normalizedMethod === "DELETE") {
     return { allowed: false, reason: "Automation actions may not delete resources." };
   }
-  if (forbiddenPathFragments.some((fragment) => normalizedPath.includes(fragment))) {
+  if (isBridgeAdministrationPath(normalizedPath) || forbiddenPathFragments.some((fragment) => normalizedPath.includes(fragment))) {
     return { allowed: false, reason: "Automation actions may not administer the Hue bridge." };
   }
   if (!["/lights/", "/groups/", "/scenes/", "/sensors/", "/rules/", "/schedules/"].some((fragment) => normalizedPath.includes(fragment))) {
@@ -36,6 +35,13 @@ export function validateImmediateAction(method: string, path: string, body?: unk
     return { allowed: false, reason: "The action method is not supported by the structured editor." };
   }
   return { allowed: true };
+}
+
+function isBridgeAdministrationPath(path: string): boolean {
+  // Sensor configuration is a supported schedule target at
+  // /sensors/{id}/config. Only the bridge-level configuration resource is
+  // administration, so do not reject the sensor subresource here.
+  return /(?:^|\/api\/[^/]+)\/config(?:\/|$)/i.test(path);
 }
 
 function containsForbiddenOperation(value: unknown): boolean {
@@ -59,7 +65,10 @@ export function validateStructuredRuleAction(action: HueRuleAction): HueActionDe
 }
 
 export function validateStructuredScheduleCommand(command: StructuredScheduleCommand): HueActionDecision {
-  const path = `/api/<redacted>/${command.resourceKind}${command.resourceId ? `/${command.resourceId}` : ""}${command.subpath ? `/${command.subpath}` : ""}`;
+  const resourceKind = command.resourceKind === "scene" ? "groups" : `${command.resourceKind}s`;
+  const resourceId = command.resourceKind === "scene" ? "0" : command.resourceId;
+  const subpath = command.resourceKind === "scene" ? "action" : command.subpath;
+  const path = `/api/<redacted>/${resourceKind}${resourceId ? `/${resourceId}` : ""}${subpath ? `/${subpath}` : ""}`;
   return validateImmediateAction(command.method, path, command.body);
 }
 

@@ -1,32 +1,61 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useAppRuntime } from "../AppContext";
+import { HueSearchStatus } from "../../protocol/hue/search";
 
 type HueSearchKind = "lights" | "sensors";
-interface HueSearchStatus { readonly kind: HueSearchKind; readonly active: boolean; readonly recent: boolean; readonly raw: unknown; }
 
 export function HueSearchStatusView({ kind }: { kind: HueSearchKind }): JSX.Element {
   const runtime = useAppRuntime();
   const [status, setStatus] = useState<HueSearchStatus>();
   const [message, setMessage] = useState<string>();
-  const refreshStatus = async () => {
+  const mounted = useRef(true);
+  const refreshStatus = async (): Promise<HueSearchStatus | undefined> => {
     try {
-      const next = await runtime.service.getHueSearchStatus(kind) as HueSearchStatus | undefined;
+      const next = await runtime.service.getHueSearchStatus(kind);
+      if (!mounted.current || !runtime.service.isForeground) return undefined;
       if (!next) {
         setStatus(undefined);
         setMessage("Hue is not configured.");
-        return;
+        return undefined;
       }
       setStatus(next);
       setMessage(undefined);
+      return next;
     } catch (_error) {
+      if (!mounted.current || !runtime.service.isForeground) return undefined;
       setMessage("Search status is unavailable.");
+      return undefined;
     }
   };
-  useEffect(() => { void refreshStatus(); }, [kind]);
+  useEffect(() => {
+    let disposed = false;
+    mounted.current = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const poll = async () => {
+      if (disposed || !runtime.service.isForeground) return;
+      const next = await refreshStatus();
+      if (!disposed && runtime.service.isForeground && next?.active) timer = setTimeout(() => void poll(), 1000);
+    };
+    const lifecycle = runtime.service.subscribeLifecycle(() => {
+      if (!runtime.service.isForeground) {
+        if (timer) clearTimeout(timer);
+        timer = undefined;
+        return;
+      }
+      void poll();
+    });
+    void poll();
+    return () => { disposed = true; mounted.current = false; lifecycle(); if (timer) clearTimeout(timer); };
+  // The status value is read inside the polling loop; adding it as a dependency
+  // would restart the timer on every bridge response.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind, runtime]);
+  const visibleMessage = message || (status?.active ? "A bridge search is active." : undefined);
+  if (!visibleMessage) return <></>;
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>{message || (status?.active ? "A bridge search is active." : status?.recent ? "The bridge reports a recent search." : "No active search.")}</Text>
+      <Text style={styles.text}>{visibleMessage}</Text>
     </View>
   );
 }

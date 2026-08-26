@@ -1,26 +1,30 @@
 # Phase 25 — Plug UI and Editor Contract
 
-- Status: **COMPLETE**
+- Status: **SUPERSEDED — LOCAL GAPS RECTIFIED; TARGET ACCEPTANCE PENDING**
 - Revision under review: working tree (no commit created by this task).
-- Date: 2026-08-23.
+- Date: 2026-08-25.
+
+Rectification update: the pre-rectification plug information/energy gaps are closed by [rectification phase 08](./nonconformance_rectification_plan/phase-08.md). The original baseline text below is retained as audit history; physical-model acceptance remains pending.
 
 ## Work completed
 
-- Implemented the phase slice in the modern Expo/RN architecture; primary requirement owners: `FR-013`, `TPL-002`, `TPL-007`, `TPL-009`, `TPL-010`.
-- Tests were implemented with the feature and the shared local suite is green.
+- Implemented endpoint administration, physical alias update, relay dashboard integration, local-only removal, and overlay persistence.
+- Required plug information and energy presentation are absent. See [TP-Link nonconformance](../docs/nonconformance/tplink.md).
 
 ## Requirement IDs addressed
 
 - Primary: `FR-013`, `TPL-002`, `TPL-007`, `TPL-009`, `TPL-010`
-- Supporting/acceptance handoff: `AC-FR-013`, `AC-TPL-002`, `AC-TPL-007`, `AC-TPL-009`, `AC-TPL-010`
+- Supporting: `TPL-005`, `TPL-006`, `TPL-008`, `AC-FR-013`, `AC-TPL-002`, `AC-TPL-005`, `AC-TPL-007`, `AC-TPL-008`, `AC-TPL-009`, `AC-TPL-010`
 
 ## Acceptance criteria exercised
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| `AC-FR-013` | BLOCKED — ADDITIONAL ACCEPTANCE | local source/tests; final target status in [final-traceability-status.md](./final-traceability-status.md) |
+| `AC-FR-013` | PASS — LOCAL; TARGET PENDING | [rectification phase 08](./nonconformance_rectification_plan/phase-08.md) |
 | `AC-TPL-002` | PASS — LOCAL | local source/tests; final target status in [final-traceability-status.md](./final-traceability-status.md) |
 | `AC-TPL-007` | BLOCKED — TARGET | local source/tests; final target status in [final-traceability-status.md](./final-traceability-status.md) |
+| `AC-TPL-005` | PASS — LOCAL; TARGET PENDING | [rectification phase 08](./nonconformance_rectification_plan/phase-08.md) |
+| `AC-TPL-008` | PASS — LOCAL; TARGET PENDING | [rectification phase 08](./nonconformance_rectification_plan/phase-08.md) |
 | `AC-TPL-009` | BLOCKED — ADDITIONAL ACCEPTANCE | local source/tests; final target status in [final-traceability-status.md](./final-traceability-status.md) |
 | `AC-TPL-010` | BLOCKED — ADDITIONAL ACCEPTANCE | local source/tests; final target status in [final-traceability-status.md](./final-traceability-status.md) |
 
@@ -57,7 +61,7 @@
 
 ## Deviations or discovered specification problems
 
-- No SRS ambiguity or SAD contradiction was discovered.
+- No SRS/SAD contradiction was found. Existing implementation does not meet `TPL-005`, `TPL-008`, or the associated `FR-013` editor/presentation contract.
 
 ## Scope check
 
@@ -68,5 +72,5 @@
 
 - Modern runtime entry is `App.tsx` → `src/ui/App.tsx` → `src/ui/navigation/AppNavigation.tsx`.
 - Protocols remain isolated behind `ApplicationService`; local persistence is `ConfigStore`, protected Hue state is `CredentialStore`.
-- Pending target work: PENDING TARGET: Pixel 9 Pro/device, Hue bridge, TP-Link, WAN-disabled, signing, or EAS checks remain as applicable; see final traceability.
-
+- Pending local work: none for `NC-TPL-001` or `NC-TPL-002`; see the rectification handoff.
+- Pending target work: TP-Link/Pixel acceptance after local completion, plus the other target items in final traceability.

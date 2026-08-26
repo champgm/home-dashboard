@@ -75,6 +75,16 @@ describe("dashboard tile integration", () => {
     expect(view.queryByText("No current resources. Refresh when the local bridge is reachable.")).toBeNull();
   });
 
+  test("Unknown Hue resources do not expose an Edit action", () => {
+    stateStore.getAll.mockReturnValue(new Map([[
+      "light:unknown",
+      { state: { status: "unknown", reason: { category: "NetworkUnavailable", message: "offline" } }, pending: false },
+    ]]));
+    const view = render(<ResourceCollectionScreen kind="light" title="Lights" />);
+    expect(view.getByLabelText("Unknown resource state")).toBeTruthy();
+    expect(view.queryByLabelText("Edit")).toBeNull();
+  });
+
   test("renders search and navigation utilities with the same AwesomeButton primitive", async () => {
     const onSearch = jest.fn();
     const view = render(<ResourceCollectionScreen kind="light" title="Lights" onSearch={onSearch} />);
@@ -129,5 +139,34 @@ describe("dashboard tile integration", () => {
     const view = render(<PlugsScreen />);
     fireEvent.press(view.getByLabelText("Refresh"));
     return waitFor(() => expect(mockRuntime.service.refreshConfiguredPlugs).toHaveBeenCalledWith({ ignoreBackoff: true }));
+  });
+
+  test("lists reachable plugs before unknown plugs while preserving configured order", () => {
+    configStore.getCommitted.mockReturnValue({
+      bridge: {},
+      plugs: [
+        { id: "unknown-1", ipv4: "192.168.1.11", port: 9999 },
+        { id: "known-1", ipv4: "192.168.1.12", port: 9999 },
+        { id: "unknown-2", ipv4: "192.168.1.13", port: 9999 },
+        { id: "known-2", ipv4: "192.168.1.14", port: 9999 },
+      ],
+      favorites: [],
+    });
+    stateStore.get.mockImplementation((ref: { plugEndpointId?: string }) => {
+      if (ref.plugEndpointId === "known-1") return { state: { status: "known", value: { alias: "Known one", relayState: true } }, pending: false };
+      if (ref.plugEndpointId === "known-2") return { state: { status: "known", value: { alias: "Known two", relayState: false } }, pending: false };
+      return undefined;
+    });
+
+    const view = render(<PlugsScreen />);
+    const labels = view.getAllByTestId("legacy-resource-primary").map((tile) => tile.props.accessibilityLabel);
+    expect(labels).toEqual([
+      "Refresh",
+      "Manage endpoints",
+      "Known one",
+      "Known two",
+      "192.168.1.11",
+      "192.168.1.13",
+    ]);
   });
 });

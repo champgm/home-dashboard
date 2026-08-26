@@ -21,6 +21,44 @@ describe("ApplicationService command semantics", () => {
     expect(calls).toHaveLength(0);
   });
 
+  test("rejects Hue updates and Sensor config writes without a known original", async () => {
+    let calls = 0;
+    const service = new ApplicationService({
+      hue: {
+        snapshot: async () => emptySnapshot(),
+        mutate: async () => { calls += 1; },
+      },
+      stateStore: new DeviceStateStore(),
+    });
+    expect((await service.mutateHue("group", "1", "update", { name: "Room", lights: ["1"] })).kind).toBe("definite_failure");
+    expect((await service.mutateHue("sensor", "1", "config", { config: { on: false } })).kind).toBe("definite_failure");
+    expect(calls).toBe(0);
+  });
+
+  test("submits a validated replacement for a stale Rule binding through the service boundary", async () => {
+    const writes: Array<Record<string, unknown>> = [];
+    const service = new ApplicationService({
+      hue: {
+        snapshot: async () => emptySnapshot(),
+        mutate: async (_kind, _id, _operation, payload) => { writes.push(payload); },
+      },
+      stateStore: new DeviceStateStore(),
+    });
+    service.stateStore.setKnown({ kind: "rule", id: "8" }, {
+      conditions: [{ address: "/sensors/4/state/stale-event", operator: "eq", value: "1002" }],
+      actions: [{ address: "/lights/1/action", method: "PUT", body: { on: true } }],
+    });
+    const result = await service.mutateHue("rule", "8", "update", {
+      conditions: [{ address: "/sensors/4/state/buttonevent", operator: "eq", value: "1002" }],
+      actions: [{ address: "/lights/1/state", method: "PUT", body: { bri: 180, transitiontime: 4 } }],
+    });
+    expect(result.kind).toBe("success");
+    expect(writes).toEqual([{
+      conditions: [{ address: "/sensors/4/state/buttonevent", operator: "eq", value: "1002" }],
+      actions: [{ address: "/lights/1/state", method: "PUT", body: { bri: 180, transitiontime: 4 } }],
+    }]);
+  });
+
   test("known light uses absolute opposite state and refreshes", async () => {
     const calls: Array<Record<string, unknown>> = [];
     const service = new ApplicationService({ hue: { snapshot: async () => emptySnapshot(), setLightState: async (_id, value) => { calls.push(value); } }, stateStore: new DeviceStateStore() });

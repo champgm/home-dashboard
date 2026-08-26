@@ -6,5 +6,9 @@ export const TPLINK_METHODS = {
 } as const;
 
 export function command(method: string, params: Record<string, unknown> = {}): Record<string, unknown> {
-  return { [method]: params };
+  const [module, operation, ...extra] = method.split(".");
+  if (!module || !operation || extra.length > 0) {
+    throw new Error(`Invalid TP-Link method: ${method}`);
+  }
+  return { [module]: { [operation]: params } };
 }

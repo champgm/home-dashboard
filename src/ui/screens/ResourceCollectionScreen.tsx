@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { StyleSheet, Text } from "react-native";
 import { ResourceRef, ResourceKind } from "../../app/types";
 import { LegacyResourceButton } from "../components/LegacyResourceButton";
 import { ResourceTile } from "../components/ResourceTile";
@@ -11,12 +12,13 @@ export interface ResourceCollectionScreenProps {
   readonly title: string;
   readonly navigation?: any;
   readonly canCreate?: boolean;
-  readonly onSearch?: () => void;
+  readonly onSearch?: () => Promise<unknown> | void;
 }
 
 export function ResourceCollectionScreen({ kind, title, navigation, canCreate, onSearch }: ResourceCollectionScreenProps): JSX.Element {
   const runtime = useAppRuntime();
   const [version, setVersion] = useState(0);
+  const [searchMessage, setSearchMessage] = useState<string>();
   useEffect(() => {
     const unsubscribeState = runtime.service.stateStore.subscribe(() => setVersion((value) => value + 1));
     const unsubscribeConfig = runtime.configStore.subscribe(() => setVersion((value) => value + 1));
@@ -36,12 +38,32 @@ export function ResourceCollectionScreen({ kind, title, navigation, canCreate, o
   const editorRoute = `${title.slice(0, -1)}Editor`;
   const favorites = runtime.configStore.getCommitted()?.favorites || [];
   const navigateAdvanced = () => navigation?.getParent?.()?.navigate("Advanced") || navigation?.navigate?.("Advanced");
+  const startSearch = async () => {
+    if (!onSearch) return;
+    try {
+      const result = await onSearch() as { started?: boolean; status?: { active?: boolean; recent?: boolean } } | undefined;
+      if (!result) {
+        setSearchMessage("Search could not be started because Hue is not configured.");
+      } else if (result.started) {
+        setSearchMessage("Bridge search started. Results will appear after the bridge reports them.");
+      } else if (result.status?.active) {
+        setSearchMessage("A bridge search is already active; another search was not started.");
+      } else if (result.status?.recent) {
+        setSearchMessage("The bridge reports a recent search; another search was not started.");
+      } else {
+        setSearchMessage("The bridge did not start the search.");
+      }
+    } catch (_error) {
+      setSearchMessage("Search status or start request failed.");
+    }
+  };
   return (
     <Screen showTitle={false} title={title}>
+      {searchMessage && <Text accessibilityRole="alert" style={styles.searchMessage}>{searchMessage}</Text>}
       <LegacyDashboardGrid testID={`${kind}-dashboard-grid`}>
         <LegacyResourceButton hideEdit hideFavorite onPress={() => void runtime.service.refreshHue()} state="known" title="Refresh" />
         {canCreate && <LegacyResourceButton hideEdit hideFavorite onPress={() => navigation?.getParent?.()?.navigate(editorRoute) || navigation?.navigate?.(editorRoute)} state="known" title={`New ${title.slice(0, -1)}`} />}
-        {onSearch && <LegacyResourceButton hideEdit hideFavorite onPress={onSearch} state="known" title={kind === "light" ? "Scan for new lights" : kind === "sensor" ? "Scan for new sensors" : "Search"} />}
+        {onSearch && <LegacyResourceButton hideEdit hideFavorite onPress={() => void startSearch()} state="known" title={kind === "light" ? "Scan for new lights" : kind === "sensor" ? "Scan for new sensors" : "Search"} />}
         <LegacyResourceButton hideEdit hideFavorite onPress={navigateAdvanced} state="known" title="Advanced" />
         {entries.map(({ id, value, stored }) => {
           const ref: ResourceRef = { kind, id };
@@ -54,7 +76,7 @@ export function ResourceCollectionScreen({ kind, title, navigation, canCreate, o
               onPress={() => void runtime.service.performPrimary(ref)}
               favorite={favorites.some((favorite) => sameResourceRef(favorite, ref))}
               onFavorite={() => void (favorites.some((favorite) => sameResourceRef(favorite, ref)) ? runtime.service.removeFavorite(ref) : runtime.service.addFavorite(ref))}
-              onEdit={() => navigation?.getParent?.()?.navigate(editorRoute, { id }) || navigation?.navigate?.(editorRoute, { id })}
+              onEdit={stored?.state.status === "known" ? () => navigation?.getParent?.()?.navigate(editorRoute, { id }) || navigation?.navigate?.(editorRoute, { id }) : undefined}
             />
           );
         })}
@@ -63,6 +85,10 @@ export function ResourceCollectionScreen({ kind, title, navigation, canCreate, o
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  searchMessage: { backgroundColor: "#073642", borderRadius: 8, color: "#fdf6e3", marginBottom: 10, padding: 10 },
+});
 
 function sameResourceRef(left: ResourceRef, right: ResourceRef): boolean {
   return left.kind === right.kind && left.id === right.id && left.plugEndpointId === right.plugEndpointId;

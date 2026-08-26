@@ -1,0 +1,119 @@
+version: 1
+purpose: >-
+  Machine-readable local evidence index. A status claim is valid only when its
+  owning phase, source paths, focused test paths, and phase record all exist.
+  This manifest does not substitute for bridge, device, phone, WAN, or signed
+  APK acceptance.
+entries:
+  - id: NC-TRACE-001
+    primary_phase: "01"
+    local_status: mechanically-verified
+    target_status: not-applicable
+    phase_record: implementation_evidence/nonconformance_rectification_plan/phase-01.md
+    source_paths: [implementation_evidence/final-traceability-status.md, docs/validate_nonconformance_rectification_plan.py]
+    test_paths: [docs/validate_nonconformance_rectification_plan.py]
+  - id: NC-TRACE-002
+    primary_phase: "01"
+    local_status: mechanically-verified
+    target_status: not-applicable
+    phase_record: implementation_evidence/nonconformance_rectification_plan/phase-01.md
+    source_paths: [implementation_evidence/final-traceability-status.md, docs/validate_nonconformance_rectification_plan.py]
+    test_paths: [docs/validate_nonconformance_rectification_plan.py]
+  - id: NC-HUE-001
+    primary_phase: "02"
+    local_status: verified-locally
+    target_status: pending
+    phase_record: implementation_evidence/nonconformance_rectification_plan/phase-02.md
+    source_paths: [src/protocol/hue/catalog/resourceCatalog.ts, src/ui/editors/editorControls.tsx]
+    test_paths: [test/protocol/hue/catalog/resourceCatalog.test.ts, test/protocol/hue/catalog/mutationBoundary.test.ts]
+  - id: NC-HUE-008
+    primary_phase: "02"
+    local_status: verified-locally
+    target_status: pending
+    phase_record: implementation_evidence/nonconformance_rectification_plan/phase-02.md
+    source_paths: [src/app/ApplicationService.ts, src/protocol/hue/catalog/resourceCatalog.ts, src/ui/editors/ResourceLinkEditor.tsx]
+    test_paths: [test/protocol/hue/catalog/resourceCatalog.test.ts, test/protocol/hue/catalog/mutationBoundary.test.ts, test/app/commands/commandSemantics.test.ts, test/ui/editors/managementEditors.test.tsx]
+  - id: NC-HUE-002
+    primary_phase: "03"
+    local_status: verified-locally
+    target_status: pending
+    phase_record: implementation_evidence/nonconformance_rectification_plan/phase-03.md
+    source_paths: [src/ui/editors/LightEditor.tsx, src/protocol/hue/HueV1Adapter.ts]
+    test_paths: [test/ui/editors/managementEditors.test.tsx, test/protocol/hue/catalog/mutationBoundary.test.ts]
+  - id: NC-HUE-003
+    primary_phase: "03"
+    local_status: verified-locally
+    target_status: pending
+    phase_record: implementation_evidence/nonconformance_rectification_plan/phase-03.md
+    source_paths: [src/ui/editors/GroupEditor.tsx, src/protocol/hue/HueV1Adapter.ts]
+    test_paths: [test/ui/editors/managementEditors.test.tsx, test/protocol/hue/catalog/mutationBoundary.test.ts]
+  - id: NC-HUE-004
+    primary_phase: "04"
+    local_status: verified-locally
+    target_status: pending
+    phase_record: implementation_evidence/nonconformance_rectification_plan/phase-04.md
+    source_paths: [src/ui/editors/SceneEditor.tsx, src/protocol/hue/HueV1Adapter.ts]
+    test_paths: [test/ui/editors/managementEditors.test.tsx, test/protocol/hue/catalog/mutationBoundary.test.ts]
+  - id: NC-HUE-005
+    primary_phase: "05"
+    local_status: verified-locally
+    target_status: pending
+    phase_record: implementation_evidence/nonconformance_rectification_plan/phase-05.md
+    source_paths: [src/ui/editors/SensorEditor.tsx, src/protocol/hue/catalog/resourceCatalog.ts]
+    test_paths: [test/ui/editors/managementEditors.test.tsx, test/protocol/hue/catalog/resourceCatalog.test.ts]
+  - id: NC-HUE-009
+    primary_phase: "05"
+    local_status: verified-locally
+    target_status: pending
+    phase_record: implementation_evidence/nonconformance_rectification_plan/phase-05.md
+    source_paths: [src/protocol/hue/search.ts, src/ui/components/HueSearchStatus.tsx]
+    test_paths: [test/protocol/hue/search/searchLifecycle.test.ts, test/ui/search/HueSearchStatus.test.tsx]
+  - id: NC-HUE-006
+    primary_phase: "06"
+    local_status: verified-locally
+    target_status: pending
+    phase_record: implementation_evidence/nonconformance_rectification_plan/phase-06.md
+    source_paths: [src/ui/editors/RuleEditor.tsx, src/protocol/hue/catalog/resourceCatalog.ts, src/protocol/hue/HueActionPolicy.ts]
+    test_paths: [test/ui/editors/managementEditors.test.tsx, test/protocol/hue/catalog/resourceCatalog.test.ts, test/protocol/hue/catalog/mutationBoundary.test.ts, test/protocol/hue/actionPolicy/actionPolicy.test.ts]
+  - id: NC-HUE-007
+    primary_phase: "07"
+    local_status: verified-locally
+    target_status: pending
+    phase_record: implementation_evidence/nonconformance_rectification_plan/phase-07.md
+    source_paths: [src/ui/editors/ScheduleEditor.tsx, src/protocol/hue/HueV1Adapter.ts, src/protocol/hue/catalog/schedules.ts, src/protocol/hue/HueActionPolicy.ts]
+    test_paths: [test/protocol/hue/catalog/mutationBoundary.test.ts, test/protocol/hue/resources/resources.test.ts, test/protocol/hue/catalog/resourceCatalog.test.ts, test/protocol/hue/actionPolicy/actionPolicy.test.ts, test/ui/editors/managementEditors.test.tsx]
+  - id: NC-TPL-001
+    primary_phase: "08"
+    local_status: verified-locally
+    target_status: pending
+    phase_record: implementation_evidence/nonconformance_rectification_plan/phase-08.md
+    source_paths: [src/ui/editors/PlugEditor.tsx, src/ui/screens/PlugsScreen.tsx, src/protocol/tplink/models.ts]
+    test_paths: [test/protocol/tplink/features/adapter.test.ts, test/ui/editors/managementEditors.test.tsx]
+  - id: NC-TPL-002
+    primary_phase: "08"
+    local_status: verified-locally
+    target_status: pending
+    phase_record: implementation_evidence/nonconformance_rectification_plan/phase-08.md
+    source_paths: [src/app/ApplicationService.ts, src/ui/screens/PlugsScreen.tsx]
+    test_paths: [test/app/tplinkEnergy.test.ts, test/protocol/tplink/features/adapter.test.ts]
+  - id: NC-REL-001
+    primary_phase: "09"
+    local_status: verified-locally
+    target_status: pending
+    phase_record: implementation_evidence/nonconformance_rectification_plan/phase-09.md
+    source_paths: [src/app/ApplicationService.ts]
+    test_paths: [test/app/commands/hueAmbiguousReadback.test.ts]
+  - id: NC-EVID-001
+    primary_phase: "10"
+    local_status: reconciled
+    target_status: not-applicable
+    phase_record: implementation_evidence/nonconformance_rectification_plan/phase-10.md
+    source_paths: [docs/validate_nonconformance_rectification_plan.py, implementation_evidence/nonconformance_rectification_plan/evidence-manifest.yaml]
+    test_paths: [docs/validate_nonconformance_rectification_plan.py]
+  - id: NC-EVID-002
+    primary_phase: "10"
+    local_status: reconciled
+    target_status: not-applicable
+    phase_record: implementation_evidence/nonconformance_rectification_plan/phase-10.md
+    source_paths: [docs/validate_nonconformance_rectification_plan.py, implementation_evidence/nonconformance_rectification_plan/evidence-manifest.yaml]
+    test_paths: [docs/validate_nonconformance_rectification_plan.py]

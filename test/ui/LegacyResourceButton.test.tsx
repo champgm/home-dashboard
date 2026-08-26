@@ -20,6 +20,7 @@ describe("LegacyResourceButton", () => {
     const onPress = jest.fn();
     const view = render(<LegacyResourceButton state="unknown" title="Missing" onPress={onPress} />);
     expect(view.getByTestId("resource-unknown-icon").props.source).toBeDefined();
+    expect(StyleSheet.flatten(view.getByTestId("resource-unknown-overlay").props.style).backgroundColor).toBeUndefined();
     expect(view.getByLabelText("Missing").props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
     expect(view.getByLabelText("Unknown resource state")).toBeTruthy();
     fireEvent.press(view.getByLabelText("Missing"));

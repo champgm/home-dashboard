@@ -67,7 +67,7 @@ export function LegacyResourceButton(props: LegacyResourceButtonProps): JSX.Elem
         <View style={styles.mainContent}>
           <Text numberOfLines={2} style={[styles.title, { color: mainColors.text }]}>{props.title}</Text>
           {props.showLightBulb && !unknown && <Image accessibilityLabel="Light bulb" source={legacyButtonAssets.lightBulb} style={styles.lightBulb} />}
-          {unknown && <View pointerEvents="none" style={styles.unknownOverlay}>
+          {unknown && <View pointerEvents="none" style={styles.unknownOverlay} testID="resource-unknown-overlay">
             <Image
               accessibilityLabel={props.unknownAccessibilityLabel || "Unknown resource state"}
               accessible
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   mainContent: { alignItems: "center", flex: 1, justifyContent: "center", overflow: "hidden", position: "relative", width: "100%" },
   title: { fontSize: 12, fontWeight: "700", textAlign: "center" },
   lightBulb: { height: "72%", opacity: 0.2, position: "absolute", width: "72%" },
-  unknownOverlay: { alignItems: "center", backgroundColor: "rgba(0,0,0,0.16)", bottom: 0, justifyContent: "center", left: 0, position: "absolute", right: 0, top: 0 },
+  unknownOverlay: { alignItems: "center", bottom: 0, justifyContent: "center", left: 0, position: "absolute", right: 0, top: 0 },
   questionMark: { height: "90%", opacity: 0.42, width: "90%" },
   // The package applies this style to its inner animated surface. Positioning
   // belongs only on the outer Pressable above; applying the offsets here as

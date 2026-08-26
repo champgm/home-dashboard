@@ -1,13 +1,15 @@
 # Phase 07 — Hue Scenes Protocol
 
-- Status: **COMPLETE**
+- Status: **SUPERSEDED — LOCAL GAP RECTIFIED; TARGET ACCEPTANCE PENDING**
 - Revision under review: working tree (no commit created by this task).
-- Date: 2026-08-23.
+- Date: 2026-08-25.
+
+Rectification update: the pre-rectification local gap is closed by [rectification phase 04](./nonconformance_rectification_plan/phase-04.md). The original baseline text below is retained as audit history; only disposable live-bridge acceptance remains pending.
 
 ## Work completed
 
-- Implemented the phase slice in the modern Expo/RN architecture; primary requirement owners: `HUE-006`.
-- Tests were implemented with the feature and the shared local suite is green.
+- Implemented Scene parsing, changed-field helpers, and GroupScene/LightScene activation routing.
+- No service/adapter operation exposes per-light Scene state updates and the required create/update forms are not exercised. See `NC-HUE-004` in [Hue management nonconformance](../docs/nonconformance/hue-resource-management.md).
 
 ## Requirement IDs addressed
 
@@ -18,7 +20,7 @@
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| `AC-HUE-006` | BLOCKED — TARGET | local source/tests; final target status in [final-traceability-status.md](./final-traceability-status.md) |
+| `AC-HUE-006` | PASS — LOCAL; TARGET PENDING | [rectification phase 04](./nonconformance_rectification_plan/phase-04.md) covers forms, per-light routing, and focused tests |
 
 ## Tests and checks executed
 
@@ -49,11 +51,11 @@
 
 ## Target-dependent checks not yet performed
 
-- None beyond final target acceptance.
+- Disposable GroupScene/LightScene live acceptance remains pending after local completion.
 
 ## Deviations or discovered specification problems
 
-- No SRS ambiguity or SAD contradiction was discovered.
+- No SRS/SAD contradiction was found. Local protocol/UI coverage is incomplete for existing `HUE-006`.
 
 ## Scope check
 
@@ -64,5 +66,5 @@
 
 - Modern runtime entry is `App.tsx` → `src/ui/App.tsx` → `src/ui/navigation/AppNavigation.tsx`.
 - Protocols remain isolated behind `ApplicationService`; local persistence is `ConfigStore`, protected Hue state is `CredentialStore`.
-- Pending target work: None beyond final target acceptance.
-
+- Pending local work: none for `NC-HUE-004`; see the rectification handoff.
+- Pending target work: `AC-HUE-006` after local completion.

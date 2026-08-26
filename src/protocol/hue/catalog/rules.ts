@@ -19,32 +19,20 @@ export interface HueRuleAction {
 export const HUE_RULE_ACTION_METHODS = ["GET", "PUT", "POST"] as const;
 
 export function parseRuleCondition(value: unknown): HueRuleCondition {
-  if (!value || typeof value !== "object") {
-    throw new Error("Invalid Hue Rule condition.");
-  }
-  const record = value as Record<string, unknown>;
-  if (typeof record.address !== "string" || typeof record.operator !== "string") {
-    throw new Error("Hue Rule condition requires address and operator.");
-  }
+  const record = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
   return {
-    address: record.address,
-    operator: record.operator,
+    address: typeof record.address === "string" ? record.address : "",
+    operator: typeof record.operator === "string" ? record.operator : "unknown",
     ...(typeof record.value === "string" ? { value: record.value } : {}),
   };
 }
 
 export function parseRuleAction(value: unknown): HueRuleAction {
-  if (!value || typeof value !== "object") {
-    throw new Error("Invalid Hue Rule action.");
-  }
-  const record = value as Record<string, unknown>;
-  if (typeof record.address !== "string" || typeof record.method !== "string") {
-    throw new Error("Hue Rule action requires address and method.");
-  }
+  const record = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
   return {
-    address: record.address,
-    method: record.method,
-    ...(record.body && typeof record.body === "object" ? { body: record.body as Record<string, unknown> } : {}),
+    address: typeof record.address === "string" ? record.address : "",
+    method: typeof record.method === "string" ? record.method : "UNKNOWN",
+    ...(record.body && typeof record.body === "object" && !Array.isArray(record.body) ? { body: record.body as Record<string, unknown> } : {}),
   };
 }
 
