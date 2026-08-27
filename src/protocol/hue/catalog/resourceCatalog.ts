@@ -2,6 +2,7 @@ import { valuesEqual } from "../changedFields";
 import { redactHueCredential } from "../redaction";
 import { HueRuleAction, HueRuleCondition, HUE_RULE_ACTION_METHODS, HUE_RULE_CONDITION_OPERATORS, serializeRuleAction, serializeRuleCondition } from "./rules";
 import { HueScheduleTimePattern, scheduleCommandsEqual, StructuredScheduleCommand, serializeScheduleTimePattern, serializeStructuredScheduleCommand, validateScheduleTimePattern } from "./schedules";
+import type { DimmerSceneTargetDetails } from "../dimmer/actions";
 
 export type HueCatalogResourceKind = "light" | "group" | "scene" | "sensor" | "rule" | "schedule" | "resourcelink";
 export type HueCatalogOperation = "create" | "update" | "action" | "status" | "config";
@@ -71,9 +72,18 @@ const STATE_FIELDS: readonly HueCatalogField[] = [
     : entry;
 });
 
-const ACTION_FIELDS: readonly HueCatalogField[] = STATE_FIELDS
-  .filter((entry) => entry.path !== "state.reachable" && entry.path !== "state.colormode")
-  .map((entry) => ({ ...entry, path: entry.path.replace("state.", "action."), endpoint: "action" as const, create: false }));
+const RELATIVE_ACTION_FIELDS: readonly HueCatalogField[] = [
+  field("action.bri_inc", "number", "action", true, false, true, "Brightness change while held", -254, 254),
+];
+
+const ACTION_FIELDS: readonly HueCatalogField[] = [
+  ...STATE_FIELDS
+    .filter((entry) => entry.path !== "state.reachable" && entry.path !== "state.colormode")
+    .map((entry) => ({ ...entry, path: entry.path.replace("state.", "action."), endpoint: "action" as const, create: false })),
+  ...RELATIVE_ACTION_FIELDS,
+];
+
+const LIGHT_ACTION_FIELDS: readonly HueCatalogField[] = [...STATE_FIELDS, ...RELATIVE_ACTION_FIELDS];
 
 const RESOURCE_CATALOG: Readonly<Record<HueCatalogResourceKind, HueCatalogResource>> = {
   light: resource("light", "lights", [
@@ -279,7 +289,8 @@ export function getHueSensorConfigFields(sensorType: string | undefined): readon
 
 export function getHueActionFields(kind: "light" | "group"): readonly HueCatalogField[] {
   const prefix = kind === "light" ? "state." : "action.";
-  return RESOURCE_CATALOG[kind].fields.filter((entry) => entry.path.startsWith(prefix) && entry.writable && entry.update);
+  const fields = kind === "light" ? LIGHT_ACTION_FIELDS : ACTION_FIELDS;
+  return fields.filter((entry) => (entry.path.startsWith(prefix) || entry.path.startsWith("action.")) && entry.writable && entry.update);
 }
 
 export function validateHueCatalogPayload(
@@ -346,12 +357,12 @@ export function validateHueCatalogPayload(
 }
 
 function validateActionFields(kind: HueCatalogResourceKind, record: Record<string, unknown>): HueCatalogValidation {
-  const allowed = kind === "light" ? STATE_FIELDS : kind === "group" ? ACTION_FIELDS : [];
+  const allowed = kind === "light" ? LIGHT_ACTION_FIELDS : kind === "group" ? ACTION_FIELDS : [];
   if (allowed.length === 0) return { allowed: false, reason: `${kind} has no generic action endpoint.` };
   if (!record || typeof record !== "object" || Array.isArray(record)) return { allowed: false, reason: "Action fields must be a structured object." };
   for (const [key, value] of Object.entries(record)) {
     const prefix = kind === "light" ? "state" : "action";
-    const descriptor = allowed.find((entry) => entry.path === `${prefix}.${key}`);
+    const descriptor = allowed.find((entry) => entry.path === `${prefix}.${key}` || entry.path === `action.${key}`);
     if (!descriptor) return { allowed: false, path: key, reason: `Action field '${key}' is not declared by the Hue catalog.` };
     const result = validateValue(descriptor, value);
     if (!result.allowed) return { ...result, path: key };
@@ -501,7 +512,7 @@ function validateScheduleCommand(value: unknown): HueCatalogValidation {
   if (typeof command.address === "string") return isSupportedScheduleAddress(command.method, command.address, command.body) ? { allowed: true } : { allowed: false, path: "command", reason: "Schedule command target is not a supported Hue resource operation." };
   if (typeof command.resourceKind !== "string" || !["light", "group", "scene", "sensor"].includes(command.resourceKind)) return { allowed: false, path: "command", reason: "Schedule command target is not a supported resource." };
   if (typeof command.resourceId !== "string" || command.resourceId.trim() === "") return { allowed: false, path: "command.resourceId", reason: "Schedule command requires a resource ID." };
-  if (!/^\d+$/.test(command.resourceId)) return { allowed: false, path: "command.resourceId", reason: "Schedule command resource IDs must be numeric." };
+  if (command.resourceKind !== "scene" && !/^\d+$/.test(command.resourceId)) return { allowed: false, path: "command.resourceId", reason: "Schedule command resource IDs must be numeric." };
   if (command.subpath !== undefined && typeof command.subpath !== "string") return { allowed: false, path: "command", reason: "Schedule command subpath must be structured." };
   if (!isSupportedStructuredScheduleTarget(command.method, command)) return { allowed: false, path: "command", reason: "Schedule command target is not a supported Hue resource operation." };
   return { allowed: true };
@@ -517,8 +528,13 @@ function isSupportedRuleConditionAddress(value: string): boolean {
 
 function isSupportedRuleActionAddress(value: string, body: unknown): boolean {
   const path = normalizedHuePath(value);
-  if (/^\/groups\/0\/action$/i.test(path)) {
-    return Boolean(body && typeof body === "object" && !Array.isArray(body) && typeof (body as Record<string, unknown>).scene === "string" && /^\d+$/.test((body as Record<string, unknown>).scene as string));
+  if (/^\/groups\/\d+\/action$/i.test(path) && body && typeof body === "object" && !Array.isArray(body)
+    && typeof (body as Record<string, unknown>).scene === "string") {
+    const scene = body && typeof body === "object" && !Array.isArray(body)
+      ? (body as Record<string, unknown>).scene
+      : undefined;
+    return Object.keys(body as Record<string, unknown>).length === 1
+      && typeof scene === "string" && scene.trim() !== "" && !/[/?#]/.test(scene);
   }
   if (/^\/lights\/\d+\/state$/i.test(path)) return body === undefined || Boolean(body && typeof body === "object" && !Array.isArray(body) && validateActionFields("light", body as Record<string, unknown>).allowed);
   if (/^\/groups\/\d+\/action$/i.test(path)) return body === undefined || Boolean(body && typeof body === "object" && !Array.isArray(body) && validateActionFields("group", body as Record<string, unknown>).allowed);
@@ -556,7 +572,8 @@ function validateScheduleTargetMethod(method: string, body: unknown, kind: "ligh
 function isSceneScheduleBody(body: unknown, resourceId?: unknown): boolean {
   if (!body || typeof body !== "object" || Array.isArray(body)) return false;
   const scene = (body as Record<string, unknown>).scene;
-  return typeof scene === "string" && /^\d+$/.test(scene) && (resourceId === undefined || scene === resourceId);
+  return typeof scene === "string" && scene.trim() !== "" && !/[/?#]/.test(scene)
+    && (resourceId === undefined || scene === resourceId);
 }
 
 export function isManagedHuePath(value: string): boolean {
@@ -637,20 +654,40 @@ export function buildRuleConditionFromSensor(sensorId: string, event: string, op
 export function buildRuleActionFromTarget(
   kind: "light" | "group" | "scene",
   id: string,
-  operation: "on" | "off" | "set" | "activate",
+  operation: "on" | "off" | "set" | "brighten" | "dim" | "activate",
   body?: Record<string, unknown>,
+  sceneDetails?: DimmerSceneTargetDetails,
 ): HueRuleAction {
-  if (!/^\d+$/.test(id)) throw new Error("Hue resource IDs must be numeric.");
   if (kind === "scene") {
+    if (!isSceneIdentifier(id)) throw new Error("A Scene ID is required.");
     if (operation !== "activate") throw new Error("Scenes support activation only.");
-    return { address: `/groups/0/action`, method: "PUT", body: { scene: id } };
+    if (sceneDetails?.type === "GroupScene" && !sceneDetails.group) {
+      throw new Error("A GroupScene must identify its owning Group.");
+    }
+    const groupId = sceneDetails?.type === "LightScene" ? "0" : sceneDetails?.group || "0";
+    if (!/^\d+$/.test(groupId)) throw new Error("A GroupScene must identify a numeric Group target.");
+    return { address: `/groups/${groupId}/action`, method: "PUT", body: { scene: id } };
   }
-  const actionBody = { ...(body || {}) };
-  if (operation === "on" || operation === "off") actionBody.on = operation === "on";
+  if (!/^\d+$/.test(id)) throw new Error("Hue resource IDs must be numeric.");
+  const actionBody = operation === "brighten" || operation === "dim"
+    ? relativeActionBody(operation, body)
+    : operation === "on" || operation === "off"
+      ? { on: operation === "on" }
+      : { ...(body || {}) };
   if (Object.keys(actionBody).length === 0) throw new Error("A structured Rule action requires at least one state field.");
   const validation = validateHueCatalogPayload(kind, "action", actionBody);
   if (!validation.allowed) throw new Error(validation.reason);
   return { address: kind === "light" ? `/lights/${id}/state` : `/groups/${id}/action`, method: "PUT", body: actionBody };
+}
+
+function relativeActionBody(operation: "brighten" | "dim", body?: Record<string, unknown>): Record<string, unknown> {
+  const supplied = body?.bri_inc;
+  const magnitude = typeof supplied === "number" && Number.isFinite(supplied) && Math.abs(supplied) > 0
+    ? Math.min(254, Math.max(1, Math.round(Math.abs(supplied))))
+    : 25;
+  const result: Record<string, unknown> = { bri_inc: operation === "brighten" ? magnitude : -magnitude };
+  if (typeof body?.transitiontime === "number") result.transitiontime = body.transitiontime;
+  return result;
 }
 
 export function buildScheduleCommandFromTarget(
@@ -659,11 +696,12 @@ export function buildScheduleCommandFromTarget(
   operation: "on" | "off" | "set" | "activate" | "read",
   body?: Record<string, unknown>,
 ): StructuredScheduleCommand {
-  if (!/^\d+$/.test(id)) throw new Error("Hue resource IDs must be numeric.");
   if (kind === "scene") {
+    if (!isSceneIdentifier(id)) throw new Error("A Scene ID is required.");
     if (operation !== "activate") throw new Error("Scenes support activation only.");
     return { method: "PUT", resourceKind: "scene", resourceId: id, subpath: "action", body: { scene: id } };
   }
+  if (!/^\d+$/.test(id)) throw new Error("Hue resource IDs must be numeric.");
   if (operation === "activate") throw new Error(`${kind} targets do not support scene activation.`);
   const method = operation === "read" ? "GET" : "PUT";
   const command: StructuredScheduleCommand = {
@@ -680,6 +718,10 @@ export function buildScheduleCommandFromTarget(
   const validation = validateHueCatalogPayload("schedule", "update", { command });
   if (!validation.allowed) throw new Error(validation.reason);
   return command;
+}
+
+function isSceneIdentifier(value: string): boolean {
+  return typeof value === "string" && value.trim() !== "" && !/[/?#]/.test(value);
 }
 
 export function isHueCatalogComplete(): boolean {

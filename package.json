@@ -28,7 +28,7 @@
     "test": "jest",
     "test:ci": "jest --runInBand --coverage=false",
     "check:fixture-secrets": "node scripts/check-characterization-secrets.mjs",
-    "check:docs": "python3 docs/validate_home_dashboard_docs_2.2.0.py && python3 docs/validate_nonconformance_rectification_plan.py",
+    "check:docs": "python3 docs/validate_home_dashboard_docs_2.4.1.py docs && python3 docs/validate_home_dashboard_docs_2.2.0.py && python3 docs/validate_nonconformance_rectification_plan.py",
     "doctor": "npx -y expo-doctor",
     "build": "npx eas-cli@latest build --platform android --profile release-apk",
     "build:apk": "node scripts/build-local-apk.mjs",

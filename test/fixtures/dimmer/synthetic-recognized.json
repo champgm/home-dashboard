@@ -1,0 +1,77 @@
+{
+  "lights": {
+    "1": { "name": "Reading Lamp", "state": { "on": false, "bri": 120 } }
+  },
+  "groups": {
+    "2": { "name": "Living Room", "action": { "on": true } }
+  },
+  "scenes": {
+    "7": { "name": "Evening", "type": "GroupScene", "group": "2" }
+  },
+  "sensors": {
+    "4": {
+      "name": "Wall switch",
+      "type": "ZLLSwitch",
+      "manufacturername": "Acme",
+      "modelid": "DIM-1",
+      "uniqueid": "physical-a",
+      "config": { "on": true, "battery": 90 },
+      "state": { "buttonevent": 1000 }
+    },
+    "5": {
+      "name": "Wall switch helper",
+      "type": "ZLLSwitch",
+      "manufacturername": "Acme",
+      "modelid": "DIM-1",
+      "uniqueid": "physical-a",
+      "config": { "on": true },
+      "state": { "buttonevent": 1001 }
+    }
+  },
+  "rules": {
+    "10": {
+      "name": "Wall switch on",
+      "owner": "SECRET_OWNER",
+      "status": "enabled",
+      "conditions": [{ "address": "/api/TEST_CREDENTIAL/sensors/4/state/buttonevent", "operator": "eq", "value": "1000" }],
+      "actions": [{ "address": "/api/TEST_CREDENTIAL/lights/1/state", "method": "PUT", "body": { "on": true } }]
+    },
+    "11": {
+      "name": "Wall switch dim",
+      "owner": "OTHER_OWNER",
+      "status": "enabled",
+      "conditions": [{ "address": "/sensors/5/state/buttonevent", "operator": "eq", "value": "1001" }],
+      "actions": [{ "address": "/groups/2/action", "method": "PUT", "body": { "bri": 180, "transitiontime": 4 } }]
+    },
+    "12": {
+      "name": "Wall switch scene",
+      "status": "disabled",
+      "conditions": [{ "address": "/sensors/4/state/buttonevent", "operator": "eq", "value": "1002" }],
+      "actions": [{ "address": "/groups/2/action", "method": "PUT", "body": { "scene": "7" } }]
+    },
+    "13": {
+      "name": "Wall switch custom",
+      "status": "enabled",
+      "conditions": [{ "address": "/sensors/4/state/buttonevent", "operator": "eq", "value": "1003" }],
+      "actions": [
+        { "address": "/lights/1/state", "method": "PUT", "body": { "on": true } },
+        { "address": "/groups/2/action", "method": "PUT", "body": { "on": false } }
+      ]
+    },
+    "14": {
+      "name": "Wall switch malformed",
+      "status": "enabled",
+      "conditions": [{ "address": "/sensors/4/state/buttonevent/extra", "operator": "eq", "value": "1000" }],
+      "actions": [{ "address": "/lights/1/state/extra", "method": "PUT", "body": { "on": true } }]
+    }
+  },
+  "schedules": {
+    "20": {
+      "name": "Wall switch schedule",
+      "command": { "address": "/api/TEST_CREDENTIAL/sensors/4/config", "method": "PUT", "body": { "on": false } }
+    }
+  },
+  "resourcelinks": {
+    "30": { "class": "HomeDashboard", "description": "Wall switch resources", "links": ["/sensors/4", "/rules/10", "/schedules/20"] }
+  }
+}

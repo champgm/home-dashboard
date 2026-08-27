@@ -1,0 +1,25 @@
+{
+  "deviceKey": "synthetic:physical-a",
+  "summary": "Update the characterized dimmer behavior.",
+  "operations": [
+    {
+      "kind": "rule",
+      "id": "10",
+      "operation": "update",
+      "payload": { "name": "Updated" },
+      "label": "Update dimmer behavior"
+    },
+    {
+      "kind": "schedule",
+      "id": "20",
+      "operation": "disable",
+      "label": "Disable related dimmer schedule"
+    },
+    {
+      "kind": "rule",
+      "id": "10",
+      "operation": "enable",
+      "label": "Enable new dimmer behavior"
+    }
+  ]
+}

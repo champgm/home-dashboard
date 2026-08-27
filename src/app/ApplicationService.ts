@@ -1,5 +1,6 @@
 import { ConfigStore } from "../storage/ConfigStore";
 import { CredentialStore } from "../storage/CredentialStore";
+import { valuesEqual } from "../protocol/hue/changedFields";
 import { HueV1Adapter } from "../protocol/hue/HueV1Adapter";
 import { HueGroup, groupAggregateState } from "../protocol/hue/resources/groups";
 import { HueScene } from "../protocol/hue/resources/scenes";
@@ -14,6 +15,21 @@ import { ambiguous, definiteFailure, partialFailure, success } from "./commandRe
 import { diagnostic, diagnosticForError, errorCategory, userMessage } from "./diagnostics";
 import { emitDevelopmentEvent } from "./developmentLogger";
 import { DeviceStateStore } from "./DeviceStateStore";
+import { buildSimpleDimmerBindingPayload, previewStructuralDimmerEdit } from "./dimmerEditing";
+import { buildEditorModel, snapshotFromStateStore } from "../protocol/hue/dimmer/projector";
+import { getDimmerModelCatalog } from "../protocol/hue/dimmer/modelCatalog";
+import { dimmerActionTargetExists } from "../protocol/hue/dimmer/actions";
+import { parseResourceLinkReferences, parseRuleReferences, parseScheduleCommandReference } from "../protocol/hue/dimmer/references";
+import {
+  DimmerChangeOperation,
+  DimmerChangeSet,
+  DimmerRuleShape,
+  SimpleDimmerBindingEdit,
+  StructuralCommitReport,
+  StructuralOperationResult,
+  StructuralDimmerEdit,
+  resourceRefKey,
+} from "../protocol/hue/dimmer/types";
 import {
   AppConfig,
   CommandResult,
@@ -56,12 +72,21 @@ export interface ApplicationServiceOptions {
   readonly hue?: HueClient;
   readonly plugs?: PlugClient;
   readonly stateStore?: DeviceStateStore;
+  /** Characterized catalog used for independent dimmer save revalidation. */
+  readonly dimmerCatalog?: import("../protocol/hue/dimmer/modelCatalog").DimmerModelCatalog;
   readonly deadlineMs?: number;
   readonly now?: () => number;
 }
 
 export interface PlugRefreshOptions {
   readonly ignoreBackoff?: boolean;
+}
+
+export interface HueRefreshOptions {
+  /** Wait for an older snapshot and issue a fresh read after a mutation. */
+  readonly force?: boolean;
+  /** Internal mutation lifecycle path; keeps the write gate held during refresh. */
+  readonly allowWhileMutationBusy?: boolean;
 }
 
 export interface HueSearchResult {
@@ -77,6 +102,13 @@ interface PlugBackoffState {
   readonly nextAttemptAt: number;
 }
 
+interface HueMutationExecutionOptions {
+  readonly observablePayload?: Record<string, unknown>;
+  /** Structural commits hold the busy gate and refresh only after the set. */
+  readonly busyAlreadyHeld?: boolean;
+  readonly refresh?: boolean;
+}
+
 export class ApplicationService {
   readonly stateStore: DeviceStateStore;
   private readonly configStore?: ConfigStore;
@@ -85,6 +117,7 @@ export class ApplicationService {
   private readonly plugs?: PlugClient;
   private readonly deadlineMs: number;
   private readonly now: () => number;
+  readonly dimmerCatalog: import("../protocol/hue/dimmer/modelCatalog").DimmerModelCatalog;
   private foreground = true;
   private lifecycleGeneration = 0;
   private hueStateGeneration = 0;
@@ -103,6 +136,7 @@ export class ApplicationService {
     this.plugs = options.plugs;
     this.deadlineMs = options.deadlineMs || 5000;
     this.now = options.now || (() => globalThis.performance?.now?.() ?? Date.now());
+    this.dimmerCatalog = options.dimmerCatalog || getDimmerModelCatalog();
   }
 
   get isForeground(): boolean {
@@ -180,8 +214,14 @@ export class ApplicationService {
     ]);
   }
 
-  async refreshHue(): Promise<void> {
-    if (!this.foreground || !this.hue || this.hueMutationBusy || this.hueRefreshInFlight) return;
+  async refreshHue(options: HueRefreshOptions = {}): Promise<void> {
+    if (!this.foreground || !this.hue || (this.hueMutationBusy && !options.allowWhileMutationBusy)) return;
+    while (this.hueRefreshInFlight) {
+      if (!options.force) return;
+      const inFlight = this.hueRefreshInFlight;
+      await inFlight;
+      if (!this.foreground || !this.hue || (this.hueMutationBusy && !options.allowWhileMutationBusy)) return;
+    }
     const generation = this.lifecycleGeneration;
     const hueGeneration = this.hueStateGeneration;
     const operation = this.withDeadline(() => this.hue!.snapshot(), false, "Hue snapshot");
@@ -353,6 +393,61 @@ export class ApplicationService {
     operation: "update" | "action" | "status" | "config",
     payload: Record<string, unknown>,
   ): Promise<CommandResult> {
+    return this.mutateHueInternal(kind, id, operation, payload);
+  }
+
+  /** The common one-binding dimmer path: one Rule update, no preview dialog. */
+  async saveSimpleBinding(edit: SimpleDimmerBindingEdit): Promise<CommandResult> {
+    const revalidated = this.revalidateSimpleDimmerBinding(edit);
+    if (!revalidated.allowed) return definiteFailure(diagnostic("ProtocolRejected", revalidated.reason));
+    edit = revalidated.edit;
+    const stored = this.stateStore.get({ kind: "rule", id: edit.ruleId });
+    if (!stored || stored.state.status !== "known" || !stored.state.value || typeof stored.state.value !== "object") {
+      return definiteFailure(diagnostic("Unknown", "The Rule is no longer available; refresh the bridge before editing it."));
+    }
+    const prepared = buildSimpleDimmerBindingPayload(stored.state.value as Record<string, unknown>, edit);
+    if (!prepared.allowed) return definiteFailure(diagnostic("ProtocolRejected", prepared.reason, { resource: `rule:${edit.ruleId}` }));
+    return this.mutateHue("rule", edit.ruleId, "update", prepared.payload);
+  }
+
+  private revalidateSimpleDimmerBinding(
+    edit: SimpleDimmerBindingEdit,
+  ): { readonly allowed: true; readonly edit: SimpleDimmerBindingEdit } | { readonly allowed: false; readonly reason: string } {
+    if (!edit || typeof edit.ruleId !== "string" || !edit.ruleId.trim()) return { allowed: false, reason: "A Rule ID is required." };
+    if (typeof edit.sensorId !== "string" || !edit.sensorId.trim()
+      || typeof edit.catalogId !== "string" || !edit.catalogId.trim()
+      || typeof edit.controlId !== "string" || !edit.controlId.trim()
+      || typeof edit.deviceKey !== "string" || !edit.deviceKey.trim()
+      || !Number.isInteger(edit.event)) {
+      return { allowed: false, reason: "The dimmer binding identity is incomplete; refresh the bridge before editing it." };
+    }
+    const currentSnapshot = snapshotFromStateStore(this.stateStore);
+    const model = buildEditorModel({ kind: "sensor", id: edit.sensorId }, currentSnapshot, this.dimmerCatalog);
+    if (!model.recognized || model.catalogId !== edit.catalogId || model.deviceKey !== edit.deviceKey) {
+      return { allowed: false, reason: "The dimmer model or physical device changed; refresh the bridge before editing it." };
+    }
+    const binding = model.advanced.bindings.find((candidate) => candidate.advanced.ruleId === edit.ruleId
+      && candidate.advanced.conditionIndex === edit.conditionIndex
+      && candidate.advanced.actionIndex === edit.actionIndex
+      && candidate.controlId === edit.controlId
+      && candidate.gestureId === edit.gestureId
+      && candidate.event === edit.event);
+    if (!binding || !binding.editable || binding.classification !== "editable_simple" || !binding.simpleForm) {
+      return { allowed: false, reason: "The dimmer gesture is no longer the same characterized simple binding; refresh the bridge before editing it." };
+    }
+    if (!dimmerActionTargetExists(currentSnapshot, edit.action)) {
+      return { allowed: false, reason: "The selected Hue target is no longer present; refresh the bridge before saving." };
+    }
+    return { allowed: true, edit: { ...edit, characterization: binding.simpleForm } };
+  }
+
+  private async mutateHueInternal(
+    kind: Exclude<ResourceKind, "plug">,
+    id: string,
+    operation: "update" | "action" | "status" | "config",
+    payload: Record<string, unknown>,
+    execution: HueMutationExecutionOptions = {},
+  ): Promise<CommandResult> {
     if (!this.hue?.mutate) return definiteFailure(diagnostic("NetworkUnavailable", "Hue resource mutation is unavailable."));
     const current = this.stateStore.get({ kind, id });
     const original = current?.state.status === "known" && current.state.value && typeof current.state.value === "object"
@@ -397,20 +492,215 @@ export class ApplicationService {
       }
     }
     return this.executeHueMutation(() => this.hue?.mutate?.(kind, id, operation, prepared.payload), `${kind} ${operation}`, { kind, id }, {
+      ...execution,
       observablePayload: operation === "update" || operation === "config" || operation === "status" ? prepared.payload : undefined,
     });
   }
 
   async createHue(kind: Exclude<ResourceKind, "plug">, payload: Record<string, unknown>): Promise<CommandResult> {
+    return this.createHueInternal(kind, payload);
+  }
+
+  private async createHueInternal(
+    kind: Exclude<ResourceKind, "plug">,
+    payload: Record<string, unknown>,
+    execution: HueMutationExecutionOptions = {},
+  ): Promise<CommandResult> {
     if (!this.hue?.create) return definiteFailure(diagnostic("NetworkUnavailable", "Hue resource creation is unavailable."));
     const validation = validateHueCatalogPayload(kind, "create", payload);
     if (!validation.allowed) return definiteFailure(diagnostic("ProtocolRejected", validation.reason, { resource: kind }));
-    return this.executeHueMutation(() => this.hue?.create?.(kind, payload), `${kind} create`, { kind });
+    return this.executeHueMutation(() => this.hue?.create?.(kind, payload), `${kind} create`, { kind }, execution);
   }
 
   async deleteHue(kind: Exclude<ResourceKind, "plug">, id: string): Promise<CommandResult> {
+    return this.deleteHueInternal(kind, id);
+  }
+
+  private async deleteHueInternal(
+    kind: Exclude<ResourceKind, "plug">,
+    id: string,
+    execution: HueMutationExecutionOptions = {},
+  ): Promise<CommandResult> {
     if (!this.hue?.delete) return definiteFailure(diagnostic("NetworkUnavailable", "Hue resource deletion is unavailable."));
-    return this.executeHueMutation(() => this.hue?.delete?.(kind, id), `${kind} delete`, { kind, id });
+    return this.executeHueMutation(() => this.hue?.delete?.(kind, id), `${kind} delete`, { kind, id }, execution);
+  }
+
+  previewStructuralEdit(edit: StructuralDimmerEdit): ReturnType<typeof previewStructuralDimmerEdit> {
+    const prepared = this.revalidateStructuralDimmerEdit(edit);
+    if (!prepared.allowed) return prepared;
+    return { allowed: true, changeSet: prepared.changeSet };
+  }
+
+  /**
+   * Commit one identity-bound structural edit. The concrete operation list is
+   * rebuilt immediately before execution; each operation is attempted at
+   * most once, later operations are left unattempted after any definite,
+   * ambiguous, partial, or abandoned result, and authoritative state is
+   * refreshed once at the end.
+   */
+  async commitStructuralEdit(edit: StructuralDimmerEdit): Promise<StructuralCommitReport> {
+    const prepared = this.revalidateStructuralDimmerEdit(edit);
+    const suppliedOperations = structuralOperationsFromEdit(edit);
+    const operations = prepared.allowed ? [...prepared.changeSet.operations] : [...suppliedOperations];
+    if (!prepared.allowed) {
+      const diagnosticValue = diagnostic("ProtocolRejected", prepared.reason);
+      return structuralReport("stopped", "definite_failure", operations.map((operation) => ({ operation, status: "unattempted" as const, reason: prepared.reason })), diagnosticValue);
+    }
+    if (!this.foreground) {
+      const diagnosticValue = diagnostic("Unknown", "Structural change abandoned because the app is not in the foreground.");
+      return structuralReport("stopped", "abandoned", operations.map((operation) => ({ operation, status: "unattempted" as const, reason: diagnosticValue.message })), diagnosticValue);
+    }
+    if (!this.hue) {
+      const diagnosticValue = diagnostic("NetworkUnavailable", "Hue is not configured.");
+      return structuralReport("stopped", "definite_failure", operations.map((operation) => ({ operation, status: "unattempted" as const, reason: diagnosticValue.message })), diagnosticValue);
+    }
+    if (this.hueMutationBusy) {
+      const diagnosticValue = diagnostic("Busy", userMessage("Busy"));
+      return structuralReport("stopped", "definite_failure", operations.map((operation) => ({ operation, status: "unattempted" as const, reason: diagnosticValue.message })), diagnosticValue);
+    }
+
+    this.hueMutationBusy = true;
+    this.hueStateGeneration += 1;
+    const generation = this.lifecycleGeneration;
+    const results: StructuralOperationResult[] = [];
+    try {
+      for (let index = 0; index < operations.length; index += 1) {
+        const operation = operations[index];
+        if (!this.foreground || generation !== this.lifecycleGeneration) {
+          const abandonedReason = "Structural change abandoned when the app left the foreground.";
+          for (let remaining = index; remaining < operations.length; remaining += 1) {
+            results.push({ operation: operations[remaining], status: "unattempted", reason: abandonedReason });
+          }
+          break;
+        }
+        const result = await this.executeStructuralOperation(operation);
+        if (result.kind === "success") {
+          results.push({ operation, status: "succeeded", kind: result.kind });
+          continue;
+        }
+        results.push({ operation, status: "failed_or_ambiguous", kind: result.kind, reason: result.diagnostic?.message, diagnostic: result.diagnostic });
+        for (let remaining = index + 1; remaining < operations.length; remaining += 1) {
+          results.push({ operation: operations[remaining], status: "unattempted", reason: "Not attempted after the structural change stopped." });
+        }
+        break;
+      }
+      const failed = results.find((result) => result.status === "failed_or_ambiguous");
+      const unattempted = results.find((result) => result.status === "unattempted");
+      const lastFailure = [...results].reverse().find((result) => result.status === "failed_or_ambiguous");
+      const reportKind = failed
+        ? resultKindForStructuralReport(results)
+        : unattempted
+          ? "abandoned" as const
+          : "success" as const;
+      const reportDiagnostic = lastFailure?.diagnostic || (lastFailure?.reason
+        ? diagnostic(reportKind === "ambiguous" ? "Ambiguous" : reportKind === "abandoned" ? "Unknown" : "ProtocolRejected", lastFailure.reason)
+        : unattempted
+          ? diagnostic("Unknown", "Structural change was not completed.")
+          : undefined);
+      if (this.foreground && generation === this.lifecycleGeneration) {
+        // Keep the write gate held until the required authoritative refresh
+        // completes. A second Hue mutation must not begin against the old
+        // snapshot while this report is being finalized.
+        await this.refreshHue({ force: true, allowWhileMutationBusy: true });
+      }
+      return structuralReport(
+        failed || unattempted ? "stopped" : "completed",
+        reportKind,
+        results,
+        reportDiagnostic,
+      );
+    } finally {
+      this.hueMutationBusy = false;
+    }
+  }
+
+  /**
+   * Re-project and rebuild a structural edit from the current snapshot. The
+   * preview is intentionally not a capability token: commit calls this same
+   * routine again immediately before the first Hue write.
+   */
+  private revalidateStructuralDimmerEdit(
+    edit: StructuralDimmerEdit,
+  ): { readonly allowed: true; readonly changeSet: DimmerChangeSet } | { readonly allowed: false; readonly reason: string } {
+    const conditionIndex = edit?.conditionIndex;
+    if (!edit || typeof edit !== "object"
+      || typeof edit.sensorId !== "string" || !edit.sensorId.trim()
+      || typeof edit.catalogId !== "string" || !edit.catalogId.trim()
+      || typeof edit.deviceKey !== "string" || !edit.deviceKey.trim()
+      || typeof edit.formId !== "string" || !edit.formId.trim()
+      || typeof edit.controlId !== "string" || !edit.controlId.trim()
+      || typeof edit.bindingId !== "string" || !edit.bindingId.trim()
+      || typeof edit.ruleId !== "string" || !edit.ruleId.trim()
+      || !Number.isInteger(edit.event)
+      || !Number.isInteger(conditionIndex) || (conditionIndex as number) < 0) {
+      return { allowed: false, reason: "The structural dimmer binding identity is incomplete; refresh the bridge before editing it." };
+    }
+
+    const currentSnapshot = snapshotFromStateStore(this.stateStore);
+    const model = buildEditorModel({ kind: "sensor", id: edit.sensorId }, currentSnapshot, this.dimmerCatalog);
+    if (!model.recognized || model.catalogId !== edit.catalogId || model.deviceKey !== edit.deviceKey) {
+      return { allowed: false, reason: "The dimmer model or physical device changed; refresh the bridge before applying this structural edit." };
+    }
+    const binding = model.advanced.bindings.find((candidate) => candidate.classification === "recognized_structural"
+      && candidate.editable
+      && candidate.id === edit.bindingId
+      && candidate.structuralFormId === edit.formId
+      && candidate.controlId === edit.controlId
+      && candidate.gestureId === edit.gestureId
+      && candidate.event === edit.event
+      && candidate.advanced.ruleId === edit.ruleId
+      && candidate.advanced.conditionIndex === conditionIndex);
+    if (!binding) {
+      return { allowed: false, reason: "The structural gesture is no longer the same characterized binding; refresh the bridge before applying it." };
+    }
+    const form = this.dimmerCatalog.models.find((entry) => entry.id === model.catalogId)?.structuralForms
+      ?.find((candidate) => candidate.id === edit.formId);
+    if (!form?.buildChangeSet) return { allowed: false, reason: "This structural form has no characterized local builder." };
+    const rule = binding.advanced.ruleShape;
+    if (!rule) return { allowed: false, reason: "The current Rule shape is unavailable for structural editing." };
+
+    const { changeSet: _ignoredChangeSet, operations: _ignoredOperations, ...identityAndValues } = edit;
+    let generated: DimmerChangeSet | undefined;
+    try {
+      generated = form.buildChangeSet({
+        edit: identityAndValues,
+        model,
+        binding,
+        rule,
+        snapshot: currentSnapshot,
+      });
+    } catch (_error) {
+      return { allowed: false, reason: "The characterized structural form could not build a change set from the current Rule." };
+    }
+    if (!generated) return { allowed: false, reason: "The selected structural values are not valid for the current binding." };
+    if (generated.deviceKey !== model.deviceKey) return { allowed: false, reason: "The structural change set is not bound to the selected physical dimmer." };
+    const shape = structuralOperationShapeMatches(form.operationShape, generated.operations, edit.ruleId);
+    if (!shape.allowed) return shape;
+
+    const checked = previewStructuralDimmerEdit({ changeSet: generated });
+    if (!checked.allowed) return checked;
+    const safe = validateStructuralChangeSetAgainstSnapshot(
+      checked.changeSet,
+      currentSnapshot,
+      rule,
+      edit.ruleId,
+      structuralModelResourceRefs(model),
+    );
+    if (!safe.allowed) return safe;
+    return checked;
+  }
+
+  private async executeStructuralOperation(operation: DimmerChangeOperation): Promise<CommandResult> {
+    const execution: HueMutationExecutionOptions = { busyAlreadyHeld: true, refresh: false };
+    if (operation.operation === "create") return this.createHueInternal(operation.kind, operation.payload || {}, execution);
+    if (!operation.id) return definiteFailure(diagnostic("ProtocolRejected", "A structural operation is missing its Hue resource ID."));
+    if (operation.operation === "delete") return this.deleteHueInternal(operation.kind, operation.id, execution);
+    if (operation.operation === "enable" || operation.operation === "disable") {
+      return this.mutateHueInternal(operation.kind, operation.id, "status", {
+        status: operation.operation === "enable" ? "enabled" : "disabled",
+      }, execution);
+    }
+    return this.mutateHueInternal(operation.kind, operation.id, "update", operation.payload || {}, execution);
   }
 
   async mutateSceneLightState(sceneId: string, lightId: string, payload: Record<string, unknown>): Promise<CommandResult> {
@@ -513,25 +803,36 @@ export class ApplicationService {
     operation: (() => Promise<unknown> | undefined) | undefined,
     operationName: string,
     ref: ResourceRef,
-    reconciliation: { readonly observablePayload?: Record<string, unknown> } = {},
+    reconciliation: HueMutationExecutionOptions = {},
   ): Promise<CommandResult> {
     if (!operation || !this.hue) return definiteFailure(diagnostic("NetworkUnavailable", "Hue is not configured."));
-    if (this.hueMutationBusy) return definiteFailure(diagnostic("Busy", userMessage("Busy"), { operation: operationName }));
-    this.hueMutationBusy = true;
-    this.hueStateGeneration += 1;
+    const ownsMutationGate = !reconciliation.busyAlreadyHeld;
+    if (!reconciliation.busyAlreadyHeld && this.hueMutationBusy) return definiteFailure(diagnostic("Busy", userMessage("Busy"), { operation: operationName }));
+    if (ownsMutationGate) {
+      this.hueMutationBusy = true;
+      this.hueStateGeneration += 1;
+    }
     const generation = this.lifecycleGeneration;
     try {
       const result = await this.withDeadline(operation, true, operationName, `${ref.kind}:${ref.id || ref.plugEndpointId || ""}`);
       if (result.kind === "ambiguous" && reconciliation.observablePayload && ref.id && this.hue.getResource) {
-        return this.reconcileHueMutation(ref, reconciliation.observablePayload, result.diagnostic);
+        const reconciled = await this.reconcileHueMutation(ref, reconciliation.observablePayload, result.diagnostic);
+        if (reconciled.kind !== "abandoned"
+          && reconciliation.refresh !== false
+          && this.foreground
+          && generation === this.lifecycleGeneration) {
+          await this.refreshHue({ force: true, allowWhileMutationBusy: true });
+        }
+        return reconciled;
       }
       if (result.kind !== "success") return result;
       if (!this.foreground || generation !== this.lifecycleGeneration) return { kind: "abandoned", diagnostic: diagnostic("Unknown", "Operation abandoned when the app left the foreground.") };
-      this.hueMutationBusy = false;
-      await this.refreshHue();
+      if (reconciliation.refresh !== false) {
+        await this.refreshHue({ force: true, allowWhileMutationBusy: true });
+      }
       return success();
     } finally {
-      this.hueMutationBusy = false;
+      if (ownsMutationGate) this.hueMutationBusy = false;
     }
   }
 
@@ -752,6 +1053,172 @@ export class ApplicationService {
       ? success()
       : definiteFailure(diagnostic("StorageError", userMessage("StorageError")));
   }
+}
+
+function structuralOperationsFromEdit(edit: StructuralDimmerEdit): readonly DimmerChangeOperation[] {
+  if (!edit || typeof edit !== "object") return [];
+  if (edit.changeSet && Array.isArray(edit.changeSet.operations)) return edit.changeSet.operations;
+  return Array.isArray(edit.operations) ? edit.operations : [];
+}
+
+function structuralOperationShapeMatches(
+  shape: "multiple_resources" | "replace_rule",
+  operations: readonly DimmerChangeOperation[],
+  ruleId: string,
+): { readonly allowed: true } | { readonly allowed: false; readonly reason: string } {
+  const resources = new Set(operations.map((operation) => `${operation.kind}:${operation.id || "<new>"}`));
+  if (shape === "multiple_resources" && resources.size < 2) {
+    return { allowed: false, reason: "The catalog marked this form structural, but it does not produce a multi-resource change." };
+  }
+  if (shape === "replace_rule") {
+    const deletesExisting = operations.some((operation) => operation.kind === "rule" && operation.operation === "delete" && operation.id === ruleId);
+    const createsRule = operations.some((operation) => operation.kind === "rule" && operation.operation === "create");
+    if (!deletesExisting || !createsRule) {
+      return { allowed: false, reason: "The catalog marked this form as a Rule replacement, but the builder did not produce the characterized replacement operations." };
+    }
+  }
+  return { allowed: true };
+}
+
+function structuralModelResourceRefs(model: import("../protocol/hue/dimmer/types").DimmerEditorModel): readonly ResourceRef[] {
+  return [
+    ...model.advanced.resourceRefs,
+    ...model.advanced.sensorIds.map((id) => ({ kind: "sensor" as const, id })),
+    ...model.advanced.ruleIds.map((id) => ({ kind: "rule" as const, id })),
+    ...model.advanced.scheduleIds.map((id) => ({ kind: "schedule" as const, id })),
+    ...model.advanced.resourceLinkIds.map((id) => ({ kind: "resourcelink" as const, id })),
+  ];
+}
+
+function validateStructuralChangeSetAgainstSnapshot(
+  changeSet: DimmerChangeSet,
+  snapshot: HueSnapshot,
+  originalRule: DimmerRuleShape,
+  originalRuleId: string,
+  allowedResources: readonly ResourceRef[],
+): { readonly allowed: true } | { readonly allowed: false; readonly reason: string } {
+  const allowed = new Set(allowedResources.map(resourceRefKey));
+  allowed.add(resourceRefKey({ kind: "rule", id: originalRuleId }));
+
+  for (const operation of changeSet.operations) {
+    if (operation.operation !== "create") {
+      if (!operation.id || !resourcePresent(snapshot, operation.kind, operation.id)) {
+        return { allowed: false, reason: `${operation.label} refers to a resource that is not in the current Hue snapshot.` };
+      }
+      if (!allowed.has(resourceRefKey({ kind: operation.kind, id: operation.id }))) {
+        return { allowed: false, reason: `${operation.label} is outside the selected dimmer's characterized automation graph.` };
+      }
+    }
+    const payload = operation.operation === "enable" || operation.operation === "disable"
+      ? { status: operation.operation === "enable" ? "enabled" : "disabled" }
+      : operation.payload;
+    if (!payload) continue;
+    const resourceValidation = validateStructuralPayloadReferences(operation.kind, payload, snapshot);
+    if (!resourceValidation.allowed) return resourceValidation;
+  }
+
+  const replacementDeleteIndex = changeSet.operations.findIndex((operation) => operation.kind === "rule"
+    && operation.operation === "delete" && operation.id === originalRuleId);
+  const replacementCreateIndex = changeSet.operations.findIndex((operation) => operation.kind === "rule" && operation.operation === "create");
+  if (replacementDeleteIndex >= 0 && replacementCreateIndex >= 0) {
+    if (replacementCreateIndex > replacementDeleteIndex) {
+      return { allowed: false, reason: "A Rule replacement must create the new Rule before deleting the existing one." };
+    }
+    const replacement = changeSet.operations[replacementCreateIndex].payload || {};
+    if (originalRule.name !== undefined && replacement.name !== originalRule.name) {
+      return { allowed: false, reason: "A Rule replacement must preserve the existing Rule name." };
+    }
+    if (originalRule.status !== undefined && replacement.status !== originalRule.status) {
+      return { allowed: false, reason: "A Rule replacement must preserve the existing Rule status." };
+    }
+    if (originalRule.recycle !== undefined && replacement.recycle !== originalRule.recycle) {
+      return { allowed: false, reason: "A Rule replacement must preserve the existing Rule recycle behavior." };
+    }
+    if (!valuesEqual(originalRule.conditions, replacement.conditions)) {
+      return { allowed: false, reason: "A Rule replacement must preserve the existing Rule conditions." };
+    }
+    if (resourceLinkReferences(snapshot, "rule", originalRuleId)) {
+      return { allowed: false, reason: "The existing Rule is referenced by a Resource Link and cannot be safely replaced with a new bridge-assigned ID." };
+    }
+  }
+  return { allowed: true };
+}
+
+function validateStructuralPayloadReferences(
+  kind: DimmerChangeOperation["kind"],
+  payload: Record<string, unknown>,
+  snapshot: HueSnapshot,
+): { readonly allowed: true } | { readonly allowed: false; readonly reason: string } {
+  if (kind === "rule" && Array.isArray(payload.actions)) {
+    const parsed = parseRuleReferences({ actions: payload.actions });
+    for (const [index, reference] of parsed.actions.entries()) {
+      if (reference.status !== "recognized" || !dimmerActionTargetExists(snapshot, payload.actions[index] as never)) {
+        return { allowed: false, reason: `The structural Rule action at index ${index} is not an exact, currently available Hue target.` };
+      }
+    }
+  }
+  if (kind === "rule" && Array.isArray(payload.conditions)) {
+    const parsed = parseRuleReferences({ conditions: payload.conditions });
+    for (const [index, reference] of parsed.conditions.entries()) {
+      if (reference.status !== "recognized" || !reference.ref || !resourcePresent(snapshot, reference.kind, reference.id)) {
+        return { allowed: false, reason: `The structural Rule condition at index ${index} is not an exact, currently available Hue reference.` };
+      }
+    }
+  }
+  if (kind === "schedule" && payload.command !== undefined) {
+    const reference = parseScheduleCommandReference(payload.command);
+    if (reference.status !== "recognized" || !reference.ref || !resourcePresent(snapshot, reference.kind, reference.id)) {
+      return { allowed: false, reason: "The structural Schedule command does not reference a current Hue resource." };
+    }
+  }
+  if (kind === "resourcelink" && Array.isArray(payload.links)) {
+    for (const link of parseResourceLinkReferences({ links: payload.links })) {
+      if (link.status !== "recognized" || !link.ref || !resourcePresent(snapshot, link.kind, link.id)) {
+        return { allowed: false, reason: "The structural Resource Link contains a non-current Hue resource reference." };
+      }
+    }
+  }
+  return { allowed: true };
+}
+
+function resourcePresent(snapshot: HueSnapshot, kind: DimmerChangeOperation["kind"], id: string): boolean {
+  const collectionName = kind === "resourcelink" ? "resourcelinks" : `${kind}s`;
+  const collection = snapshot[collectionName as keyof HueSnapshot];
+  return Boolean(collection && Object.prototype.hasOwnProperty.call(collection, id));
+}
+
+function resourceLinkReferences(snapshot: HueSnapshot, kind: DimmerChangeOperation["kind"], id: string): boolean {
+  return Object.values(snapshot.resourcelinks).some((value) => parseResourceLinkReferences(value).some((reference) =>
+    reference.status === "recognized" && reference.kind === kind && reference.id === id));
+}
+
+function structuralReport(
+  status: StructuralCommitReport["status"],
+  kind: StructuralCommitReport["kind"],
+  operations: StructuralCommitReport["operations"],
+  diagnosticValue?: Diagnostic,
+): StructuralCommitReport {
+  return {
+    status,
+    kind,
+    operations,
+    succeeded: operations.filter((operation) => operation.status === "succeeded"),
+    failedOrAmbiguous: operations.filter((operation) => operation.status === "failed_or_ambiguous"),
+    unattempted: operations.filter((operation) => operation.status === "unattempted"),
+    ...(diagnosticValue ? { diagnostic: diagnosticValue } : {}),
+  };
+}
+
+function resultKindForStructuralReport(
+  operations: readonly StructuralCommitReport["operations"][number][],
+): StructuralCommitReport["kind"] {
+  const kinds = operations
+    .filter((operation) => operation.status === "failed_or_ambiguous")
+    .map((operation) => operation.kind);
+  if (kinds.includes("ambiguous")) return "ambiguous";
+  if (kinds.includes("partial_failure")) return "partial_failure";
+  if (kinds.includes("abandoned")) return "abandoned";
+  return "definite_failure";
 }
 
 function diagnosticEventContext(

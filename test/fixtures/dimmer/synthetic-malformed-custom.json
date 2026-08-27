@@ -1,0 +1,17 @@
+{
+  "lights": { "1": { "name": "Same name" } },
+  "groups": { "2": { "name": "Same name" } },
+  "scenes": {},
+  "sensors": {
+    "4": { "name": "Switch", "type": "ZLLSwitch", "manufacturername": "Acme", "modelid": "DIM-1", "uniqueid": "physical-a", "state": { "buttonevent": 1999 } }
+  },
+  "rules": {
+    "50": {
+      "name": "Text mentions /sensors/4/state/buttonevent but is not a reference",
+      "conditions": [{ "address": "/sensors/4/state/unknown-event", "operator": "eq", "value": "1999" }],
+      "actions": [{ "address": "/lights/99/state", "method": "PUT", "body": { "on": true } }]
+    }
+  },
+  "schedules": {},
+  "resourcelinks": {}
+}

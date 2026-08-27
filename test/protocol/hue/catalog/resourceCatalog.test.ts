@@ -84,9 +84,30 @@ describe("Hue V1 resource catalog", () => {
     expect(buildRuleConditionFromSensor("4", "state.buttonevent", "eq", "100")).toEqual({ address: "/sensors/4/state/buttonevent", operator: "eq", value: "100" });
     expect(buildRuleActionFromTarget("light", "1", "on")).toEqual({ address: "/lights/1/state", method: "PUT", body: { on: true } });
     expect(buildRuleActionFromTarget("group", "2", "off")).toEqual({ address: "/groups/2/action", method: "PUT", body: { on: false } });
+    expect(buildRuleActionFromTarget("light", "1", "brighten", { bri_inc: 40 })).toEqual({ address: "/lights/1/state", method: "PUT", body: { bri_inc: 40 } });
+    expect(buildRuleActionFromTarget("group", "2", "dim", { bri_inc: 40 })).toEqual({ address: "/groups/2/action", method: "PUT", body: { bri_inc: -40 } });
     expect(buildRuleActionFromTarget("light", "1", "set", { bri: 180, transitiontime: 4 })).toEqual({ address: "/lights/1/state", method: "PUT", body: { bri: 180, transitiontime: 4 } });
     expect(buildScheduleCommandFromTarget("scene", "9", "activate")).toEqual({ method: "PUT", resourceKind: "scene", resourceId: "9", subpath: "action", body: { scene: "9" } });
+    expect(buildRuleActionFromTarget("scene", "scene-evening", "activate")).toEqual({ address: "/groups/0/action", method: "PUT", body: { scene: "scene-evening" } });
+    expect(buildScheduleCommandFromTarget("scene", "scene-evening", "activate")).toEqual({ method: "PUT", resourceKind: "scene", resourceId: "scene-evening", subpath: "action", body: { scene: "scene-evening" } });
+    expect(buildRuleActionFromTarget("scene", "scene-group", "activate", undefined, { type: "GroupScene", group: "2" })).toEqual({ address: "/groups/2/action", method: "PUT", body: { scene: "scene-group" } });
+    expect(buildRuleActionFromTarget("scene", "scene-light", "activate", undefined, { type: "LightScene", group: "2" })).toEqual({ address: "/groups/0/action", method: "PUT", body: { scene: "scene-light" } });
+    expect(() => buildRuleActionFromTarget("scene", "scene-group", "activate", undefined, { type: "GroupScene" })).toThrow(/owning Group/i);
+    expect(validateHueCatalogPayload("rule", "update", { actions: [{ address: "/groups/0/action", method: "PUT", body: { scene: "scene-evening" } }] }).allowed).toBe(true);
+    expect(validateHueCatalogPayload("schedule", "update", { command: { method: "PUT", resourceKind: "scene", resourceId: "scene-evening", subpath: "action", body: { scene: "scene-evening" } } }).allowed).toBe(true);
     expect(() => buildRuleActionFromTarget("light", "arbitrary", "on")).toThrow();
+  });
+
+  test("accepts relative brightness Rule actions in the documented dimmer forms", () => {
+    expect(validateHueCatalogPayload("rule", "update", {
+      actions: [{ address: "/lights/1/state", method: "PUT", body: { bri_inc: -25 } }],
+    }).allowed).toBe(true);
+    expect(validateHueCatalogPayload("rule", "update", {
+      actions: [{ address: "/lights/1/state", method: "PUT", body: { bri_inc: 0 } }],
+    }).allowed).toBe(true);
+    expect(validateHueCatalogPayload("rule", "update", {
+      actions: [{ address: "/lights/1/state", method: "PUT", body: { bri_inc: 255 } }],
+    }).allowed).toBe(false);
   });
 
   test("redacts an explicit schedule command rebuild without rewriting an unchanged command", () => {

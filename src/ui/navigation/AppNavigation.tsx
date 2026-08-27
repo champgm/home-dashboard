@@ -26,6 +26,7 @@ import { RuleEditor } from "../editors/RuleEditor";
 import { ScheduleEditor } from "../editors/ScheduleEditor";
 import { PlugEditor } from "../editors/PlugEditor";
 import { ResourceLinkEditor } from "../editors/ResourceLinkEditor";
+import { ConfigureDimmerScreen } from "../screens/ConfigureDimmerScreen";
 
 const Tabs = createMaterialTopTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -83,6 +84,7 @@ export function AppNavigation(): JSX.Element {
         <Stack.Screen name="GroupEditor" component={GroupEditor} options={{ title: "Group" }} />
         <Stack.Screen name="SceneEditor" component={SceneEditor} options={{ title: "Scene" }} />
         <Stack.Screen name="SensorEditor" component={SensorEditor} options={{ title: "Sensor" }} />
+        <Stack.Screen name="ConfigureDimmer" component={ConfigureDimmerScreen} options={{ title: "Configure Dimmer" }} />
         <Stack.Screen name="RuleEditor" component={RuleEditor} options={{ title: "Rule" }} />
         <Stack.Screen name="ScheduleEditor" component={ScheduleEditor} options={{ title: "Schedule" }} />
         <Stack.Screen name="PlugEditor" component={PlugEditor} options={{ title: "Plug" }} />

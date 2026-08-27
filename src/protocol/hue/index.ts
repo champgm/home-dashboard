@@ -19,3 +19,4 @@ export * from "./resources/resourceLinks";
 export * from "./catalog/rules";
 export * from "./catalog/schedules";
 export * from "./catalog/resourceCatalog";
+export * from "./dimmer";

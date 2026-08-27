@@ -6,6 +6,7 @@ import { ResourceTile } from "../components/ResourceTile";
 import { EmptyState, Screen } from "../components/Screen";
 import { LegacyDashboardGrid, LegacyDashboardUtilityRow } from "../legacy/LegacyDashboardGrid";
 import { useAppRuntime } from "../AppContext";
+import { buildEditorModel, snapshotFromStateStore } from "../../protocol/hue/dimmer";
 
 export interface ResourceCollectionScreenProps {
   readonly kind: Exclude<ResourceKind, "plug">;
@@ -38,6 +39,17 @@ export function ResourceCollectionScreen({ kind, title, navigation, canCreate, o
   const editorRoute = `${title.slice(0, -1)}Editor`;
   const favorites = runtime.configStore.getCommitted()?.favorites || [];
   const navigateAdvanced = () => navigation?.getParent?.()?.navigate("Advanced") || navigation?.navigate?.("Advanced");
+  const navigateEditor = (id: string): void => {
+    if (kind === "sensor") {
+      const snapshot = snapshotFromStateStore(runtime.service.stateStore);
+      const model = buildEditorModel({ kind: "sensor", id }, snapshot, runtime.service.dimmerCatalog);
+      if (model.recognized) {
+        navigateFromCollection(navigation, "ConfigureDimmer", { sensorId: id, deviceKey: model.deviceKey });
+        return;
+      }
+    }
+    navigateFromCollection(navigation, editorRoute, { id });
+  };
   const startSearch = async () => {
     if (!onSearch) return;
     try {
@@ -78,7 +90,7 @@ export function ResourceCollectionScreen({ kind, title, navigation, canCreate, o
               onPress={() => void runtime.service.performPrimary(ref)}
               favorite={favorites.some((favorite) => sameResourceRef(favorite, ref))}
               onFavorite={() => void (favorites.some((favorite) => sameResourceRef(favorite, ref)) ? runtime.service.removeFavorite(ref) : runtime.service.addFavorite(ref))}
-              onEdit={stored?.state.status === "known" ? () => navigation?.getParent?.()?.navigate(editorRoute, { id }) || navigation?.navigate?.(editorRoute, { id }) : undefined}
+              onEdit={stored?.state.status === "known" ? () => navigateEditor(id) : undefined}
             />
           );
         })}
@@ -94,4 +106,13 @@ const styles = StyleSheet.create({
 
 function sameResourceRef(left: ResourceRef, right: ResourceRef): boolean {
   return left.kind === right.kind && left.id === right.id && left.plugEndpointId === right.plugEndpointId;
+}
+
+function navigateFromCollection(navigation: any, route: string, params?: Record<string, unknown>): void {
+  const parent = navigation?.getParent?.();
+  if (parent?.navigate) {
+    parent.navigate(route, params);
+    return;
+  }
+  navigation?.navigate?.(route, params);
 }
