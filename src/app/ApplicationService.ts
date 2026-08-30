@@ -5,7 +5,7 @@ import { HueV1Adapter } from "../protocol/hue/HueV1Adapter";
 import { HueGroup, groupAggregateState } from "../protocol/hue/resources/groups";
 import { HueScene } from "../protocol/hue/resources/scenes";
 import { HueRule } from "../protocol/hue/resources/rules";
-import { HueSchedule } from "../protocol/hue/resources/schedules";
+import { HueSchedule, parseSchedules } from "../protocol/hue/resources/schedules";
 import { rebuildScheduleCommandAuthorization } from "../protocol/hue/catalog/schedules";
 import { prepareHueMutationPayload, validateHueCatalogPayload } from "../protocol/hue/catalog/resourceCatalog";
 import { HueSearchStatus } from "../protocol/hue/search";
@@ -975,9 +975,10 @@ export class ApplicationService {
   }
 
   private publishHueSnapshot(snapshot: HueSnapshot): void {
+    const schedules = parseSchedules(snapshot.schedules);
     const collections: Array<[Exclude<ResourceKind, "plug">, Record<string, unknown>]> = [
       ["light", snapshot.lights], ["group", snapshot.groups], ["scene", snapshot.scenes],
-      ["sensor", snapshot.sensors], ["rule", snapshot.rules], ["schedule", snapshot.schedules],
+      ["sensor", snapshot.sensors], ["rule", snapshot.rules], ["schedule", schedules],
       ["resourcelink", snapshot.resourcelinks],
     ];
     collections.forEach(([kind, collection]) => {

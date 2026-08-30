@@ -300,7 +300,9 @@ describe("Configure Dimmer screen", () => {
     fireEvent.press(view.getByTestId("dimmer-binding-summary-binding:5"));
     const binding = view.getByTestId("dimmer-edit-binding:5");
     fireEvent.press(within(binding).getByText("Brighten while held"));
-    fireEvent.changeText(view.getByTestId("dimmer-binding:5-bri-inc"), "40");
+    expect(view.queryByTestId("dimmer-binding:5-bri-inc-exact")).toBeNull();
+    fireEvent.press(view.getByTestId("dimmer-binding:5-bri-inc-exact-toggle"));
+    fireEvent.changeText(view.getByTestId("dimmer-binding:5-bri-inc-exact"), "40");
     fireEvent.press(view.getByTestId("dimmer-save-binding:5"));
     await waitFor(() => expect(saveSimpleBinding).toHaveBeenCalledWith(expect.objectContaining({
       action: expect.objectContaining({ body: { bri_inc: 40 } }),

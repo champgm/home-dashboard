@@ -117,7 +117,7 @@ function renderConfigField(field: HueCatalogField, config: Record<string, unknow
   const key = field.path.slice("config.".length);
   const label = field.description;
   if (field.type === "boolean") return <EditorToggle label={label} onValueChange={(value) => update(key, value)} testID={`sensor-config-${key}`} value={config[key] === true} />;
-  if (field.type === "number") return <EditorCatalogNumberField fieldKey={key} label={label} onChange={(value) => update(key, value)} testID={`sensor-config-${key}`} value={numberValue(config[key])} />;
+  if (field.type === "number") return <EditorCatalogNumberField fieldKey={key} label={label} onChange={(value) => update(key, value)} showExact={false} testID={`sensor-config-${key}`} value={numberValue(config[key])} />;
   return <ReadOnlyField label={label} value={config[key]} />;
 }
 

@@ -38,6 +38,15 @@ describe("Hue resource serializers", () => {
     expect(schedules.valid.command).toEqual(expect.objectContaining({ resourceKind: "light", resourceId: "1" }));
   });
 
+  test("retains an unsupported Schedule time pattern beside a safe fallback", () => {
+    const schedule = parseSchedules({
+      unsupported: { name: "Holiday schedule", localtime: "T09:00:00", timePattern: { kind: "holiday", date: "next-weekend" } },
+    }).unsupported;
+
+    expect(schedule.timePattern).toEqual({ kind: "at", localtime: "T09:00:00" });
+    expect(schedule.timePatternRaw).toEqual({ kind: "holiday", date: "next-weekend" });
+  });
+
   test("serializes an intentionally changed Schedule command exactly once", () => {
     const original = parseSchedules({
       "1": { command: { address: "/api/OLD/lights/1/state", method: "PUT", body: { on: true } } },

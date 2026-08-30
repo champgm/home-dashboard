@@ -21,13 +21,15 @@ interface ConditionRow {
 
 type RuleActionTargetKind = "light" | "group" | "scene";
 type RuleActionOperation = "on" | "off" | "set" | "activate";
+type RuleSceneType = "GroupScene" | "LightScene";
 
 interface ActionRow {
   readonly targetKind: RuleActionTargetKind;
   readonly targetId: string;
   readonly operation: RuleActionOperation;
   readonly body: Record<string, unknown>;
-  /** Preserve a GroupScene's owning group when the action is edited and saved. */
+  /** The Scene form controls the exact Hue action route. */
+  readonly sceneType?: RuleSceneType;
   readonly sceneGroupId?: string;
   readonly raw?: HueRuleAction;
 }
@@ -50,7 +52,7 @@ export function RuleEditor({ route, navigation }: { route?: any; navigation?: an
   } : undefined;
   const original = value as Record<string, unknown> | undefined;
   const initialConditions = (value?.conditions || []).map(toConditionRow);
-  const initialActions = (value?.actions || []).map(toActionRow);
+  const initialActions = (value?.actions || []).map((action) => toActionRow(action, runtime.service.stateStore));
   const [conditions, setConditions] = useState<ConditionRow[]>(initialConditions.length > 0 ? initialConditions : [newConditionRow()]);
   const [actions, setActions] = useState<ActionRow[]>(initialActions.length > 0 ? initialActions : [newActionRow()]);
   const [expandedCondition, setExpandedCondition] = useState(-1);
@@ -60,7 +62,13 @@ export function RuleEditor({ route, navigation }: { route?: any; navigation?: an
   const buildDraft = (name?: string): Record<string, unknown> => ({
     ...(name === undefined ? {} : { name }),
     conditions: conditions.map((row) => row.raw || buildRuleConditionFromSensor(row.sensorId.trim(), row.event, row.operator, row.value === "" ? undefined : row.value)),
-    actions: actions.map((row) => row.raw || buildRuleActionFromTarget(row.targetKind, row.targetId.trim(), row.operation, row.body, row.targetKind === "scene" && row.sceneGroupId ? { type: "GroupScene", group: row.sceneGroupId } : undefined)),
+    actions: actions.map((row) => row.raw || buildRuleActionFromTarget(
+      row.targetKind,
+      row.targetId.trim(),
+      row.operation,
+      row.body,
+      row.targetKind === "scene" ? sceneTargetDetails(runtime.service.stateStore, row) : undefined,
+    )),
   });
 
   const save = async (name: string) => {
@@ -150,7 +158,25 @@ export function RuleEditor({ route, navigation }: { route?: any; navigation?: an
             <EditorAction label="Replace action" onPress={() => setActions((current) => current.map((row, rowIndex) => rowIndex === index ? newActionRow() : row))} testID={`rule-action-${index}-replace`} />
           </> : <>
             <EditorChoice label="Target" onChange={(targetKind) => changeActionTarget(setActions, index, targetKind as RuleActionTargetKind)} options={["light", "group", "scene"]} testID={`rule-action-${index}-target`} value={action.targetKind} />
-            <EditorTextField keyboardType={action.targetKind === "scene" ? "default" : "numeric"} label="Resource ID" onChangeText={(targetId) => updateAction(setActions, index, { targetId })} placeholder="1" testID={`rule-action-${index}-id`} value={action.targetId} />
+            <EditorTextField keyboardType={action.targetKind === "scene" ? "default" : "numeric"} label="Resource ID" onChangeText={(targetId) => updateActionTargetId(setActions, index, targetId, runtime.service.stateStore)} placeholder="1" testID={`rule-action-${index}-id`} value={action.targetId} />
+            {action.targetKind === "scene" && <>
+              <EditorChoice
+                label="Scene type"
+                onChange={(sceneType) => changeActionSceneType(setActions, index, sceneType as RuleSceneType)}
+                options={["LightScene", "GroupScene"]}
+                testID={`rule-action-${index}-scene-type`}
+                value={action.sceneType || "LightScene"}
+              />
+              {(action.sceneType || "LightScene") === "GroupScene" && <EditorTextField
+                keyboardType="numeric"
+                label="Owning Group ID"
+                onChangeText={(sceneGroupId) => updateAction(setActions, index, { sceneGroupId })}
+                placeholder="3"
+                testID={`rule-action-${index}-scene-group`}
+                value={action.sceneGroupId || ""}
+              />}
+              <ReadOnlyField label="Exact Scene action path" value={sceneActionPath(action)} />
+            </>}
             <EditorChoice label="Operation" onChange={(operation) => changeActionOperation(setActions, index, operation as RuleActionOperation)} options={action.targetKind === "scene" ? ["activate"] : ["on", "off", "set"]} testID={`rule-action-${index}-operation`} value={action.operation} />
             {action.targetKind !== "scene" && getHueActionFields(action.targetKind).map((field) => renderActionField(action, index, field, setActions))}
             <ReadOnlyField label="Exact target reference" value={resourceLabel(runtime.service.stateStore, action.targetKind, action.targetId)} />
@@ -189,11 +215,48 @@ function updateAction(setter: React.Dispatch<React.SetStateAction<ActionRow[]>>,
   setter((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, ...update, raw: undefined } : row));
 }
 
+function updateActionTargetId(
+  setter: React.Dispatch<React.SetStateAction<ActionRow[]>>,
+  index: number,
+  targetId: string,
+  stateStore: DeviceStateStore,
+): void {
+  setter((current) => current.map((row, rowIndex) => {
+    if (rowIndex !== index) return row;
+    if (row.targetKind !== "scene") return { ...row, targetId, raw: undefined };
+    const metadata = sceneMetadataForId(stateStore, targetId.trim());
+    return {
+      ...row,
+      targetId,
+      sceneType: metadata?.type || "LightScene",
+      sceneGroupId: metadata?.group || "0",
+      raw: undefined,
+    };
+  }));
+}
+
+function changeActionSceneType(
+  setter: React.Dispatch<React.SetStateAction<ActionRow[]>>,
+  index: number,
+  sceneType: RuleSceneType,
+): void {
+  setter((current) => current.map((row, rowIndex) => {
+    if (rowIndex !== index) return row;
+    if (sceneType === "LightScene") return { ...row, sceneType, sceneGroupId: "0", raw: undefined };
+    return {
+      ...row,
+      sceneType,
+      sceneGroupId: row.sceneType === "GroupScene" && row.sceneGroupId !== "0" ? row.sceneGroupId : "",
+      raw: undefined,
+    };
+  }));
+}
+
 function changeActionTarget(setter: React.Dispatch<React.SetStateAction<ActionRow[]>>, index: number, targetKind: RuleActionTargetKind): void {
   setter((current) => current.map((row, rowIndex) => {
     if (rowIndex !== index) return row;
-    if (targetKind === "scene") return { ...row, targetKind, operation: "activate", body: {}, sceneGroupId: undefined, raw: undefined };
-    return { ...row, targetKind, operation: row.operation === "activate" ? "on" : row.operation, body: Object.keys(row.body).length > 0 ? row.body : { on: true }, sceneGroupId: undefined, raw: undefined };
+    if (targetKind === "scene") return { ...row, targetKind, operation: "activate", body: {}, sceneType: "LightScene", sceneGroupId: "0", raw: undefined };
+    return { ...row, targetKind, operation: row.operation === "activate" ? "on" : row.operation, body: Object.keys(row.body).length > 0 ? row.body : { on: true }, sceneType: undefined, sceneGroupId: undefined, raw: undefined };
   }));
 }
 
@@ -230,10 +293,10 @@ function renderActionField(
   const label = `Action ${index + 1} ${field.description}`;
   const value = action.body[key];
   if (field.type === "boolean") return <EditorToggle key={field.path} label={label} onValueChange={(next) => updateActionField(setter, index, key, next)} testID={`rule-action-${index}-${key}`} value={value === true} />;
-  if (field.type === "number" && key === "hue") return <EditorHueField key={field.path} label={label} onChange={(next) => updateActionField(setter, index, key, next)} testID={`rule-action-${index}-${key}`} value={typeof value === "number" ? value : undefined} />;
-  if (field.type === "number") return <EditorCatalogNumberField fieldKey={key} key={field.path} label={label} onChange={(next) => updateActionField(setter, index, key, next)} testID={`rule-action-${index}-${key}`} value={typeof value === "number" ? value : undefined} />;
+  if (field.type === "number" && key === "hue") return <EditorHueField key={field.path} label={label} onChange={(next) => updateActionField(setter, index, key, next)} showExact={false} testID={`rule-action-${index}-${key}`} value={typeof value === "number" ? value : undefined} />;
+  if (field.type === "number") return <EditorCatalogNumberField fieldKey={key} key={field.path} label={label} onChange={(next) => updateActionField(setter, index, key, next)} showExact={false} testID={`rule-action-${index}-${key}`} value={typeof value === "number" ? value : undefined} />;
   if (field.type === "enum") return <EditorChoice key={field.path} label={label} onChange={(next) => updateActionField(setter, index, key, next)} options={field.enumValues || []} testID={`rule-action-${index}-${key}`} value={typeof value === "string" ? value : field.enumValues?.[0] || ""} />;
-  if (field.type === "number[]" && key === "xy") return <EditorXyColorField key={field.path} label={label} onChangeText={(next) => updateActionField(setter, index, key, parseNumberArray(next))} testID={`rule-action-${index}-${key}`} value={Array.isArray(value) ? value.join(",") : ""} />;
+  if (field.type === "number[]" && key === "xy") return <EditorXyColorField key={field.path} label={label} onChangeText={(next) => updateActionField(setter, index, key, parseNumberArray(next))} showExact={false} testID={`rule-action-${index}-${key}`} value={Array.isArray(value) ? value.join(",") : ""} />;
   if (field.type === "number[]") return <EditorTextField key={field.path} label={`${label} (comma-separated)`} onChangeText={(next) => updateActionField(setter, index, key, parseNumberArray(next))} placeholder="0.4,0.5" testID={`rule-action-${index}-${key}`} value={Array.isArray(value) ? value.join(",") : ""} />;
   return <ReadOnlyField key={field.path} label={label} value={value} />;
 }
@@ -252,8 +315,13 @@ function conditionSummary(stateStore: DeviceStateStore, condition: ConditionRow)
 function actionSummary(stateStore: DeviceStateStore, action: ActionRow): string {
   if (action.raw) return `Unsupported path · ${action.raw.method} ${action.raw.address}`;
   const target = resourceLabel(stateStore, action.targetKind, action.targetId);
+  const sceneRoute = action.targetKind === "scene"
+    ? (action.sceneType || "LightScene") === "GroupScene"
+      ? ` · GroupScene / Group ${action.sceneGroupId || "not set"}`
+      : " · LightScene / Group 0"
+    : "";
   const fields = Object.keys(action.body).filter((key) => key !== "on" || action.operation === "set");
-  return `${action.operation} · ${target}${fields.length > 0 ? ` · ${fields.join(", ")}` : ""}`;
+  return `${action.operation} · ${target}${sceneRoute}${fields.length > 0 ? ` · ${fields.join(", ")}` : ""}`;
 }
 
 function toConditionRow(condition: HueRuleCondition): ConditionRow {
@@ -264,14 +332,25 @@ function toConditionRow(condition: HueRuleCondition): ConditionRow {
     : { sensorId: "", event: "state.buttonevent", operator: condition.operator, value: condition.value || "", raw: condition };
 }
 
-function toActionRow(action: HueRuleAction): ActionRow {
+function toActionRow(action: HueRuleAction, stateStore: DeviceStateStore): ActionRow {
   const scene = action.body?.scene;
   const sceneMatch = action.address.match(/^(?:\/api\/[^/]+)?\/groups\/([^/]+)\/action$/i);
   const match = action.address.match(/^(?:\/api\/[^/]+)?\/(lights|groups)\/([^/]+)\/(state|action)$/i);
   const sceneGroupId = sceneMatch ? safeDecode(sceneMatch[1]) : undefined;
   const sceneId = typeof scene === "string" ? safeDecode(scene) : undefined;
   if (sceneMatch && sceneGroupId && /^\d+$/.test(sceneGroupId) && action.method.toUpperCase() === "PUT" && sceneId && !/[\/?#]/.test(sceneId) && Object.keys(action.body || {}).length === 1) {
-    return { targetKind: "scene", targetId: sceneId, operation: "activate", body: {}, sceneGroupId };
+    const metadata = sceneMetadataForId(stateStore, sceneId);
+    const storedScene = stateStore.get({ kind: "scene", id: sceneId });
+    if (storedScene?.state.status === "known" && !metadata) return unsupportedActionRow(action);
+    if (metadata && metadata.group !== sceneGroupId) return unsupportedActionRow(action);
+    return {
+      targetKind: "scene",
+      targetId: sceneId,
+      operation: "activate",
+      body: {},
+      sceneType: metadata?.type || (sceneGroupId === "0" ? "LightScene" : "GroupScene"),
+      sceneGroupId: metadata?.group || sceneGroupId,
+    };
   }
   if (match && action.method.toUpperCase() === "PUT" && action.body && typeof action.body === "object" && !Array.isArray(action.body)) {
     const targetKind = match[1].toLowerCase() === "lights" ? "light" : "group";
@@ -282,7 +361,37 @@ function toActionRow(action: HueRuleAction): ActionRow {
       return { targetKind, targetId: safeDecode(match[2]), operation, body };
     }
   }
+  return unsupportedActionRow(action);
+}
+
+function unsupportedActionRow(action: HueRuleAction): ActionRow {
   return { targetKind: "light", targetId: "", operation: "set", body: {}, raw: action };
+}
+
+function sceneMetadataForId(stateStore: DeviceStateStore, id: string): { readonly type: RuleSceneType; readonly group: string } | undefined {
+  if (!id) return undefined;
+  const stored = stateStore.get({ kind: "scene", id });
+  if (stored?.state.status !== "known" || !stored.state.value || typeof stored.state.value !== "object" || Array.isArray(stored.state.value)) return undefined;
+  const scene = stored.state.value as { readonly type?: unknown; readonly group?: unknown };
+  if (scene.type === "LightScene") return { type: "LightScene", group: "0" };
+  if (scene.type === "GroupScene" && typeof scene.group === "string" && /^\d+$/.test(scene.group)) return { type: "GroupScene", group: scene.group };
+  return undefined;
+}
+
+function sceneTargetDetails(stateStore: DeviceStateStore, action: ActionRow): { readonly type: RuleSceneType; readonly group: string } {
+  const sceneType = action.sceneType || "LightScene";
+  const group = sceneType === "LightScene" ? "0" : action.sceneGroupId?.trim() || "";
+  const id = action.targetId.trim();
+  const stored = id ? stateStore.get({ kind: "scene", id }) : undefined;
+  const metadata = sceneMetadataForId(stateStore, id);
+  if (stored?.state.status === "known" && !metadata) throw new Error("The selected Scene has incomplete or unsupported type/owning Group metadata.");
+  if (metadata && (metadata.type !== sceneType || metadata.group !== group)) throw new Error("The selected Scene type and owning Group do not match the selected Scene.");
+  return { type: sceneType, group };
+}
+
+function sceneActionPath(action: ActionRow): string {
+  if ((action.sceneType || "LightScene") === "GroupScene") return action.sceneGroupId?.trim() ? `/groups/${action.sceneGroupId.trim()}/action` : "Select an owning Group ID";
+  return "/groups/0/action";
 }
 
 function safeDecode(value: string): string {

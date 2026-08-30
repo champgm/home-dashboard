@@ -404,15 +404,15 @@ function renderActionFields(
   const values = fields;
   return <View testID={`dimmer-fields-${bindingId}`}>
     {allowedFields.includes("on") && <EditorToggle label="Power" onValueChange={(value) => update("on", value)} testID={`dimmer-${bindingId}-on`} value={values.on === true} />}
-    {allowedFields.includes("bri") && <EditorCatalogNumberField fieldKey="bri" label="Brightness" onChange={(value) => update("bri", value)} testID={`dimmer-${bindingId}-bri`} value={numberValue(values.bri)} />}
-    {allowedFields.includes("hue") && <EditorHueField label="Hue color" onChange={(value) => update("hue", value)} testID={`dimmer-${bindingId}-hue`} value={numberValue(values.hue)} />}
-    {allowedFields.includes("sat") && <EditorCatalogNumberField fieldKey="sat" label="Saturation" onChange={(value) => update("sat", value)} testID={`dimmer-${bindingId}-sat`} value={numberValue(values.sat)} />}
-    {allowedFields.includes("xy") && <EditorXyColorField label="XY color" onChangeText={(value) => update("xy", parsePair(value))} testID={`dimmer-${bindingId}-xy`} value={pairValue(values.xy)} />}
-    {allowedFields.includes("ct") && <EditorCatalogNumberField fieldKey="ct" label="Color temperature" onChange={(value) => update("ct", value)} testID={`dimmer-${bindingId}-ct`} value={numberValue(values.ct)} />}
-    {allowedFields.includes("bri_inc") && <EditorCatalogNumberField fieldKey="bri_inc" label="Brightness step" onChange={(value) => update("bri_inc", value)} testID={`dimmer-${bindingId}-bri-inc`} value={relativeNumberValue(values.bri_inc)} />}
+    {allowedFields.includes("bri") && <EditorCatalogNumberField fieldKey="bri" label="Brightness" onChange={(value) => update("bri", value)} showExact={false} testID={`dimmer-${bindingId}-bri`} value={numberValue(values.bri)} />}
+    {allowedFields.includes("hue") && <EditorHueField label="Hue color" onChange={(value) => update("hue", value)} showExact={false} testID={`dimmer-${bindingId}-hue`} value={numberValue(values.hue)} />}
+    {allowedFields.includes("sat") && <EditorCatalogNumberField fieldKey="sat" label="Saturation" onChange={(value) => update("sat", value)} showExact={false} testID={`dimmer-${bindingId}-sat`} value={numberValue(values.sat)} />}
+    {allowedFields.includes("xy") && <EditorXyColorField label="XY color" onChangeText={(value) => update("xy", parsePair(value))} showExact={false} testID={`dimmer-${bindingId}-xy`} value={pairValue(values.xy)} />}
+    {allowedFields.includes("ct") && <EditorCatalogNumberField fieldKey="ct" label="Color temperature" onChange={(value) => update("ct", value)} showExact={false} testID={`dimmer-${bindingId}-ct`} value={numberValue(values.ct)} />}
+    {allowedFields.includes("bri_inc") && <EditorCatalogNumberField fieldKey="bri_inc" label="Brightness step" onChange={(value) => update("bri_inc", value)} showExact={false} testID={`dimmer-${bindingId}-bri-inc`} value={relativeNumberValue(values.bri_inc)} />}
     {allowedFields.includes("alert") && <EditorChoice label="Alert" onChange={(value) => update("alert", value)} options={["none", "select", "lselect"]} testID={`dimmer-${bindingId}-alert`} value={stringValue(values.alert, "none")} />}
     {allowedFields.includes("effect") && <EditorChoice label="Effect" onChange={(value) => update("effect", value)} options={["none", "colorloop"]} testID={`dimmer-${bindingId}-effect`} value={stringValue(values.effect, "none")} />}
-    {allowedFields.includes("transitiontime") && <EditorCatalogNumberField fieldKey="transitiontime" label="Transition duration" onChange={(value) => update("transitiontime", value)} testID={`dimmer-${bindingId}-transitiontime`} value={numberValue(values.transitiontime)} />}
+    {allowedFields.includes("transitiontime") && <EditorCatalogNumberField fieldKey="transitiontime" label="Transition duration" onChange={(value) => update("transitiontime", value)} showExact={false} testID={`dimmer-${bindingId}-transitiontime`} value={numberValue(values.transitiontime)} />}
     {allowedFields.length === 0 && <Text style={styles.hint}>{kind === "light" || kind === "group" ? "Choose a supported value when needed." : "No editable fields."}</Text>}
   </View>;
 }

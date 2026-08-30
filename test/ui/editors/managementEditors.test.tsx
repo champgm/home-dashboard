@@ -7,6 +7,7 @@ const states: Record<string, unknown> = {
   "group:2": { name: "Room", lights: ["1", "3"], class: "Living room", type: "Room", action: { on: true, bri: 120, xy: [0.4, 0.5] } },
   "scene:3": { name: "Evening", type: "LightScene", lights: ["1"], lightstates: { "1": { on: true, bri: 90 } }, appdata: { version: 1 }, owner: "owner", locked: false, version: 2 },
   "scene:bdATgVKQdaELH9I": { name: "Household Group Scene", type: "GroupScene", group: "3" },
+  "scene:other-group": { name: "Other Group Scene", type: "GroupScene", group: "4" },
   "scene:rich-state": { name: "Rich state", type: "LightScene", lights: ["1"], lightstates: { "1": { on: true, bri: 90, hue: 123, sat: 45, xy: [0.4, 0.5], ct: 250, transitiontime: 4 } } },
   "sensor:4": { name: "Dimmer", type: "ZLLSwitch", manufacturername: "Signify", modelid: "RWL", uniqueid: "00:11", config: { on: true, battery: 80 }, state: { buttonevent: 1002 }, capabilities: { inputs: ["buttonevent"] } },
   "rule:5": { name: "Dimmer on", conditions: [{ address: "/sensors/4/state/buttonevent", operator: "eq", value: "1002" }], actions: [{ address: "/lights/1/state", method: "PUT", body: { on: true } }], status: "disabled" },
@@ -18,6 +19,8 @@ const states: Record<string, unknown> = {
   "schedule:brightness": { name: "Dim at night", description: "Dim without toggling", timePattern: { kind: "at", localtime: "T22:00:00" }, command: { method: "PUT", resourceKind: "light", resourceId: "1", subpath: "state", body: { bri: 80, transitiontime: 4 }, authorizationCredential: "old-user" }, autodelete: false },
   "schedule:recurring-timer": { name: "Repeat timer", description: "Repeat every five minutes", timePattern: { kind: "timer", time: "PT00:05:00", recurring: true }, command: { method: "PUT", resourceKind: "light", resourceId: "1", subpath: "state", body: { on: true }, authorizationCredential: "old-user" }, autodelete: false },
   "schedule:recurring-daily": { name: "Daily timer", description: "Daily with a start date", timePattern: { kind: "recurring-daily", localtime: "T07:00:00", recurring: true, date: "2026-01-01T07:00:00" }, command: { method: "PUT", resourceKind: "light", resourceId: "1", subpath: "state", body: { on: true }, authorizationCredential: "old-user" }, autodelete: false },
+  "schedule:unsupported": { name: "Custom command", description: "Unsupported command", timePattern: { kind: "at", localtime: "T08:00:00" }, command: { method: "POST", resourceKind: "custom", resourceId: "abc", subpath: "action", body: { custom: true } }, autodelete: false },
+  "schedule:unsupported-time": { name: "Unsupported timing", description: "Needs a replacement", timePattern: { kind: "at", localtime: "T00:00:00" }, timePatternRaw: { kind: "holiday", value: "next-weekend" }, command: { method: "PUT", resourceKind: "light", resourceId: "1", subpath: "state", body: { on: true } }, autodelete: false },
   "resourcelink:7": { class: "HomeDashboard", description: "Favorites", links: ["/lights/1"] },
   "resourcelink:scene": { class: "HomeDashboard", description: "Household scene", links: ["/scenes/bdATgVKQdaELH9I"] },
   "plug:hs103": { alias: "Hallway Plug", model: "HS103", deviceId: "TEST-HS103-ID", hardwareVersion: "2.0", softwareVersion: "1.0.8", mac: "00:11:22:33:44:66", rssi: -52, signalLevel: 2, relayState: false, feature: "TIM", hasEnergy: false },
@@ -178,6 +181,8 @@ describe("typed management editors", () => {
     const rule = render(<RuleEditor route={{ params: { id: "group-scene" } }} />);
     expect(rule.getByTestId("rule-action-0-summary")).toHaveTextContent(/Household Group Scene \(ID bdATgVKQdaELH9I\)/);
     fireEvent.press(rule.getByTestId("rule-action-0-summary"));
+    expect(rule.getByLabelText("Scene type: GroupScene").props.accessibilityState.selected).toBe(true);
+    expect(rule.getByTestId("rule-action-0-scene-group").props.value).toBe("3");
     fireEvent.press(rule.getByTestId("editor-save"));
     await waitFor(() => expect(mockRuntime.service.mutateHue).toHaveBeenCalledWith(
       "rule",
@@ -197,6 +202,25 @@ describe("typed management editors", () => {
       "scene",
       "update",
       expect.objectContaining({ links: ["/scenes/bdATgVKQdaELH9I"] }),
+    ));
+  });
+
+  test("re-derives a GroupScene owner when its Scene ID changes", async () => {
+    const view = render(<RuleEditor route={{ params: { id: "group-scene" } }} />);
+    fireEvent.press(view.getByTestId("rule-action-0-summary"));
+    fireEvent.changeText(view.getByTestId("rule-action-0-id"), "other-group");
+    expect(view.getByLabelText("Scene type: GroupScene").props.accessibilityState.selected).toBe(true);
+    expect(view.getByTestId("rule-action-0-scene-group").props.value).toBe("4");
+    expect(view.getByLabelText("Exact Scene action path: /groups/4/action")).toBeTruthy();
+    fireEvent.press(view.getByTestId("editor-save"));
+
+    await waitFor(() => expect(mockRuntime.service.mutateHue).toHaveBeenCalledWith(
+      "rule",
+      "group-scene",
+      "update",
+      expect.objectContaining({
+        actions: [{ address: "/groups/4/action", method: "PUT", body: { scene: "other-group" } }],
+      }),
     ));
   });
 
@@ -230,6 +254,8 @@ describe("typed management editors", () => {
     const rich = render(<RuleEditor route={{ params: { id: "rich" } }} />);
     fireEvent.press(rich.getByTestId("rule-action-0-summary"));
     expect(rich.getByTestId("rule-action-0-bri")).toBeTruthy();
+    expect(rich.queryByTestId("rule-action-0-bri-exact")).toBeNull();
+    expect(rich.getByTestId("rule-action-0-bri-exact-toggle")).toBeTruthy();
     expect(rich.getByTestId("rule-action-0-transitiontime")).toBeTruthy();
     rich.unmount();
 
@@ -299,8 +325,10 @@ describe("typed management editors", () => {
 
     fireEvent.press(view.getByTestId("schedule-command-summary"));
     expect(view.getByTestId("schedule-command-bri")).toBeTruthy();
+    expect(view.queryByTestId("schedule-command-bri-exact")).toBeNull();
+    fireEvent.press(view.getByTestId("schedule-command-bri-exact-toggle"));
     expect(view.getByTestId("schedule-command-transitiontime")).toBeTruthy();
-    fireEvent.changeText(view.getByTestId("schedule-command-bri"), "100");
+    fireEvent.changeText(view.getByTestId("schedule-command-bri-exact"), "100");
     fireEvent.press(view.getByTestId("editor-save"));
 
     await waitFor(() => expect(mockRuntime.service.mutateHue).toHaveBeenCalledWith(
@@ -309,6 +337,36 @@ describe("typed management editors", () => {
       "update",
       expect.objectContaining({
         command: expect.objectContaining({ body: { bri: 100, transitiontime: 4 } }),
+      }),
+    ));
+  });
+
+  test("shows unsupported Schedule commands as read-only instead of fabricating a summary", () => {
+    const view = render(<ScheduleEditor route={{ params: { id: "unsupported" } }} />);
+
+    expect(view.getByTestId("schedule-command-summary")).toHaveTextContent(/Unsupported command · read-only/);
+    fireEvent.press(view.getByTestId("schedule-command-summary"));
+    expect(view.queryByTestId("schedule-target-kind")).toBeNull();
+    expect(view.getByText(/not represented by a supported structured form/i)).toBeTruthy();
+  });
+
+  test("requires an explicit replacement before saving an unsupported Schedule time pattern", async () => {
+    const view = render(<ScheduleEditor route={{ params: { id: "unsupported-time" } }} />);
+
+    expect(view.getByTestId("schedule-time-summary")).toHaveTextContent(/Unsupported time pattern · replace to edit/);
+    fireEvent.press(view.getByTestId("schedule-time-summary"));
+    expect(view.queryByTestId("schedule-pattern")).toBeNull();
+    fireEvent.press(view.getByTestId("schedule-replace-time-pattern"));
+    expect(view.getByTestId("schedule-localtime").props.value).toBe("T07:00:00");
+    expect(view.getByTestId("schedule-time-summary")).toHaveTextContent(/At · T07:00:00/);
+    fireEvent.press(view.getByTestId("editor-save"));
+
+    await waitFor(() => expect(mockRuntime.service.mutateHue).toHaveBeenCalledWith(
+      "schedule",
+      "unsupported-time",
+      "update",
+      expect.objectContaining({
+        timePattern: { kind: "at", localtime: "T07:00:00" },
       }),
     ));
   });

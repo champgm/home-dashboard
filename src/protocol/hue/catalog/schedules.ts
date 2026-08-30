@@ -312,6 +312,17 @@ export function parseStructuredScheduleCommand(value: unknown): StructuredSchedu
   const record = value as Record<string, unknown>;
   const method = typeof record.method === "string" ? record.method : "UNKNOWN";
   if (typeof record.address !== "string") {
+    if (typeof record.resourceKind === "string") {
+      return {
+        method,
+        resourceKind: record.resourceKind,
+        ...(typeof record.resourceId === "string" ? { resourceId: record.resourceId } : {}),
+        ...(typeof record.subpath === "string" ? { subpath: record.subpath } : {}),
+        ...(record.body && typeof record.body === "object" && !Array.isArray(record.body) ? { body: record.body as Record<string, unknown> } : {}),
+        ...(typeof record.authorizationCredential === "string" ? { authorizationCredential: record.authorizationCredential } : {}),
+        ...(record.raw && typeof record.raw === "object" && !Array.isArray(record.raw) ? { raw: record.raw as Record<string, unknown> } : {}),
+      };
+    }
     return {
       method,
       resourceKind: "unknown",

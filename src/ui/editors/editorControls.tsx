@@ -90,21 +90,42 @@ export function EditorNumberField({
   onChange,
   placeholder,
   testID,
+  showExact = true,
 }: {
   readonly label: string;
   readonly value: number | undefined;
   readonly onChange: (value: number | undefined) => void;
   readonly placeholder?: string;
   readonly testID?: string;
+  readonly showExact?: boolean;
 }): JSX.Element {
-  return <EditorTextField
-    label={label}
-    keyboardType="decimal-pad"
-    onChangeText={(next) => onChange(next.trim() === "" ? undefined : Number(next))}
-    placeholder={placeholder}
-    testID={testID}
-    value={value === undefined ? "" : String(value)}
-  />;
+  const [exactVisible, setExactVisible] = React.useState(showExact);
+  const onChangeText = (next: string): void => onChange(next.trim() === "" ? undefined : Number(next));
+  if (showExact) return <EditorTextField
+      label={label}
+      keyboardType="decimal-pad"
+      onChangeText={onChangeText}
+      placeholder={placeholder}
+      testID={testID}
+      value={value === undefined ? "" : String(value)}
+    />;
+  return <View style={styles.field} testID={testID}>
+    <Text style={styles.label}>{label}: {value === undefined ? "Not set" : String(value)}</Text>
+    {!exactVisible && <Pressable
+      accessibilityRole="button"
+      onPress={() => setExactVisible(true)}
+      style={styles.secondaryLink}
+      testID={testID ? `${testID}-exact-toggle` : undefined}
+    ><Text style={styles.secondaryLinkText}>Enter exact value</Text></Pressable>}
+    {exactVisible && <EditorTextField
+      label={`${label} exact value`}
+      keyboardType="decimal-pad"
+      onChangeText={onChangeText}
+      placeholder={placeholder}
+      testID={testID ? `${testID}-exact` : undefined}
+      value={value === undefined ? "" : String(value)}
+    />}
+  </View>;
 }
 
 export function EditorRangeField({
@@ -178,7 +199,8 @@ export function EditorCatalogNumberField({ fieldKey, label, value, onChange, tes
   if (fieldKey === "transitiontime") return <EditorRangeField displayScale={0.1} label={label} maximumValue={600} minimumValue={0} onChange={onChange} showExact={showExact} step={1} testID={testID} unit="seconds" value={value} />;
   if (fieldKey === "sunriseoffset" || fieldKey === "sunsetoffset") return <EditorRangeField label={label} maximumValue={120} minimumValue={-120} onChange={onChange} showExact={showExact} testID={testID} unit="minutes" value={value} />;
   if (fieldKey === "duration") return <EditorRangeField label={label} maximumValue={3600} minimumValue={0} onChange={onChange} showExact={showExact} testID={testID} unit="seconds" value={value} />;
-  return <EditorNumberField label={label} onChange={onChange} testID={testID} value={value} />;
+  if (fieldKey === "bri_inc") return <EditorRangeField label={label} maximumValue={254} minimumValue={-254} onChange={onChange} showExact={showExact} testID={testID} value={value} />;
+  return <EditorNumberField label={label} onChange={onChange} showExact={showExact} testID={testID} value={value} />;
 }
 
 const HUE_SWATCHES = [

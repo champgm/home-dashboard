@@ -54,3 +54,18 @@ test("SensorEditor leads with household details and exact Advanced references", 
   fireEvent.press(view.getByText("Configure Dimmer"));
   expect(navigation.navigate).toHaveBeenCalledWith("ConfigureDimmer", expect.objectContaining({ sensorId: "4", deviceKey: "recognized:physical-a" }));
 });
+
+test("Sensor numeric configuration keeps exact entry behind disclosure", () => {
+  const sensor = { name: "Light-level sensor", type: "ZLLLightLevel", modelid: "DIM-1", uniqueid: "light-level-a", config: { on: true, tholddark: 10, tholdoffset: 2 } };
+  stateStore.get.mockImplementation((ref: { kind: string; id?: string }) => ref.kind === "sensor" && ref.id === "7" ? { state: { status: "known", value: sensor }, pending: false } : undefined);
+  stateStore.getAll.mockReturnValue(new Map([
+    ["sensor:7", { state: { status: "known", value: sensor }, pending: false }],
+  ]));
+  mockRuntime.service.dimmerCatalog = catalog;
+  const view = render(<SensorEditor route={{ params: { id: "7" } }} />);
+
+  expect(view.getByTestId("sensor-config-tholddark")).toBeTruthy();
+  expect(view.queryByTestId("sensor-config-tholddark-exact")).toBeNull();
+  fireEvent.press(view.getByTestId("sensor-config-tholddark-exact-toggle"));
+  expect(view.getByTestId("sensor-config-tholddark-exact")).toBeTruthy();
+});
