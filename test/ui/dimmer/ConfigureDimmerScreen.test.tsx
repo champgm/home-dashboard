@@ -103,6 +103,18 @@ describe("Configure Dimmer screen", () => {
     expect(view.getByLabelText(/Resource Link IDs:.*30/)).toBeTruthy();
   });
 
+  test("keeps recognized binding editors closed and focuses one binding at a time", () => {
+    const view = render(<ConfigureDimmerScreen route={{ params: { sensorId: "4" } }} navigation={{ navigate: jest.fn() }} />);
+    expect(view.queryByTestId("dimmer-edit-binding:0")).toBeNull();
+    expect(view.queryByTestId("dimmer-edit-binding:1")).toBeNull();
+
+    fireEvent.press(view.getByTestId("dimmer-binding-summary-binding:0"));
+    expect(view.getByTestId("dimmer-edit-binding:0")).toBeTruthy();
+    fireEvent.press(view.getByTestId("dimmer-binding-summary-binding:1"));
+    expect(view.queryByTestId("dimmer-edit-binding:0")).toBeNull();
+    expect(view.getByTestId("dimmer-edit-binding:1")).toBeTruthy();
+  });
+
   test("subscribes with the state-store instance bound", () => {
     const unsubscribe = jest.fn();
     const subscribe = jest.fn(function (this: unknown, _listener?: () => void) {
@@ -118,6 +130,7 @@ describe("Configure Dimmer screen", () => {
 
   test("saves a simple binding directly without a preview or provenance confirmation", async () => {
     const view = render(<ConfigureDimmerScreen route={{ params: { sensorId: "4" } }} navigation={{ navigate: jest.fn() }} />);
+    fireEvent.press(view.getByTestId("dimmer-binding-summary-binding:0"));
     fireEvent.changeText(view.getByTestId("dimmer-target-filter-binding:0"), "Living Room");
     fireEvent.press(within(view.getByTestId("dimmer-target-binding:0")).getByText("Group: Living Room"));
     fireEvent.press(view.getByTestId("dimmer-save-binding:0"));
@@ -160,6 +173,7 @@ describe("Configure Dimmer screen", () => {
     };
     mockRuntime.service.dimmerCatalog = limitedCatalog as any;
     const view = render(<ConfigureDimmerScreen route={{ params: { sensorId: "4" } }} navigation={{ navigate: jest.fn() }} />);
+    fireEvent.press(view.getByTestId("dimmer-binding-summary-binding:0"));
     const binding = view.getByTestId("dimmer-edit-binding:0");
     expect(within(binding).getByText("Turn on")).toBeTruthy();
     expect(within(binding).getByText("Turn off")).toBeTruthy();
@@ -169,6 +183,7 @@ describe("Configure Dimmer screen", () => {
 
   test("replaces action fields when changing action type or target", async () => {
     const view = render(<ConfigureDimmerScreen route={{ params: { sensorId: "4" } }} navigation={{ navigate: jest.fn() }} />);
+    fireEvent.press(view.getByTestId("dimmer-binding-summary-binding:1"));
     const binding = view.getByTestId("dimmer-edit-binding:1");
     fireEvent.press(within(binding).getByText("Turn off"));
     fireEvent.press(view.getByTestId("dimmer-save-binding:1"));
@@ -181,6 +196,7 @@ describe("Configure Dimmer screen", () => {
     view.unmount();
     saveSimpleBinding.mockClear();
     const secondView = render(<ConfigureDimmerScreen route={{ params: { sensorId: "4" } }} navigation={{ navigate: jest.fn() }} />);
+    fireEvent.press(secondView.getByTestId("dimmer-binding-summary-binding:1"));
     fireEvent.changeText(secondView.getByTestId("dimmer-target-filter-binding:1"), "Reading Lamp");
     fireEvent.press(within(secondView.getByTestId("dimmer-target-binding:1")).getByText("Light: Reading Lamp"));
     fireEvent.press(secondView.getByTestId("dimmer-save-binding:1"));
@@ -193,6 +209,7 @@ describe("Configure Dimmer screen", () => {
 
   test("keeps target collections compact until the user filters them", () => {
     const view = render(<ConfigureDimmerScreen route={{ params: { sensorId: "4" } }} navigation={{ navigate: jest.fn() }} />);
+    fireEvent.press(view.getByTestId("dimmer-binding-summary-binding:0"));
     const target = view.getByTestId("dimmer-target-binding:0");
     expect(within(target).getByText("Light: Reading Lamp")).toBeTruthy();
     expect(within(target).queryByText("Group: Living Room")).toBeNull();
@@ -207,6 +224,7 @@ describe("Configure Dimmer screen", () => {
   test("repairs one characterized missing target while locking the existing action", async () => {
     screenSnapshot = { ...fixture, lights: {} };
     const view = render(<ConfigureDimmerScreen route={{ params: { sensorId: "4" } }} navigation={{ navigate: jest.fn() }} />);
+    fireEvent.press(view.getByTestId("dimmer-binding-summary-binding:0"));
     const binding = view.getByTestId("dimmer-edit-binding:0");
     expect(within(binding).getByText(/original target was deleted/i)).toBeTruthy();
     expect(within(binding).getByLabelText(/Action to preserve: Turn on/i)).toBeTruthy();
@@ -255,6 +273,7 @@ describe("Configure Dimmer screen", () => {
       return jest.fn();
     });
     const view = render(<ConfigureDimmerScreen route={{ params: { sensorId: "4" } }} navigation={{ navigate: jest.fn() }} />);
+    fireEvent.press(view.getByTestId("dimmer-binding-summary-binding:0"));
     const binding = view.getByTestId("dimmer-edit-binding:0");
     fireEvent.press(within(binding).getByText("Turn off"));
 
@@ -278,6 +297,7 @@ describe("Configure Dimmer screen", () => {
       },
     };
     const view = render(<ConfigureDimmerScreen route={{ params: { sensorId: "4" } }} navigation={{ navigate: jest.fn() }} />);
+    fireEvent.press(view.getByTestId("dimmer-binding-summary-binding:5"));
     const binding = view.getByTestId("dimmer-edit-binding:5");
     fireEvent.press(within(binding).getByText("Brighten while held"));
     fireEvent.changeText(view.getByTestId("dimmer-binding:5-bri-inc"), "40");
@@ -363,6 +383,7 @@ describe("Configure Dimmer screen", () => {
     ]));
     mockRuntime.service.dimmerCatalog = structuralCatalog as any;
     const view = render(<ConfigureDimmerScreen route={{ params: { sensorId: "4" } }} navigation={{ navigate: jest.fn() }} />);
+    fireEvent.press(view.getByTestId("dimmer-binding-summary-binding:5"));
     const fields = view.getByTestId("dimmer-structural-fields-binding:5");
     fireEvent.press(within(fields).getAllByText("Scene: Calm")[0]);
     fireEvent.press(within(fields).getAllByText("Scene: Relaxed")[1]);

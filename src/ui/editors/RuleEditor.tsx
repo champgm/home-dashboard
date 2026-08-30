@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { EditorAction, EditorCatalogNumberField, EditorChoice, EditorHueField, EditorSection, EditorTextField, EditorToggle, EditorXyColorField, ReadOnlyField } from "./editorControls";
+import { StyleSheet, View } from "react-native";
+import { EditorAction, EditorCatalogNumberField, EditorChoice, EditorHueField, EditorSection, EditorSummaryRow, EditorTextField, EditorToggle, EditorXyColorField, ReadOnlyField } from "./editorControls";
 import { EditorForm } from "./EditorForm";
 import { useAppRuntime } from "../AppContext";
 import { HueRuleAction, HueRuleCondition, HUE_RULE_CONDITION_OPERATORS } from "../../protocol/hue/catalog/rules";
@@ -8,6 +9,7 @@ import { HueCatalogField } from "../../protocol/hue/catalog/resourceCatalog";
 import { DeviceStateStore } from "../../app/DeviceStateStore";
 import { definiteFailure } from "../../app/commandResults";
 import { diagnostic } from "../../app/diagnostics";
+import { ExpandableAdvancedSection } from "../components/ExpandableAdvancedSection";
 
 interface ConditionRow {
   readonly sensorId: string;
@@ -25,6 +27,8 @@ interface ActionRow {
   readonly targetId: string;
   readonly operation: RuleActionOperation;
   readonly body: Record<string, unknown>;
+  /** Preserve a GroupScene's owning group when the action is edited and saved. */
+  readonly sceneGroupId?: string;
   readonly raw?: HueRuleAction;
 }
 
@@ -49,12 +53,14 @@ export function RuleEditor({ route, navigation }: { route?: any; navigation?: an
   const initialActions = (value?.actions || []).map(toActionRow);
   const [conditions, setConditions] = useState<ConditionRow[]>(initialConditions.length > 0 ? initialConditions : [newConditionRow()]);
   const [actions, setActions] = useState<ActionRow[]>(initialActions.length > 0 ? initialActions : [newActionRow()]);
+  const [expandedCondition, setExpandedCondition] = useState(-1);
+  const [expandedAction, setExpandedAction] = useState(-1);
   const [preview, setPreview] = useState<string>();
 
   const buildDraft = (name?: string): Record<string, unknown> => ({
     ...(name === undefined ? {} : { name }),
     conditions: conditions.map((row) => row.raw || buildRuleConditionFromSensor(row.sensorId.trim(), row.event, row.operator, row.value === "" ? undefined : row.value)),
-    actions: actions.map((row) => row.raw || buildRuleActionFromTarget(row.targetKind, row.targetId.trim(), row.operation, row.body)),
+    actions: actions.map((row) => row.raw || buildRuleActionFromTarget(row.targetKind, row.targetId.trim(), row.operation, row.body, row.targetKind === "scene" && row.sceneGroupId ? { type: "GroupScene", group: row.sceneGroupId } : undefined)),
   });
 
   const save = async (name: string) => {
@@ -95,52 +101,75 @@ export function RuleEditor({ route, navigation }: { route?: any; navigation?: an
     id={id}
     kind="rule"
     navigation={navigation}
-    note="Rules use catalog-backed Sensor conditions and Light/Group/Scene action controls. Unsupported existing entries can be replaced or removed; no raw JSON write path is provided. Preview validates the exact changed fields before saving."
+    note="Known conditions and actions are edited one at a time. Unsupported existing entries stay read-only until explicitly replaced."
     onSave={save}
     title="Rule Editor"
   >
     <EditorSection title="Conditions">
       {conditions.length === 0 && <ReadOnlyField label="Conditions" value="No conditions. Add one before saving." />}
       {conditions.map((condition, index) => <React.Fragment key={`condition-${index}`}>
-        {condition.raw ? <>
-          <ReadOnlyField label={`Condition ${index + 1} (unrecognized)`} value={`${condition.raw.address} ${condition.raw.operator}${condition.raw.value ? ` ${condition.raw.value}` : ""}`} />
-          <EditorAction label="Replace condition" onPress={() => setConditions((current) => current.map((row, rowIndex) => rowIndex === index ? newConditionRow() : row))} testID={`rule-condition-${index}-replace`} />
-        </> : <>
-          <EditorTextField label={`Condition ${index + 1} Sensor ID`} onChangeText={(sensorId) => updateCondition(setConditions, index, { sensorId })} placeholder="1" testID={`rule-condition-${index}-sensor`} value={condition.sensorId} />
-          <EditorChoice label={`Condition ${index + 1} event`} onChange={(event) => updateCondition(setConditions, index, { event })} options={CONDITION_EVENTS} testID={`rule-condition-${index}-event`} value={condition.event} />
-          <EditorChoice label={`Condition ${index + 1} operator`} onChange={(operator) => updateCondition(setConditions, index, { operator: operator as ConditionRow["operator"] })} options={OPERATORS} testID={`rule-condition-${index}-operator`} value={condition.operator} />
-          <EditorTextField label={`Condition ${index + 1} value`} onChangeText={(valueText) => updateCondition(setConditions, index, { value: valueText })} placeholder="100" testID={`rule-condition-${index}-value`} value={condition.value} />
-          <ReadOnlyField label={`Condition ${index + 1} Sensor reference`} value={resourceLabel(runtime.service.stateStore, "sensor", condition.sensorId)} />
-        </>}
-        <EditorAction label="Remove condition" onPress={() => removeRow(setConditions, index)} testID={`rule-condition-${index}-remove`} />
+        <EditorSummaryRow
+          label={`Condition ${index + 1}`}
+          onPress={() => setExpandedCondition((current) => current === index ? -1 : index)}
+          testID={`rule-condition-${index}-summary`}
+          value={conditionSummary(runtime.service.stateStore, condition)}
+          expanded={expandedCondition === index}
+        />
+        {expandedCondition === index && <View style={styles.itemEditor} testID={`rule-condition-${index}-editor`}>
+          {condition.raw ? <>
+            <ReadOnlyField label="Unsupported condition path" value={`${condition.raw.address} ${condition.raw.operator}${condition.raw.value ? ` ${condition.raw.value}` : ""}`} />
+            <EditorAction label="Replace condition" onPress={() => setConditions((current) => current.map((row, rowIndex) => rowIndex === index ? newConditionRow() : row))} testID={`rule-condition-${index}-replace`} />
+          </> : <>
+            <EditorTextField keyboardType="numeric" label="Sensor ID" onChangeText={(sensorId) => updateCondition(setConditions, index, { sensorId })} placeholder="1" testID={`rule-condition-${index}-sensor`} value={condition.sensorId} />
+            <EditorChoice label="Event" onChange={(event) => updateCondition(setConditions, index, { event })} options={CONDITION_EVENTS} testID={`rule-condition-${index}-event`} value={condition.event} />
+            <EditorChoice label="Operator" onChange={(operator) => updateCondition(setConditions, index, { operator: operator as ConditionRow["operator"] })} options={OPERATORS} testID={`rule-condition-${index}-operator`} value={condition.operator} />
+            <EditorTextField label="Value" onChangeText={(valueText) => updateCondition(setConditions, index, { value: valueText })} placeholder="100" testID={`rule-condition-${index}-value`} value={condition.value} />
+            <ReadOnlyField label="Exact Sensor reference" value={resourceLabel(runtime.service.stateStore, "sensor", condition.sensorId)} />
+          </>}
+          <EditorAction label="Remove condition" onPress={() => { removeRow(setConditions, index); setExpandedCondition((current) => current === index ? -1 : current); }} testID={`rule-condition-${index}-remove`} />
+        </View>}
       </React.Fragment>)}
-      <EditorAction label="Add condition" onPress={() => setConditions((current) => [...current, newConditionRow()])} testID="rule-add-condition" />
+      <EditorAction label="Add condition" onPress={() => { setConditions((current) => { setExpandedCondition(current.length); return [...current, newConditionRow()]; }); }} testID="rule-add-condition" />
     </EditorSection>
     <EditorSection title="Actions">
       {actions.length === 0 && <ReadOnlyField label="Actions" value="No actions. Add one before saving." />}
       {actions.map((action, index) => <React.Fragment key={`action-${index}`}>
-        {action.raw ? <>
-          <ReadOnlyField label={`Action ${index + 1} (unrecognized)`} value={`${action.raw.method} ${action.raw.address}${action.raw.body ? ` ${JSON.stringify(action.raw.body)}` : ""}`} />
-          <EditorAction label="Replace action" onPress={() => setActions((current) => current.map((row, rowIndex) => rowIndex === index ? newActionRow() : row))} testID={`rule-action-${index}-replace`} />
-        </> : <>
-          <EditorChoice label={`Action ${index + 1} target`} onChange={(targetKind) => changeActionTarget(setActions, index, targetKind as RuleActionTargetKind)} options={["light", "group", "scene"]} testID={`rule-action-${index}-target`} value={action.targetKind} />
-          <EditorTextField label={`Action ${index + 1} resource ID`} onChangeText={(targetId) => updateAction(setActions, index, { targetId })} placeholder="1" testID={`rule-action-${index}-id`} value={action.targetId} />
-          <EditorChoice label={`Action ${index + 1} operation`} onChange={(operation) => changeActionOperation(setActions, index, operation as RuleActionOperation)} options={action.targetKind === "scene" ? ["activate"] : ["on", "off", "set"]} testID={`rule-action-${index}-operation`} value={action.operation} />
-          {action.targetKind !== "scene" && getHueActionFields(action.targetKind).map((field) => renderActionField(action, index, field, setActions))}
-          <ReadOnlyField label={`Action ${index + 1} target reference`} value={resourceLabel(runtime.service.stateStore, action.targetKind, action.targetId)} />
-        </>}
-        <EditorAction label="Remove action" onPress={() => removeRow(setActions, index)} testID={`rule-action-${index}-remove`} />
+        <EditorSummaryRow
+          label={`Action ${index + 1}`}
+          onPress={() => setExpandedAction((current) => current === index ? -1 : index)}
+          testID={`rule-action-${index}-summary`}
+          value={actionSummary(runtime.service.stateStore, action)}
+          expanded={expandedAction === index}
+        />
+        {expandedAction === index && <View style={styles.itemEditor} testID={`rule-action-${index}-editor`}>
+          {action.raw ? <>
+            <ReadOnlyField label="Unsupported action path" value={`${action.raw.method} ${action.raw.address}`} />
+            <ExpandableAdvancedSection summary="The existing action body is preserved exactly" testID={`rule-action-${index}-advanced`}>
+              <ReadOnlyField label="Existing action body" value={action.raw.body} />
+            </ExpandableAdvancedSection>
+            <EditorAction label="Replace action" onPress={() => setActions((current) => current.map((row, rowIndex) => rowIndex === index ? newActionRow() : row))} testID={`rule-action-${index}-replace`} />
+          </> : <>
+            <EditorChoice label="Target" onChange={(targetKind) => changeActionTarget(setActions, index, targetKind as RuleActionTargetKind)} options={["light", "group", "scene"]} testID={`rule-action-${index}-target`} value={action.targetKind} />
+            <EditorTextField keyboardType={action.targetKind === "scene" ? "default" : "numeric"} label="Resource ID" onChangeText={(targetId) => updateAction(setActions, index, { targetId })} placeholder="1" testID={`rule-action-${index}-id`} value={action.targetId} />
+            <EditorChoice label="Operation" onChange={(operation) => changeActionOperation(setActions, index, operation as RuleActionOperation)} options={action.targetKind === "scene" ? ["activate"] : ["on", "off", "set"]} testID={`rule-action-${index}-operation`} value={action.operation} />
+            {action.targetKind !== "scene" && getHueActionFields(action.targetKind).map((field) => renderActionField(action, index, field, setActions))}
+            <ReadOnlyField label="Exact target reference" value={resourceLabel(runtime.service.stateStore, action.targetKind, action.targetId)} />
+          </>}
+          <EditorAction label="Remove action" onPress={() => { removeRow(setActions, index); setExpandedAction((current) => current === index ? -1 : current); }} testID={`rule-action-${index}-remove`} />
+        </View>}
       </React.Fragment>)}
-      <EditorAction label="Add action" onPress={() => setActions((current) => [...current, newActionRow()])} testID="rule-add-action" />
+      <EditorAction label="Add action" onPress={() => { setActions((current) => { setExpandedAction(current.length); return [...current, newActionRow()]; }); }} testID="rule-add-action" />
     </EditorSection>
     <EditorAction label="Preview rule changes" onPress={showPreview} testID="rule-preview" />
-    {preview !== undefined && <ReadOnlyField label="Rule change preview" value={preview} />}
-    <EditorSection title="Rule details">
+    {preview !== undefined && <ExpandableAdvancedSection defaultExpanded summary="Validated changed fields" testID="rule-preview-details">
+      <ReadOnlyField label="Rule change preview" value={preview} />
+    </ExpandableAdvancedSection>}
+    <ExpandableAdvancedSection summary="Owner, status, and trigger history" testID="rule-advanced">
       <ReadOnlyField label="Owner" value={value?.owner} />
       <ReadOnlyField label="Status" value={value?.status} />
       <ReadOnlyField label="Last triggered" value={value?.lasttriggered} />
       <ReadOnlyField label="Times triggered" value={value?.timestriggered} />
-    </EditorSection>
+    </ExpandableAdvancedSection>
   </EditorForm>;
 }
 
@@ -163,8 +192,8 @@ function updateAction(setter: React.Dispatch<React.SetStateAction<ActionRow[]>>,
 function changeActionTarget(setter: React.Dispatch<React.SetStateAction<ActionRow[]>>, index: number, targetKind: RuleActionTargetKind): void {
   setter((current) => current.map((row, rowIndex) => {
     if (rowIndex !== index) return row;
-    if (targetKind === "scene") return { ...row, targetKind, operation: "activate", body: {}, raw: undefined };
-    return { ...row, targetKind, operation: row.operation === "activate" ? "on" : row.operation, body: Object.keys(row.body).length > 0 ? row.body : { on: true }, raw: undefined };
+    if (targetKind === "scene") return { ...row, targetKind, operation: "activate", body: {}, sceneGroupId: undefined, raw: undefined };
+    return { ...row, targetKind, operation: row.operation === "activate" ? "on" : row.operation, body: Object.keys(row.body).length > 0 ? row.body : { on: true }, sceneGroupId: undefined, raw: undefined };
   }));
 }
 
@@ -214,6 +243,19 @@ function parseNumberArray(value: string): number[] | undefined {
   return value.split(",").map((entry) => Number(entry.trim()));
 }
 
+function conditionSummary(stateStore: DeviceStateStore, condition: ConditionRow): string {
+  if (condition.raw) return `Unsupported path · ${condition.raw.address}`;
+  const sensor = resourceLabel(stateStore, "sensor", condition.sensorId);
+  return `${sensor} · ${condition.event} ${condition.operator}${condition.value ? ` ${condition.value}` : ""}`;
+}
+
+function actionSummary(stateStore: DeviceStateStore, action: ActionRow): string {
+  if (action.raw) return `Unsupported path · ${action.raw.method} ${action.raw.address}`;
+  const target = resourceLabel(stateStore, action.targetKind, action.targetId);
+  const fields = Object.keys(action.body).filter((key) => key !== "on" || action.operation === "set");
+  return `${action.operation} · ${target}${fields.length > 0 ? ` · ${fields.join(", ")}` : ""}`;
+}
+
 function toConditionRow(condition: HueRuleCondition): ConditionRow {
   const match = condition.address.match(/^(?:\/api\/[^/]+)?\/sensors\/([^/]+)\/(state|config)\/([^/]+)$/i);
   const event = match ? `${match[2]}.${match[3]}` : "";
@@ -224,9 +266,13 @@ function toConditionRow(condition: HueRuleCondition): ConditionRow {
 
 function toActionRow(action: HueRuleAction): ActionRow {
   const scene = action.body?.scene;
-  const sceneMatch = action.address.match(/^(?:\/api\/[^/]+)?\/groups\/0\/action$/i);
+  const sceneMatch = action.address.match(/^(?:\/api\/[^/]+)?\/groups\/([^/]+)\/action$/i);
   const match = action.address.match(/^(?:\/api\/[^/]+)?\/(lights|groups)\/([^/]+)\/(state|action)$/i);
-  if (sceneMatch && action.method.toUpperCase() === "PUT" && typeof scene === "string" && /^\d+$/.test(scene)) return { targetKind: "scene", targetId: scene, operation: "activate", body: {} };
+  const sceneGroupId = sceneMatch ? safeDecode(sceneMatch[1]) : undefined;
+  const sceneId = typeof scene === "string" ? safeDecode(scene) : undefined;
+  if (sceneMatch && sceneGroupId && /^\d+$/.test(sceneGroupId) && action.method.toUpperCase() === "PUT" && sceneId && !/[\/?#]/.test(sceneId) && Object.keys(action.body || {}).length === 1) {
+    return { targetKind: "scene", targetId: sceneId, operation: "activate", body: {}, sceneGroupId };
+  }
   if (match && action.method.toUpperCase() === "PUT" && action.body && typeof action.body === "object" && !Array.isArray(action.body)) {
     const targetKind = match[1].toLowerCase() === "lights" ? "light" : "group";
     const expectedSubpath = targetKind === "light" ? "state" : "action";
@@ -256,3 +302,7 @@ function resourceLabel(stateStore: DeviceStateStore, kind: RuleActionTargetKind 
   }
   return `${kind} ${id} (label unavailable)`;
 }
+
+const styles = StyleSheet.create({
+  itemEditor: { backgroundColor: "#073642", borderColor: "#586e75", borderRadius: 8, borderWidth: 1, marginBottom: 8, marginTop: 4, padding: 10 },
+});

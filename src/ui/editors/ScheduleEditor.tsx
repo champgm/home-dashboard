@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { EditorAction, EditorCatalogNumberField, EditorChoice, EditorHueField, EditorNumberField, EditorSection, EditorTextField, EditorToggle, EditorXyColorField, ReadOnlyField } from "./editorControls";
+import { StyleSheet, View } from "react-native";
+import { EditorAction, EditorCatalogNumberField, EditorChoice, EditorChoiceOption, EditorHueField, EditorNumberField, EditorResourceSelector, EditorSection, EditorSummaryRow, EditorTextField, EditorToggle, EditorXyColorField, ReadOnlyField } from "./editorControls";
 import { EditorForm } from "./EditorForm";
 import { useAppRuntime } from "../AppContext";
 import { buildScheduleCommandFromTarget, getHueActionFields, getHueSensorConfigFields, HueCatalogField, validateHueCatalogPayload } from "../../protocol/hue/catalog/resourceCatalog";
@@ -7,6 +8,7 @@ import { HUE_WEEKDAYS, HueScheduleTimePattern, HueScheduleWeekday, StructuredSch
 import { definiteFailure } from "../../app/commandResults";
 import { diagnostic } from "../../app/diagnostics";
 import { DeviceStateStore } from "../../app/DeviceStateStore";
+import { ExpandableAdvancedSection } from "../components/ExpandableAdvancedSection";
 
 type PatternKind = "at" | "timer" | "recurring-daily" | "recurring-weekly" | "randomized";
 type TargetKind = "light" | "group" | "scene" | "sensor";
@@ -35,8 +37,11 @@ export function ScheduleEditor({ route, navigation }: { route?: any; navigation?
   const [operation, setOperation] = useState<CommandOperation>(operationFrom(initialCommand));
   const [commandBody, setCommandBody] = useState<Record<string, unknown>>(initialCommand?.body ? { ...initialCommand.body } : { on: true });
   const [commandDirty, setCommandDirty] = useState(false);
+  const [timeExpanded, setTimeExpanded] = useState(false);
+  const [commandExpanded, setCommandExpanded] = useState(false);
   const sensorType = targetKind === "sensor" ? sensorTypeFor(runtime.service.stateStore, targetId) : undefined;
   const commandFields = commandFieldsForTarget(targetKind, sensorType);
+  const targetOptions = resourceOptionsFor(runtime.service.stateStore, targetKind, targetId);
   const updateCommandField = (key: string, next: unknown) => {
     const nextBody = { ...commandBody };
     if (next === undefined) delete nextBody[key];
@@ -86,40 +91,47 @@ export function ScheduleEditor({ route, navigation }: { route?: any; navigation?
     id={id}
     kind="schedule"
     navigation={navigation}
-    note="Schedules use typed time patterns and resource-target commands. Command authorization is rebuilt only through the explicit recovery action."
+    note="Schedule timing and commands use supported typed forms. Authorization is rebuilt only through the explicit recovery action."
     onSave={save}
     title="Schedule Editor"
   >
-    <EditorSection title="Time pattern">
-      <EditorTextField label="Description" onChangeText={setDescription} testID="schedule-description" value={description} />
-      <EditorChoice label="Pattern" onChange={(kind) => setPatternKind(kind as PatternKind)} options={["at", "timer", "recurring-daily", "recurring-weekly", "randomized"]} testID="schedule-pattern" value={patternKind} />
-      {patternKind === "timer" ? <EditorTextField label="Timer duration" onChangeText={setTimer} placeholder="PT00:05:00" testID="schedule-time" value={timer} /> : <EditorTextField label="Local time" onChangeText={setLocaltime} placeholder="T07:00:00" testID="schedule-localtime" value={localtime} />}
-      {(patternKind === "recurring-daily" || patternKind === "recurring-weekly" || patternKind === "randomized") && <EditorTextField label="Start time/date" onChangeText={setStarttime} placeholder="2026-01-01T07:00:00" testID="schedule-starttime" value={starttime} />}
-      {(patternKind === "recurring-weekly" || patternKind === "randomized") && <EditorSection title="Weekdays">
-        {HUE_WEEKDAYS.map((day) => <EditorToggle key={day} label={capitalize(day)} onValueChange={(selected) => setWeekdays((current) => selected ? [...current, day].filter((item, itemIndex, all) => all.indexOf(item) === itemIndex) : current.filter((item) => item !== day))} testID={`schedule-weekday-${day}`} value={weekdays.includes(day)} />)}
-      </EditorSection>}
-      {patternKind === "randomized" && <EditorNumberField label="Randomization window (seconds)" onChange={setRandomSeconds} placeholder="300" testID="schedule-random-seconds" value={randomSeconds} />}
-      <EditorToggle disabled={patternKind !== "timer" && patternKind !== "randomized"} label="Recurring" onValueChange={setRecurring} testID="schedule-recurring" value={patternKind === "recurring-daily" || patternKind === "recurring-weekly" || ((patternKind === "timer" || patternKind === "randomized") && recurring)} />
-      <EditorToggle label="Autodelete" onValueChange={setAutodelete} testID="schedule-autodelete" value={autodelete} />
-    </EditorSection>
-    <EditorSection title="Structured command">
-      {commandEditable ? <>
-        <EditorChoice label="Target resource" onChange={changeTargetKind} options={["light", "group", "scene", "sensor"]} testID="schedule-target-kind" value={targetKind} />
-        <EditorTextField label="Target resource ID" onChangeText={(next) => { setCommandDirty(true); setTargetId(next); }} placeholder="1" testID="schedule-target-id" value={targetId} />
-        <EditorChoice label="Operation" onChange={changeOperation} options={targetKind === "scene" ? ["activate"] : ["on", "off", "set", "read"]} testID="schedule-operation" value={targetKind === "scene" ? "activate" : operation} />
-        {targetKind !== "scene" && commandFields.length > 0 && <EditorSection title="Command fields">
-          {commandFields.map((field) => renderCommandField(field, commandBody, updateCommandField))}
+    <EditorSection title="When">
+      <EditorSummaryRow label="Timing" onPress={() => setTimeExpanded((current) => !current)} testID="schedule-time-summary" value={scheduleTimeSummary(patternKind, localtime, timer, weekdays)} expanded={timeExpanded} />
+      {timeExpanded && <View style={styles.focusedEditor}>
+        <EditorTextField label="Description" onChangeText={setDescription} testID="schedule-description" value={description} />
+        <EditorChoice label="Pattern" onChange={(kind) => setPatternKind(kind as PatternKind)} options={["at", "timer", "recurring-daily", "recurring-weekly", "randomized"]} testID="schedule-pattern" value={patternKind} />
+        {patternKind === "timer" ? <EditorTextField label="Timer duration" onChangeText={setTimer} placeholder="PT00:05:00" testID="schedule-time" value={timer} /> : <EditorTextField label="Local time" onChangeText={setLocaltime} placeholder="T07:00:00" testID="schedule-localtime" value={localtime} />}
+        {(patternKind === "recurring-daily" || patternKind === "recurring-weekly" || patternKind === "randomized") && <EditorTextField label="Start time/date" onChangeText={setStarttime} placeholder="2026-01-01T07:00:00" testID="schedule-starttime" value={starttime} />}
+        {(patternKind === "recurring-weekly" || patternKind === "randomized") && <EditorSection title="Weekdays">
+          {HUE_WEEKDAYS.map((day) => <EditorToggle key={day} label={capitalize(day)} onValueChange={(selected) => setWeekdays((current) => selected ? [...current, day].filter((item, itemIndex, all) => all.indexOf(item) === itemIndex) : current.filter((item) => item !== day))} testID={`schedule-weekday-${day}`} value={weekdays.includes(day)} />)}
         </EditorSection>}
-      </> : <ReadOnlyField label="Command editing" value="This existing command is not represented by a supported structured form. Disable or delete it instead." />}
-      {id && commandEditable && <EditorAction label="Rebuild command authorization" onPress={() => void runtime.service.rebuildScheduleCommand(id)} testID="schedule-rebuild-command" />}
+        {patternKind === "randomized" && <EditorNumberField label="Randomization window (seconds)" onChange={setRandomSeconds} placeholder="300" testID="schedule-random-seconds" value={randomSeconds} />}
+        <EditorToggle disabled={patternKind !== "timer" && patternKind !== "randomized"} label="Recurring" onValueChange={setRecurring} testID="schedule-recurring" value={patternKind === "recurring-daily" || patternKind === "recurring-weekly" || ((patternKind === "timer" || patternKind === "randomized") && recurring)} />
+        <EditorToggle label="Autodelete" onValueChange={setAutodelete} testID="schedule-autodelete" value={autodelete} />
+      </View>}
     </EditorSection>
-    <EditorSection title="Schedule details">
+    <EditorSection title="Action">
+      <EditorSummaryRow label="Command" onPress={() => setCommandExpanded((current) => !current)} testID="schedule-command-summary" value={commandSummary(targetKind, targetId, operation, commandBody)} expanded={commandExpanded} />
+      {commandExpanded && <View style={styles.focusedEditor}>
+        {commandEditable ? <>
+          <EditorChoice label="Target resource kind" onChange={changeTargetKind} options={["light", "group", "scene", "sensor"]} testID="schedule-target-kind" value={targetKind} />
+          <EditorResourceSelector label="Target resource" onChange={(next) => { setCommandDirty(true); setTargetId(next); }} options={targetOptions} testID="schedule-target" value={targetId} />
+          <EditorChoice label="Operation" onChange={changeOperation} options={targetKind === "scene" ? ["activate"] : ["on", "off", "set", "read"]} testID="schedule-operation" value={targetKind === "scene" ? "activate" : operation} />
+          {targetKind !== "scene" && commandFields.length > 0 && <EditorSection title="Command fields">
+            {commandFields.map((field) => renderCommandField(field, commandBody, updateCommandField))}
+          </EditorSection>}
+        </> : <ReadOnlyField label="Command editing" value="This existing command is not represented by a supported structured form. Disable or delete it instead." />}
+        {id && commandEditable && <EditorAction label="Rebuild command authorization" onPress={() => void runtime.service.rebuildScheduleCommand(id)} testID="schedule-rebuild-command" />}
+      </View>}
+    </EditorSection>
+    <ExpandableAdvancedSection summary="Exact target ID, existing command, and trigger history" testID="schedule-advanced">
+      {commandEditable && <EditorTextField keyboardType={targetKind === "scene" ? "default" : "numeric"} label="Exact target resource ID" onChangeText={(next) => { setCommandDirty(true); setTargetId(next); }} placeholder="1" testID="schedule-target-id" value={targetId} />}
       <ReadOnlyField label="Existing command" value={initialCommand ? `${initialCommand.method} ${initialCommand.resourceKind}/${initialCommand.resourceId || ""}/${initialCommand.subpath || ""}` : "Not available"} />
       {unsupportedTimePattern && <ReadOnlyField label="Time pattern" value="This existing pattern is not represented by the typed editor." />}
       <ReadOnlyField label="Created" value={value?.created} />
       <ReadOnlyField label="Last triggered" value={value?.lasttriggered} />
       <ReadOnlyField label="Times triggered" value={value?.timestriggered} />
-    </EditorSection>
+    </ExpandableAdvancedSection>
   </EditorForm>;
 }
 
@@ -130,6 +142,36 @@ function patternFrom(pattern: HueScheduleTimePattern | undefined): PatternKind {
   if (pattern?.kind === "recurring-weekly") return "recurring-weekly";
   if (pattern?.kind === "randomized") return "randomized";
   return "at";
+}
+
+function scheduleTimeSummary(pattern: PatternKind, localtime: string, timer: string, weekdays: readonly string[]): string {
+  if (pattern === "timer") return `Timer ${timer || "not set"}`;
+  const daySummary = pattern === "recurring-weekly" || pattern === "randomized" ? ` · ${weekdays.length} day${weekdays.length === 1 ? "" : "s"}` : "";
+  return `${capitalize(pattern)} · ${localtime || "time not set"}${daySummary}`;
+}
+
+function commandSummary(kind: TargetKind, id: string, operation: CommandOperation, body: Record<string, unknown>): string {
+  const target = id.trim() ? `${capitalize(kind)} ${id.trim()}` : `No ${kind} selected`;
+  const fields = Object.keys(body).filter((key) => key !== "on" || operation === "set");
+  return `${operation} · ${target}${fields.length > 0 ? ` · ${fields.join(", ")}` : ""}`;
+}
+
+function resourceOptionsFor(stateStore: DeviceStateStore, kind: TargetKind, selectedId: string): readonly EditorChoiceOption[] {
+  const prefix = `${kind}:`;
+  const options: EditorChoiceOption[] = [];
+  stateStore.getAll().forEach((stored, key) => {
+    if (!key.startsWith(prefix) || stored.state.status !== "known") return;
+    const id = key.slice(prefix.length);
+    const raw = stored.state.value;
+    const name = raw && typeof raw === "object" && typeof (raw as { name?: unknown }).name === "string"
+      ? String((raw as { name: string }).name).trim()
+      : `${capitalize(kind)} ${id}`;
+    options.push({ value: id, label: `${name || capitalize(kind)} (ID ${id})` });
+  });
+  if (selectedId.trim() && !options.some((option) => option.value === selectedId.trim())) {
+    options.push({ value: selectedId.trim(), label: `${capitalize(kind)} unavailable (ID ${selectedId.trim()})` });
+  }
+  return options.sort((left, right) => left.label.localeCompare(right.label, undefined, { numeric: true }));
 }
 
 function isTargetKind(value: string | undefined): boolean { return value === "light" || value === "group" || value === "scene" || value === "sensor"; }
@@ -217,3 +259,7 @@ function parseNumberArray(value: string): number[] | undefined {
   if (!value.trim()) return undefined;
   return value.split(",").map((entry) => Number(entry.trim()));
 }
+
+const styles = StyleSheet.create({
+  focusedEditor: { backgroundColor: "#073642", borderColor: "#586e75", borderRadius: 8, borderWidth: 1, marginTop: 4, padding: 10 },
+});

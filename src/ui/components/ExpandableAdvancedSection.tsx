@@ -6,13 +6,15 @@ export function ExpandableAdvancedSection({
   summary,
   title = "Advanced",
   testID = "advanced-section",
+  defaultExpanded = false,
 }: {
   readonly children: ReactNode;
   readonly summary?: string;
   readonly title?: string;
   readonly testID?: string;
+  readonly defaultExpanded?: boolean;
 }): JSX.Element {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
   return <View style={styles.container} testID={testID}>
     <Pressable
       accessibilityRole="button"
@@ -30,9 +32,8 @@ export function ExpandableAdvancedSection({
 
 const styles = StyleSheet.create({
   container: { borderTopColor: "#586e75", borderTopWidth: StyleSheet.hairlineWidth, marginTop: 18, paddingTop: 10 },
-  toggle: { paddingVertical: 8 },
+  toggle: { justifyContent: "center", minHeight: 48, paddingVertical: 8 },
   title: { color: "#b58900", fontSize: 17, fontWeight: "700" },
   summary: { color: "#93a1a1", marginTop: 4 },
   content: { paddingTop: 8 },
 });
-

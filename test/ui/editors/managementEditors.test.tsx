@@ -6,8 +6,11 @@ const states: Record<string, unknown> = {
   "light:2": { name: "Guest Lamp", type: "Dimmable light", modelid: "LWB", state: { on: false, bri: 80, reachable: true }, capabilities: { control: { bri: true } } },
   "group:2": { name: "Room", lights: ["1", "3"], class: "Living room", type: "Room", action: { on: true, bri: 120, xy: [0.4, 0.5] } },
   "scene:3": { name: "Evening", type: "LightScene", lights: ["1"], lightstates: { "1": { on: true, bri: 90 } }, appdata: { version: 1 }, owner: "owner", locked: false, version: 2 },
+  "scene:bdATgVKQdaELH9I": { name: "Household Group Scene", type: "GroupScene", group: "3" },
+  "scene:rich-state": { name: "Rich state", type: "LightScene", lights: ["1"], lightstates: { "1": { on: true, bri: 90, hue: 123, sat: 45, xy: [0.4, 0.5], ct: 250, transitiontime: 4 } } },
   "sensor:4": { name: "Dimmer", type: "ZLLSwitch", manufacturername: "Signify", modelid: "RWL", uniqueid: "00:11", config: { on: true, battery: 80 }, state: { buttonevent: 1002 }, capabilities: { inputs: ["buttonevent"] } },
   "rule:5": { name: "Dimmer on", conditions: [{ address: "/sensors/4/state/buttonevent", operator: "eq", value: "1002" }], actions: [{ address: "/lights/1/state", method: "PUT", body: { on: true } }], status: "disabled" },
+  "rule:group-scene": { name: "Activate household scene", conditions: [{ address: "/sensors/4/state/buttonevent", operator: "eq", value: "1002" }], actions: [{ address: "/groups/3/action", method: "PUT", body: { scene: "bdATgVKQdaELH9I" } }], status: "disabled" },
   "rule:rich": { name: "Dimmer fade", conditions: [{ address: "/sensors/4/state/buttonevent", operator: "eq", value: "1002" }], actions: [{ address: "/lights/1/state", method: "PUT", body: { bri: 180, transitiontime: 4 } }], status: "disabled" },
   "rule:broken": { name: "Broken dimmer", conditions: [{ address: "/sensors/4/state/not-a-real-event", operator: "eq", value: "1002" }], actions: [{ address: "/lights/1/action", method: "PUT", body: { on: true } }], status: "disabled" },
   "rule:trailing-path": { name: "Malformed paths", conditions: [{ address: "/sensors/4/state/buttonevent/extra", operator: "eq", value: "1002" }], actions: [{ address: "/lights/1/state/extra", method: "PUT", body: { on: true } }], status: "disabled" },
@@ -16,6 +19,7 @@ const states: Record<string, unknown> = {
   "schedule:recurring-timer": { name: "Repeat timer", description: "Repeat every five minutes", timePattern: { kind: "timer", time: "PT00:05:00", recurring: true }, command: { method: "PUT", resourceKind: "light", resourceId: "1", subpath: "state", body: { on: true }, authorizationCredential: "old-user" }, autodelete: false },
   "schedule:recurring-daily": { name: "Daily timer", description: "Daily with a start date", timePattern: { kind: "recurring-daily", localtime: "T07:00:00", recurring: true, date: "2026-01-01T07:00:00" }, command: { method: "PUT", resourceKind: "light", resourceId: "1", subpath: "state", body: { on: true }, authorizationCredential: "old-user" }, autodelete: false },
   "resourcelink:7": { class: "HomeDashboard", description: "Favorites", links: ["/lights/1"] },
+  "resourcelink:scene": { class: "HomeDashboard", description: "Household scene", links: ["/scenes/bdATgVKQdaELH9I"] },
   "plug:hs103": { alias: "Hallway Plug", model: "HS103", deviceId: "TEST-HS103-ID", hardwareVersion: "2.0", softwareVersion: "1.0.8", mac: "00:11:22:33:44:66", rssi: -52, signalLevel: 2, relayState: false, feature: "TIM", hasEnergy: false },
 };
 
@@ -70,6 +74,7 @@ describe("typed management editors", () => {
 
     const group = render(<GroupEditor route={{ params: { id: "2" } }} />);
     expect(group.getByTestId("group-lights")).toBeTruthy();
+    fireEvent.press(group.getByTestId("group-lights-selector"));
     expect(group.getByLabelText("Lights: Lamp").props.accessibilityState.selected).toBe(true);
     expect(group.getByLabelText("Lights: Guest Lamp").props.accessibilityState.selected).toBe(false);
     expect(group.getByLabelText("Lights: Unavailable light (ID 3)").props.accessibilityState.selected).toBe(true);
@@ -90,11 +95,15 @@ describe("typed management editors", () => {
     sensor.unmount();
 
     const rule = render(<RuleEditor route={{ params: { id: "5" } }} />);
+    fireEvent.press(rule.getByTestId("rule-condition-0-summary"));
+    fireEvent.press(rule.getByTestId("rule-action-0-summary"));
     expect(rule.getByTestId("rule-condition-0-sensor")).toBeTruthy();
     expect(rule.getByTestId("rule-action-0-target")).toBeTruthy();
     rule.unmount();
 
     const schedule = render(<ScheduleEditor route={{ params: { id: "6" } }} />);
+    fireEvent.press(schedule.getByTestId("schedule-time-summary"));
+    fireEvent.press(schedule.getByTestId("schedule-command-summary"));
     expect(schedule.getByTestId("schedule-pattern")).toBeTruthy();
     expect(schedule.getByTestId("schedule-target-kind")).toBeTruthy();
     schedule.unmount();
@@ -115,6 +124,7 @@ describe("typed management editors", () => {
   test("creates a Group with selected current lights and class", async () => {
     const view = render(<GroupEditor route={{ params: {} }} />);
     fireEvent.changeText(view.getByPlaceholderText("Resource name"), "Guest Room");
+    fireEvent.press(view.getByTestId("group-lights-selector"));
     fireEvent.press(view.getByLabelText("Lights: Lamp"));
     fireEvent.press(view.getByLabelText("Lights: Guest Lamp"));
     fireEvent.press(view.getByText("Guest room"));
@@ -130,6 +140,7 @@ describe("typed management editors", () => {
 
   test("updates Group membership without silently dropping an unavailable selected light", async () => {
     const view = render(<GroupEditor route={{ params: { id: "2" } }} />);
+    fireEvent.press(view.getByTestId("group-lights-selector"));
     fireEvent.press(view.getByLabelText("Lights: Guest Lamp"));
     fireEvent.press(view.getByTestId("editor-save"));
 
@@ -163,6 +174,43 @@ describe("typed management editors", () => {
     ));
   });
 
+  test("round-trips GroupScene actions and alphanumeric Scene Resource Links", async () => {
+    const rule = render(<RuleEditor route={{ params: { id: "group-scene" } }} />);
+    expect(rule.getByTestId("rule-action-0-summary")).toHaveTextContent(/Household Group Scene \(ID bdATgVKQdaELH9I\)/);
+    fireEvent.press(rule.getByTestId("rule-action-0-summary"));
+    fireEvent.press(rule.getByTestId("editor-save"));
+    await waitFor(() => expect(mockRuntime.service.mutateHue).toHaveBeenCalledWith(
+      "rule",
+      "group-scene",
+      "update",
+      expect.objectContaining({
+        actions: [{ address: "/groups/3/action", method: "PUT", body: { scene: "bdATgVKQdaELH9I" } }],
+      }),
+    ));
+    rule.unmount();
+
+    const resourceLink = render(<ResourceLinkEditor route={{ params: { id: "scene" } }} />);
+    expect(resourceLink.getByText("Household Group Scene (Scene bdATgVKQdaELH9I)")).toBeTruthy();
+    fireEvent.press(resourceLink.getByTestId("resourcelink-save"));
+    await waitFor(() => expect(mockRuntime.service.mutateHue).toHaveBeenCalledWith(
+      "resourcelink",
+      "scene",
+      "update",
+      expect.objectContaining({ links: ["/scenes/bdATgVKQdaELH9I"] }),
+    ));
+  });
+
+  test("summarizes the complete Scene light state with protocol units", () => {
+    const view = render(<SceneEditor route={{ params: { id: "rich-state" } }} />);
+    const summary = view.getByTestId("scene-light-1-summary");
+    expect(summary).toHaveTextContent(/Brightness 90\/254/);
+    expect(summary).toHaveTextContent(/Hue 123\/65535/);
+    expect(summary).toHaveTextContent(/Saturation 45\/254/);
+    expect(summary).toHaveTextContent(/XY 0\.4,0\.5/);
+    expect(summary).toHaveTextContent(/Color temperature 250/);
+    expect(summary).toHaveTextContent(/Transition 4/);
+  });
+
   test("does not offer a save action for an Unknown existing Hue resource", () => {
     stateStore.get.mockReturnValueOnce({ state: { status: "unknown", reason: { category: "NetworkUnavailable", message: "offline" } }, pending: false } as any);
     const view = render(<LightEditor route={{ params: { id: "unknown" } }} />);
@@ -180,11 +228,14 @@ describe("typed management editors", () => {
 
   test("renders richer Rule action bodies and provides repair/remove controls", () => {
     const rich = render(<RuleEditor route={{ params: { id: "rich" } }} />);
+    fireEvent.press(rich.getByTestId("rule-action-0-summary"));
     expect(rich.getByTestId("rule-action-0-bri")).toBeTruthy();
     expect(rich.getByTestId("rule-action-0-transitiontime")).toBeTruthy();
     rich.unmount();
 
     const broken = render(<RuleEditor route={{ params: { id: "broken" } }} />);
+    fireEvent.press(broken.getByTestId("rule-condition-0-summary"));
+    fireEvent.press(broken.getByTestId("rule-action-0-summary"));
     expect(broken.getByTestId("rule-condition-0-replace")).toBeTruthy();
     expect(broken.getByTestId("rule-action-0-replace")).toBeTruthy();
     fireEvent.press(broken.getByTestId("rule-condition-0-replace"));
@@ -201,6 +252,7 @@ describe("typed management editors", () => {
   ])("requires explicit replacement for a Rule %s with trailing path components", (_case, replacementTestId, editableTestId) => {
     const view = render(<RuleEditor route={{ params: { id: "trailing-path" } }} />);
 
+    fireEvent.press(view.getByTestId(`${replacementTestId.replace("-replace", "-summary")}`));
     expect(view.getByTestId(replacementTestId)).toBeTruthy();
     expect(view.queryByTestId(editableTestId)).toBeNull();
   });
@@ -213,6 +265,8 @@ describe("typed management editors", () => {
 
   test("renders weekday and randomization controls for typed Schedule patterns", () => {
     const view = render(<ScheduleEditor route={{ params: { id: "6" } }} />);
+    fireEvent.press(view.getByTestId("schedule-time-summary"));
+    fireEvent.press(view.getByTestId("schedule-pattern-selector"));
     fireEvent.press(view.getByText("recurring-weekly"));
     expect(view.getByTestId("schedule-weekday-monday")).toBeTruthy();
     fireEvent.press(view.getByText("randomized"));
@@ -243,6 +297,7 @@ describe("typed management editors", () => {
   test("edits documented rich Schedule command fields without reducing them to on/off", async () => {
     const view = render(<ScheduleEditor route={{ params: { id: "brightness" } }} />);
 
+    fireEvent.press(view.getByTestId("schedule-command-summary"));
     expect(view.getByTestId("schedule-command-bri")).toBeTruthy();
     expect(view.getByTestId("schedule-command-transitiontime")).toBeTruthy();
     fireEvent.changeText(view.getByTestId("schedule-command-bri"), "100");
@@ -276,6 +331,7 @@ describe("typed management editors", () => {
   test("round-trips recurring-daily Schedule start dates through the editor", async () => {
     const view = render(<ScheduleEditor route={{ params: { id: "recurring-daily" } }} />);
 
+    fireEvent.press(view.getByTestId("schedule-time-summary"));
     expect(view.getByTestId("schedule-starttime").props.value).toBe("2026-01-01T07:00:00");
     fireEvent.press(view.getByTestId("editor-save"));
 

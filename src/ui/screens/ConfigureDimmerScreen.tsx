@@ -14,6 +14,7 @@ import {
   EditorHueField,
   EditorToggle,
   EditorSection,
+  EditorSummaryRow,
   EditorXyColorField,
   ReadOnlyField,
 } from "../editors/editorControls";
@@ -49,6 +50,7 @@ export function ConfigureDimmerScreen({ route, navigation }: { route?: any; navi
   const [version, setVersion] = useState(0);
   const [message, setMessage] = useState<string>();
   const [bindingMessages, setBindingMessages] = useState<Record<string, string>>({});
+  const [focusedBindingId, setFocusedBindingId] = useState<string>();
   const [drafts, setDrafts] = useState<Record<string, ActionDraft>>({});
   const [targetFilters, setTargetFilters] = useState<Record<string, string>>({});
   const [structuralValues, setStructuralValues] = useState<Record<string, Record<string, unknown>>>({});
@@ -324,18 +326,29 @@ export function ConfigureDimmerScreen({ route, navigation }: { route?: any; navi
   // params. A structural change must come from the recognized catalog form
   // rendered above, for this model and this binding.
   const structuralEdit = structuralPreview;
-  return <Screen title="Configure Dimmer">
+  return <Screen showTitle={false} title="Configure Dimmer">
     <Text style={styles.deviceName}>{model.displayName}</Text>
     {model.modelLabel && <Text style={styles.subtitle}>{model.modelLabel}</Text>}
     {!model.recognized && <View accessibilityRole="alert" style={styles.warning}><Text style={styles.warningText}>{model.reason || "This physical dimmer cannot be identified from the current snapshot."}</Text><Text style={styles.warningText}>Configure Dimmer is inspection-only until the model is characterized.</Text></View>}
     {model.recognized && <EditorSection title="Controls and gestures">
       {model.controls.map((control) => <View key={control.id} style={styles.control} testID={`dimmer-control-${control.id}`}>
         <Text style={styles.controlTitle}>{control.label}</Text>
-        {control.gestures.map((binding) => <React.Fragment key={binding.id}>
-          <DimmerControlRow binding={binding} />
-          {renderEditable(binding)}
-          {renderStructural(binding)}
-        </React.Fragment>)}
+        {control.gestures.map((binding) => {
+          const focusable = isFocusableBinding(binding);
+          return <React.Fragment key={binding.id}>
+            <DimmerControlRow binding={binding} />
+            {focusable && <EditorSummaryRow
+              label="Edit mapping"
+              onPress={() => setFocusedBindingId((current) => current === binding.id ? undefined : binding.id)}
+              testID={`dimmer-binding-summary-${binding.id}`}
+              value={bindingSummary(binding)}
+              expanded={focusedBindingId === binding.id}
+            />}
+            {focusable
+              ? focusedBindingId === binding.id && <>{renderEditable(binding)}{renderStructural(binding)}</>
+              : renderStructural(binding)}
+          </React.Fragment>;
+        })}
       </View>)}
       {model.controls.length === 0 && <ReadOnlyField label="Controls" value="No characterized controls are available." />}
     </EditorSection>}
@@ -455,6 +468,16 @@ function uniqueOptionLabels(options: readonly { readonly ref: ResourceRef; reado
   });
 }
 
+function isFocusableBinding(binding: DimmerBindingView): boolean {
+  return binding.editable && (["editable_simple", "missing_target", "recognized_structural"] as string[]).includes(binding.classification);
+}
+
+function bindingSummary(binding: DimmerBindingView): string {
+  const action = binding.action?.label || "No current binding";
+  const target = binding.action?.targetLabel || binding.reason;
+  return target ? `${action} · ${target}` : action;
+}
+
 function resourceKey(ref: ResourceRef): string { return `${ref.kind}:${ref.id || ""}`; }
 function capitalize(value: string): string { return value.charAt(0).toUpperCase() + value.slice(1); }
 function diagnosticMessage(result: CommandResult): string | undefined {
@@ -554,10 +577,10 @@ const styles = StyleSheet.create({
   control: { marginBottom: 10 },
   controlTitle: { color: "#fdf6e3", fontSize: 16, fontWeight: "700", marginBottom: 6 },
   editPanel: { backgroundColor: "#073642", borderColor: "#586e75", borderRadius: 8, borderWidth: 1, marginBottom: 12, padding: 10 },
-  save: { alignSelf: "flex-start", backgroundColor: "#268bd2", borderRadius: 8, marginTop: 4, padding: 10 },
+  save: { alignSelf: "flex-start", backgroundColor: "#268bd2", borderRadius: 8, justifyContent: "center", marginTop: 4, minHeight: 48, paddingHorizontal: 16, paddingVertical: 10 },
   saveDisabled: { opacity: 0.45 },
   saveText: { color: "#fff", fontWeight: "700" },
-  targetFilter: { backgroundColor: "#073642", borderColor: "#586e75", borderRadius: 8, borderWidth: 1, color: "#fdf6e3", marginBottom: 10, padding: 11 },
+  targetFilter: { backgroundColor: "#073642", borderColor: "#586e75", borderRadius: 8, borderWidth: 1, color: "#fdf6e3", marginBottom: 10, minHeight: 48, padding: 11 },
   repairHint: { color: "#b58900", marginBottom: 10 },
   hint: { color: "#93a1a1", marginBottom: 8 },
   message: { color: "#b58900", marginTop: 10 },

@@ -70,11 +70,17 @@ export function SensorEditor({ route, navigation }: { route?: any; navigation?: 
     id={id}
     kind="sensor"
     navigation={navigation}
-    note="Sensor state, identity, capabilities, battery, and event data are inspection-only. Configuration writes use the Hue /config subresource."
+    note="Sensor state and identity are read-only. Supported configuration writes use the Hue /config subresource."
     onSave={save}
     title="Sensor Editor"
     >
-      <EditorSection title="Editable sensor fields">
+      {dimmerModel?.recognized && <EditorSection title="Dimmer control"><EditorAction label="Configure Dimmer" onPress={configureDimmer} testID="sensor-configure-dimmer" /></EditorSection>}
+      <EditorSection title="Household status">
+        <ReadOnlyField label="Reachable" value={humanBoolean(value?.config?.reachable, "Reachability not reported")} />
+        <ReadOnlyField label="Battery" value={batteryValue(value?.config?.battery)} />
+        <ReadOnlyField label="Button event" value={value?.state?.buttonevent === undefined ? "Not reported" : "Reported"} />
+      </EditorSection>
+      <EditorSection title="Supported configuration">
       {!id && <>
         <EditorChoice label="Sensor type" onChange={setSensorType} options={HUE_SENSOR_TYPES} testID="sensor-type" value={sensorType} />
         <EditorTextField label="Manufacturer" onChangeText={setManufacturer} testID="sensor-manufacturer" value={manufacturer} />
@@ -84,23 +90,15 @@ export function SensorEditor({ route, navigation }: { route?: any; navigation?: 
       {configFields.map((field) => <React.Fragment key={field.path}>{renderConfigField(field, config, updateConfig)}</React.Fragment>)}
       <Text style={editorStyles.readOnlyValue}>Unsupported or read-only configuration is not rendered as an edit control.</Text>
       </EditorSection>
-      <EditorSection title="Sensor details">
-        {id && <>
-        <ReadOnlyField label="Type" value={value?.type} />
-        <ReadOnlyField label="Manufacturer" value={value?.manufacturername} />
-        <ReadOnlyField label="Model" value={value?.modelid} />
-        <ReadOnlyField label="Software version" value={value?.swversion} />
-      </>}
-      <ReadOnlyField label="Reachable" value={humanBoolean(value?.config?.reachable, "Reachability not reported")} />
-      <ReadOnlyField label="Battery" value={batteryValue(value?.config?.battery)} />
-      <ReadOnlyField label="Button event" value={value?.state?.buttonevent === undefined ? "Not reported" : "Reported"} />
-      {dimmerModel?.recognized && <EditorAction label="Configure Dimmer" onPress={configureDimmer} testID="sensor-configure-dimmer" />}
-      </EditorSection>
       <EditorSection title="Automation references">
       {references.length === 0 ? <ReadOnlyField label="Rules and schedules" value="No current automation references this Sensor." /> : <ReadOnlyField label="Exact references" value={`${references.length} current reference${references.length === 1 ? "" : "s"}`} />}
       </EditorSection>
       <ExpandableAdvancedSection summary="IDs, raw events, capabilities, and exact reference paths" testID="sensor-advanced">
         <ReadOnlyField label="Sensor ID" value={id} />
+        <ReadOnlyField label="Type" value={value?.type} />
+        <ReadOnlyField label="Manufacturer" value={value?.manufacturername} />
+        <ReadOnlyField label="Model" value={value?.modelid} />
+        <ReadOnlyField label="Software version" value={value?.swversion} />
         <ReadOnlyField label="Unique ID" value={value?.uniqueid} />
         <ReadOnlyField label="Capabilities" value={value?.capabilities} />
         <ReadOnlyField label="Raw button event" value={value?.state?.buttonevent} />

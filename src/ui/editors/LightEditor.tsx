@@ -5,6 +5,7 @@ import { useAppRuntime } from "../AppContext";
 import { definiteFailure } from "../../app/commandResults";
 import { diagnostic } from "../../app/diagnostics";
 import { catalogField } from "../../protocol/hue/catalog/resourceCatalog";
+import { ExpandableAdvancedSection } from "../components/ExpandableAdvancedSection";
 
 interface LightValue {
   readonly id?: string;
@@ -65,23 +66,23 @@ export function LightEditor({ route, navigation }: { route?: any; navigation?: a
     id={id}
     kind="light"
     navigation={navigation}
-    note="Only fields advertised by the Light state/capability data are writable. Identity, reachability, and configuration data are inspection-only."
+    note="Common light controls are staged until Save. Capability and read-only guards still come from the current bridge data."
     onSave={save}
     title="Light Editor"
   >
-    <EditorSection title="Editable light state">
-      {visibleFields.bri && <EditorRangeField label="Brightness" maximumValue={254} minimumValue={1} onChange={setBri} testID="light-bri" value={bri} />}
-      {visibleFields.hue && <EditorHueField label="Hue color" onChange={setHue} testID="light-hue" value={hue} />}
-      {visibleFields.sat && <EditorRangeField label="Saturation" maximumValue={254} minimumValue={0} onChange={setSat} testID="light-sat" value={sat} />}
-      {visibleFields.xy && <EditorXyColorField label="XY color" onChangeText={setXy} testID="light-xy" value={xy} />}
-      {visibleFields.ct && <EditorRangeField label="Color temperature (warm–cool)" maximumValue={ctMaximum} minimumValue={ctMinimum} onChange={setCt} testID="light-ct" value={ct} />}
+    <EditorSection title="Common light controls">
+      {visibleFields.bri && <EditorRangeField label="Brightness" maximumValue={254} minimumValue={1} onChange={setBri} showExact={false} testID="light-bri" value={bri} />}
+      {visibleFields.hue && <EditorHueField label="Hue color" onChange={setHue} showExact={false} testID="light-hue" value={hue} />}
+      {visibleFields.sat && <EditorRangeField label="Saturation" maximumValue={254} minimumValue={0} onChange={setSat} showExact={false} testID="light-sat" value={sat} />}
+      {visibleFields.xy && <EditorXyColorField label="XY color" onChangeText={setXy} showExact={false} testID="light-xy" value={xy} />}
+      {visibleFields.ct && <EditorRangeField label="Color temperature (warm–cool)" maximumValue={ctMaximum} minimumValue={ctMinimum} onChange={setCt} showExact={false} testID="light-ct" value={ct} />}
+    </EditorSection>
+    {value?.type && <ReadOnlyField label="Type" value={value.type} />}
+    <ExpandableAdvancedSection summary="Effects, exact values, capability metadata, and identifiers" testID="light-advanced">
       {visibleFields.alert && <EditorChoice label="Alert" onChange={setAlert} options={["none", "select", "lselect"]} testID="light-alert" value={alert} />}
       {visibleFields.effect && <EditorChoice label="Effect" onChange={setEffect} options={["none", "colorloop"]} testID="light-effect" value={effect} />}
-      {visibleFields.transitiontime && <EditorRangeField displayScale={0.1} label="Transition duration" maximumValue={600} minimumValue={0} onChange={setTransitiontime} testID="light-transitiontime" unit="seconds" value={transitiontime} />}
-    </EditorSection>
-    <EditorSection title="Light details">
+      {visibleFields.transitiontime && <EditorRangeField displayScale={0.1} label="Transition duration" maximumValue={600} minimumValue={0} onChange={setTransitiontime} showExact={false} testID="light-transitiontime" unit="seconds" value={transitiontime} />}
       <ReadOnlyField label="Light ID" value={id} />
-      <ReadOnlyField label="Type" value={value?.type} />
       <ReadOnlyField label="Manufacturer" value={value?.manufacturername} />
       <ReadOnlyField label="Model" value={value?.modelid} />
       <ReadOnlyField label="Product" value={value?.productname} />
@@ -89,7 +90,7 @@ export function LightEditor({ route, navigation }: { route?: any; navigation?: a
       <ReadOnlyField label="Software version" value={value?.swversion} />
       <ReadOnlyField label="Reachable" value={value?.state?.reachable} />
       <ReadOnlyField label="Color mode" value={value?.state?.colormode} />
-    </EditorSection>
+    </ExpandableAdvancedSection>
   </EditorForm>;
 }
 

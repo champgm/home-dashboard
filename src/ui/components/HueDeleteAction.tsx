@@ -55,7 +55,7 @@ export function HueDeleteAction({ kind, id, objectName, navigation }: HueDeleteA
 }
 
 const styles = StyleSheet.create({
-  delete: { alignSelf: "flex-start", backgroundColor: "#dc322f", borderRadius: 8, marginTop: 12, padding: 12 },
+  delete: { alignSelf: "flex-start", backgroundColor: "#dc322f", borderRadius: 8, justifyContent: "center", marginTop: 4, minHeight: 48, paddingHorizontal: 18, paddingVertical: 10 },
   deleteText: { color: "#fff", fontWeight: "700" },
   message: { color: "#b58900", marginTop: 10 },
 });

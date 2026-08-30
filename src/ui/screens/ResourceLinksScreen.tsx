@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useAppRuntime } from "../AppContext";
 import { Screen, EmptyState } from "../components/Screen";
+import { EditorAction, EditorSection, EditorSummaryRow } from "../editors/editorControls";
 
 export function ResourceLinksScreen({ navigation }: { navigation?: any }): JSX.Element {
   const runtime = useAppRuntime();
@@ -12,21 +13,19 @@ export function ResourceLinksScreen({ navigation }: { navigation?: any }): JSX.E
     if (key.startsWith("resourcelink:")) links.push([key.slice("resourcelink:".length), state]);
   });
   return (
-    <Screen title="Resource Links">
-      <Pressable onPress={() => navigation?.navigate("ResourceLinkEditor")} style={styles.button}><Text style={styles.buttonText}>New Resource Link</Text></Pressable>
-      {links.length === 0 ? <EmptyState message="No Resource Links are currently available." /> : links.map(([id, state]) => {
+    <Screen showTitle={false} title="Resource Links">
+      <EditorAction label="New Resource Link" onPress={() => navigation?.navigate("ResourceLinkEditor")} testID="resource-links-new" />
+      {links.length === 0 ? <EmptyState message="No Resource Links are currently available." /> : <EditorSection title="Current links">{links.map(([id, state]) => {
         const value = state.state.status === "known" ? state.state.value : undefined;
-        return <View key={id} style={styles.row}><Text style={styles.text}>{value?.description || id}</Text><View style={styles.actions}>{state.state.status === "known" && <Pressable onPress={() => navigation?.navigate("ResourceLinkEditor", { id })}><Text style={styles.edit}>Edit</Text></Pressable>}</View></View>;
-      })}
+        return <View key={id} style={styles.row}>
+          <EditorSummaryRow label={value?.description || `Resource Link ${id}`} value={state.state.status === "known" ? `ID ${id}` : "Unavailable"} testID={`resource-link-${id}`} />
+          {state.state.status === "known" && <EditorAction label="Edit" onPress={() => navigation?.navigate("ResourceLinkEditor", { id })} testID={`resource-link-edit-${id}`} />}
+        </View>;
+      })}</EditorSection>}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  button: { alignSelf: "flex-start", backgroundColor: "#268bd2", borderRadius: 8, marginBottom: 12, padding: 12 },
-  buttonText: { color: "#fff", fontWeight: "700" },
-  row: { alignItems: "center", borderBottomColor: "#586e75", borderBottomWidth: StyleSheet.hairlineWidth, flexDirection: "row", justifyContent: "space-between", paddingVertical: 12 },
-  text: { color: "#fdf6e3" },
-  edit: { color: "#b58900", fontWeight: "700" },
-  actions: { flexDirection: "row", gap: 16 },
+  row: { alignItems: "center", borderBottomColor: "#586e75", borderBottomWidth: StyleSheet.hairlineWidth, flexDirection: "row", minHeight: 60 },
 });

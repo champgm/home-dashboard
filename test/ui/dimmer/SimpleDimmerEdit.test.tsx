@@ -49,6 +49,7 @@ import { ConfigureDimmerScreen } from "../../../src/ui/screens/ConfigureDimmerSc
 
 test("Save on a recognized binding is direct and does not render a structural preview", async () => {
   const view = render(<ConfigureDimmerScreen route={{ params: { sensorId: "4" } }} navigation={{ navigate: jest.fn() }} />);
+  fireEvent.press(view.getByTestId("dimmer-binding-summary-binding:0"));
   fireEvent.changeText(view.getByTestId("dimmer-target-filter-binding:0"), "Living Room");
   fireEvent.press(within(view.getByTestId("dimmer-target-binding:0")).getByText("Group: Living Room"));
   fireEvent.press(view.getByTestId("dimmer-save-binding:0"));

@@ -13,11 +13,10 @@ export function DimmerControlRow({ binding, testID }: { readonly binding: Dimmer
 }
 
 const styles = StyleSheet.create({
-  row: { backgroundColor: "#073642", borderColor: "#586e75", borderRadius: 9, borderWidth: 1, marginBottom: 8, padding: 11 },
+  row: { backgroundColor: "#073642", borderColor: "#586e75", borderRadius: 9, borderWidth: 1, marginBottom: 8, minHeight: 48, padding: 11 },
   readOnly: { opacity: 0.88 },
   gesture: { color: "#fdf6e3", fontSize: 15, fontWeight: "700" },
   action: { color: "#b58900", marginTop: 5 },
   target: { color: "#fdf6e3", marginTop: 3 },
   status: { color: "#93a1a1", fontSize: 12, marginTop: 5 },
 });
-

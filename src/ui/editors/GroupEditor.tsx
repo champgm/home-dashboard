@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { EditorCatalogNumberField, EditorChoice, EditorChoiceOption, EditorHueField, EditorMultiChoice, EditorSection, EditorToggle, EditorXyColorField, ReadOnlyField } from "./editorControls";
+import { EditorCatalogNumberField, EditorChoice, EditorChoiceOption, EditorHueField, EditorMultiChoice, EditorSection, EditorSummaryRow, EditorToggle, EditorXyColorField, ReadOnlyField } from "./editorControls";
 import { EditorForm } from "./EditorForm";
 import { useAppRuntime } from "../AppContext";
 import { definiteFailure } from "../../app/commandResults";
 import { diagnostic } from "../../app/diagnostics";
 import { catalogField } from "../../protocol/hue/catalog/resourceCatalog";
+import { ExpandableAdvancedSection } from "../components/ExpandableAdvancedSection";
 
 interface GroupValue {
   readonly name?: string;
@@ -68,31 +69,57 @@ export function GroupEditor({ route, navigation }: { route?: any; navigation?: a
     id={id}
     kind="group"
     navigation={navigation}
-    note="Membership, class, aggregate state, and supported group actions are catalog-backed. Mixed aggregate state is never treated as Off."
+    note="Membership and class changes are staged until Save. Mixed aggregate state is shown as indeterminate."
     onSave={save}
     title="Group Editor"
   >
-    <EditorSection title="Editable group membership">
+    <EditorSection title="Group membership">
       <EditorMultiChoice label="Lights" onChange={setLights} options={lightOptions} testID="group-lights" values={lights} />
-      <EditorChoice label="Group class" onChange={setGroupClass} options={classOptions} testID="group-class" value={groupClass} />
+      <EditorChoice
+        defaultExpanded={false}
+        label="Room class"
+        onChange={setGroupClass}
+        options={classOptions}
+        presentation="list"
+        quickOptions={[groupClass, "Living room", "Bedroom", "Guest room", "Other"]}
+        testID="group-class"
+        value={groupClass}
+      />
     </EditorSection>
-    {id && <EditorSection title="Supported group action">
-      {actionHas("on") && <EditorToggle label="Action power" onValueChange={setOn} testID="group-action-on" value={on} />}
-      {actionHas("bri") && <EditorCatalogNumberField fieldKey="bri" label="Action brightness" onChange={setBri} testID="group-action-bri" value={bri} />}
-      {actionHas("hue") && <EditorHueField label="Action hue color" onChange={setHue} testID="group-action-hue" value={hue} />}
-      {actionHas("sat") && <EditorCatalogNumberField fieldKey="sat" label="Action saturation" onChange={setSat} testID="group-action-sat" value={sat} />}
-      {actionHas("xy") && <EditorXyColorField label="Action XY color" onChangeText={setXy} testID="group-action-xy" value={xy} />}
-      {actionHas("ct") && <EditorCatalogNumberField fieldKey="ct" label="Action color temperature" onChange={setCt} testID="group-action-ct" value={ct} />}
-      {actionHas("alert") && <EditorChoice label="Action alert" onChange={setAlert} options={["none", "select", "lselect"]} testID="group-action-alert" value={alert} />}
-      {actionHas("effect") && <EditorChoice label="Action effect" onChange={setEffect} options={["none", "colorloop"]} testID="group-action-effect" value={effect} />}
-      {actionHas("transitiontime") && <EditorCatalogNumberField fieldKey="transitiontime" label="Action transition duration" onChange={setTransitiontime} testID="group-action-transitiontime" value={transitiontime} />}
-    </EditorSection>}
-    <EditorSection title="Group details">
-      <ReadOnlyField label="Group type" value={value?.type} />
-      <ReadOnlyField label="Recycle" value={value?.recycle} />
-      <ReadOnlyField label="Associated sensors" value={value?.sensors} />
-      <ReadOnlyField label="Aggregate state" value={aggregateLabel(value?.state)} />
-    </EditorSection>
+    {id && <>
+      <EditorSection title="Group state">
+        <ReadOnlyField label="Aggregate state" value={aggregateLabel(value?.state)} />
+      </EditorSection>
+      <EditorSection title="Group action summary">
+        {actionHas("on") && <EditorSummaryRow label="Action power" value={on ? "On" : "Off"} testID="group-action-on" />}
+        {actionHas("bri") && <EditorSummaryRow label="Action brightness" value={rangeLabel(bri)} testID="group-action-bri" />}
+        {actionHas("hue") && <EditorSummaryRow label="Action hue" value={numberLabel(hue)} testID="group-action-hue" />}
+        {actionHas("sat") && <EditorSummaryRow label="Action saturation" value={rangeLabel(sat)} testID="group-action-sat" />}
+        {actionHas("xy") && <EditorSummaryRow label="Action XY" value={xy || "Not set"} testID="group-action-xy" />}
+        {actionHas("ct") && <EditorSummaryRow label="Action color temperature" value={rangeLabel(ct)} testID="group-action-ct" />}
+        {actionHas("alert") && <EditorSummaryRow label="Action alert" value={alert} testID="group-action-alert" />}
+        {actionHas("effect") && <EditorSummaryRow label="Action effect" value={effect} testID="group-action-effect" />}
+        {actionHas("transitiontime") && <EditorSummaryRow label="Action transition" value={rangeLabel(transitiontime)} testID="group-action-transitiontime" />}
+      </EditorSection>
+      <ExpandableAdvancedSection summary="Supported group action values and technical group metadata" testID="group-advanced">
+        <EditorSection title="Supported group action">
+          {actionHas("on") && <EditorToggle label="Action power" onValueChange={setOn} testID="group-action-on-editor" value={on} />}
+          {actionHas("bri") && <EditorCatalogNumberField fieldKey="bri" label="Action brightness" onChange={setBri} showExact={false} testID="group-action-bri-editor" value={bri} />}
+          {actionHas("hue") && <EditorHueField label="Action hue color" onChange={setHue} showExact={false} testID="group-action-hue-editor" value={hue} />}
+          {actionHas("sat") && <EditorCatalogNumberField fieldKey="sat" label="Action saturation" onChange={setSat} showExact={false} testID="group-action-sat-editor" value={sat} />}
+          {actionHas("xy") && <EditorXyColorField label="Action XY color" onChangeText={setXy} showExact={false} testID="group-action-xy-editor" value={xy} />}
+          {actionHas("ct") && <EditorCatalogNumberField fieldKey="ct" label="Action color temperature" onChange={setCt} showExact={false} testID="group-action-ct-editor" value={ct} />}
+          {actionHas("alert") && <EditorChoice label="Action alert" onChange={setAlert} options={["none", "select", "lselect"]} testID="group-action-alert-editor" value={alert} />}
+          {actionHas("effect") && <EditorChoice label="Action effect" onChange={setEffect} options={["none", "colorloop"]} testID="group-action-effect-editor" value={effect} />}
+          {actionHas("transitiontime") && <EditorCatalogNumberField fieldKey="transitiontime" label="Action transition duration" onChange={setTransitiontime} showExact={false} testID="group-action-transitiontime-editor" value={transitiontime} />}
+        </EditorSection>
+        <ReadOnlyField label="Group type" value={value?.type} />
+        <ReadOnlyField label="Recycle" value={value?.recycle} />
+        <ReadOnlyField label="Associated sensors" value={value?.sensors} />
+      </ExpandableAdvancedSection>
+    </>}
+    {!id && <EditorSection title="Group state"><ReadOnlyField label="Aggregate state" value="Available after the group is created." /></EditorSection>}
+    {!id && <ExpandableAdvancedSection summary="The Hue group type is fixed to Room for new groups" testID="group-advanced"><ReadOnlyField label="Group type" value="Room" /></ExpandableAdvancedSection>}
   </EditorForm>;
 }
 
@@ -130,6 +157,8 @@ function booleanValue(value: unknown, fallback: boolean): boolean { return typeo
 function numberValue(value: unknown): number | undefined { return typeof value === "number" ? value : undefined; }
 function stringValue(value: unknown, fallback: string): string { return typeof value === "string" ? value : fallback; }
 function pairValue(value: unknown): string { return Array.isArray(value) && value.length === 2 ? value.join(",") : ""; }
+function rangeLabel(value: number | undefined): string { return value === undefined ? "Not set" : String(value); }
+function numberLabel(value: number | undefined): string { return value === undefined ? "Not set" : String(value); }
 function parsePair(value: string): [number, number] | undefined {
   const values = value.split(",").map((part) => Number(part.trim()));
   return values.length === 2 && values.every((part) => Number.isFinite(part) && part >= 0 && part <= 1) ? [values[0], values[1]] : undefined;

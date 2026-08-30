@@ -49,8 +49,8 @@ const styles = StyleSheet.create({
   title: { color: "#073642", fontSize: 19, fontWeight: "700", marginBottom: 10 },
   body: { color: "#073642", fontSize: 15, marginBottom: 20 },
   actions: { borderTopColor: "#93a1a1", borderTopWidth: StyleSheet.hairlineWidth, flexDirection: "row", justifyContent: "flex-end", paddingTop: 16 },
-  cancel: { borderRadius: 8, marginRight: 12, padding: 12 },
-  confirm: { backgroundColor: "#dc322f", borderRadius: 8, padding: 12 },
+  cancel: { borderRadius: 8, justifyContent: "center", marginRight: 12, minHeight: 48, paddingHorizontal: 12 },
+  confirm: { backgroundColor: "#dc322f", borderRadius: 8, justifyContent: "center", minHeight: 48, paddingHorizontal: 14 },
   confirmText: { color: "#fff", fontWeight: "700" },
   confirmDisabled: { opacity: 0.55 },
 });
