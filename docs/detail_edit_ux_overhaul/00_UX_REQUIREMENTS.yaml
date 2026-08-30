@@ -1,0 +1,160 @@
+plan: detail_edit_ux_overhaul
+version: 1.1.0
+status: ready-for-implementation
+kind: supplemental_ux_requirements
+
+purpose: >-
+  Define the minimum UX constraints for compact, touch-friendly Home Dashboard detail/edit/admin screens while preserving
+  the already-working Home Dashboard 2.4.1 behavior. This is a low-stakes household UX iteration, not a generalized UI
+  platform project.
+
+authority:
+  srs: docs/SRS_2.4.1.yaml
+  sad: docs/SAD_2.4.1.yaml
+  baseline_review: docs/BASELINE_REVIEW_2.4.1.md
+  ux_review: docs/detail_edit_ux_overhaul/00_UX_REVIEW.md
+  ux_design: docs/detail_edit_ux_overhaul/00_UX_DESIGN.md
+
+scope:
+  includes:
+    - src/ui/editors/**
+    - src/ui/screens/ConfigureDimmerScreen.tsx
+    - src/ui/screens/AdvancedHueScreen.tsx
+    - src/ui/screens/BridgeConfigurationScreen.tsx
+    - src/ui/screens/HueProvisioningScreen.tsx
+    - src/ui/screens/HueReauthorizationScreen.tsx
+    - src/ui/screens/PlugAdministrationScreen.tsx
+    - shared editor/detail/selection UI components and tests
+  excludes:
+    - dashboard tile redesign
+    - protocol or application-service behavior changes
+    - new Hue or TP-Link capabilities
+    - cloud, telemetry, persistence, transaction, or automatic-repair mechanisms
+
+requirements:
+  - id: UX-EDIT-001
+    title: Household-first compact hierarchy
+    statement: >-
+      Existing-resource editors shall put human-readable identity, useful current state, and common household edits before
+      technical metadata, raw protocol representation, and low-frequency controls. Default vertical height shall be reduced
+      by removing unnecessary explanatory copy and expanded technical detail.
+    supports: [FR-013, QA-001, HUE-021]
+
+  - id: UX-EDIT-002
+    title: Progressive disclosure and touch-first values
+    statement: >-
+      Technical identifiers, exact protocol values, raw objects, provenance, diagnostics, and low-frequency controls shall be
+      placed behind Details/Advanced or another deliberate secondary interaction where practical. Common numeric/color changes
+      shall be touch-oriented; exact entry remains reachable when required for full management.
+    supports: [FR-006, FR-013, HUE-020, HUE-021, SEC-002]
+
+  - id: UX-EDIT-003
+    title: Focused large-choice selection with identity preservation
+    statement: >-
+      Large option sets and resource catalogs shall use a focused list/selector instead of a wrapping option cloud. Human labels
+      shall remain separate from exact kind/id/path values, duplicate names shall be disambiguated where necessary, and an
+      existing selected resource that is temporarily unavailable shall remain represented until explicitly removed/replaced.
+    supports: [HUE-005, HUE-020, HUE-021, HUE-022, DATA-004]
+
+  - id: UX-EDIT-004
+    title: Summarize repeatable structures
+    statement: >-
+      Scene light states, Rule conditions/actions, Schedule timing/commands, and dimmer mappings shall be summarized in the
+      parent view rather than fully expanded by default. The user shall be able to edit one logical item at a time without
+      changing the existing remote commit boundary.
+    supports: [FR-013, HUE-006, HUE-008, HUE-009, HUE-021]
+
+  - id: UX-EDIT-005
+    title: Practical touch and navigation usability
+    statement: >-
+      New primary pressable controls should normally provide approximately 48dp touch geometry, clear selected/disabled state,
+      and predictable Back/Cancel behavior. Required controls shall be comfortably operable on the supported Pixel 9 Pro
+      portrait target, including ordinary keyboard use.
+    supports: [QA-001]
+
+  - id: UX-EDIT-006
+    title: Reachable commit and separated destructive actions
+    statement: >-
+      Save/Create shall be easy to reach without traversing technical detail on long editors; the implementation may use a
+      persistent footer, header action, or sufficiently compact page. Delete/removal shall be visually separated and shall keep
+      the existing explicit confirmation semantics.
+    supports: [FR-013, UX-DEL-001, UX-DEL-002, UX-DEL-003, REL-001]
+
+  - id: UX-EDIT-007
+    title: Immediate versus staged operations
+    statement: >-
+      Immediate live operations such as power, automation status, Scene activation, and Plug relay control shall be visually
+      distinguishable from fields that wait for Save/Create. Failed immediate operations shall not be presented as successful.
+    supports: [FR-008, FR-009, FR-012, REL-001]
+
+  - id: UX-EDIT-008
+    title: Preserve working behavior and guards
+    statement: >-
+      The UX overhaul shall not change Hue/TP-Link mutation semantics, changed-field preservation, Schedule authorization
+      recovery behavior, dimmer simple/structural behavior, Unknown/capability/read-only guards, or unsupported/custom-form
+      handling. Full management required by SRS 2.4.1 shall remain reachable.
+    supports: [FR-011, FR-012, FR-013, HUE-016, HUE-020, HUE-022, REL-003, REL-005, QA-003]
+
+  - id: UX-EDIT-009
+    title: Compact administration hierarchy
+    statement: >-
+      Advanced/Bridge and plug administration shall present ordinary actions/settings as grouped compact rows, with large
+      capabilities, diagnostics, recovery detail, and credential-sensitive technical information kept secondary or hidden as
+      already required by the SRS/SAD.
+    supports: [FR-006, HUE-001, HUE-002, HUE-019, REL-008, SEC-002]
+
+  - id: UX-EDIT-010
+    title: Visual continuity and dashboard non-regression
+    statement: >-
+      Migrated editors shall use a consistent Solarized-derived touch grammar compatible with the existing dashboard. The
+      swipe-page dashboard, legacy resource-tile geometry, and Favorite/Edit corner controls are not redesigned by this plan.
+    supports: [QA-001, UX-VIS-001, UX-VIS-002]
+
+acceptance_criteria:
+  - id: AC-UX-EDIT-001
+    requirement_ids: [UX-EDIT-001, UX-EDIT-002]
+    type: ui
+    criterion: >-
+      Representative Light, Group, Scene, Sensor, Rule, Schedule, Plug, and Resource Link editors show common household edits
+      before technical detail; rare exact/raw information is collapsed or deliberately opened and remains reachable.
+
+  - id: AC-UX-EDIT-002
+    requirement_ids: [UX-EDIT-003]
+    type: ui
+    criterion: >-
+      Representative large choices use a focused selector/list; exact IDs/paths survive friendly labels, duplicate names are
+      distinguishable when needed, and an unavailable existing Group member is not silently dropped.
+
+  - id: AC-UX-EDIT-003
+    requirement_ids: [UX-EDIT-004]
+    type: ui
+    criterion: >-
+      A multi-light Scene and representative Rule/Schedule/dimmer structures render concise parent summaries, allow one logical
+      item to be edited in isolation, and keep the existing main Save/Create mutation boundary.
+
+  - id: AC-UX-EDIT-004
+    requirement_ids: [UX-EDIT-005, UX-EDIT-006, UX-EDIT-007]
+    type: usability
+    criterion: >-
+      On representative long/simple editors, common controls are comfortable to tap on Pixel 9 Pro portrait, Save/Create is not
+      buried behind technical detail, destructive actions remain separately confirmed, Back/Cancel is predictable, and
+      immediate operations remain visually/behaviorally distinct from staged edits.
+
+  - id: AC-UX-EDIT-005
+    requirement_ids: [UX-EDIT-008]
+    type: regression
+    criterion: >-
+      Relevant existing editor, action-policy, changed-field, command-semantics, destructive, Unknown-resource, and dimmer tests
+      continue to pass; the UI migration does not broaden writable fields or rewrite unsupported/custom data.
+
+  - id: AC-UX-EDIT-006
+    requirement_ids: [UX-EDIT-009, UX-EDIT-010]
+    type: ui
+    criterion: >-
+      Advanced/Bridge and plug administration use compact grouped navigation while required functions remain reachable; a final
+      representative phone pass confirms editor visual consistency and no intentional change to dashboard swipe/tile behavior.
+
+traceability_policy:
+  rule: >-
+    Every supplemental requirement must have acceptance coverage and appear in the phase coverage map. Exact requirement counts,
+    one-and-only-one phase ownership, and per-phase evidence files are intentionally not required for this low-stakes iteration.
