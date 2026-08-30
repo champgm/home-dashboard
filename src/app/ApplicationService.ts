@@ -432,8 +432,14 @@ export class ApplicationService {
       && candidate.controlId === edit.controlId
       && candidate.gestureId === edit.gestureId
       && candidate.event === edit.event);
-    if (!binding || !binding.editable || binding.classification !== "editable_simple" || !binding.simpleForm) {
+    if (!binding || !binding.editable || !["editable_simple", "missing_target"].includes(binding.classification) || !binding.simpleForm) {
       return { allowed: false, reason: "The dimmer gesture is no longer the same characterized simple binding; refresh the bridge before editing it." };
+    }
+    if (binding.classification === "missing_target") {
+      const originalAction = binding.advanced.ruleShape?.actions[edit.actionIndex];
+      if (!originalAction || !isTargetOnlyDimmerRepair(originalAction, edit.action)) {
+        return { allowed: false, reason: "A missing-target repair may replace only the target while preserving the existing action." };
+      }
     }
     if (!dimmerActionTargetExists(currentSnapshot, edit.action)) {
       return { allowed: false, reason: "The selected Hue target is no longer present; refresh the bridge before saving." };
@@ -1053,6 +1059,39 @@ export class ApplicationService {
       ? success()
       : definiteFailure(diagnostic("StorageError", userMessage("StorageError")));
   }
+}
+
+function isTargetOnlyDimmerRepair(
+  original: import("../protocol/hue/catalog/rules").HueRuleAction,
+  replacement: import("../protocol/hue/catalog/rules").HueRuleAction,
+): boolean {
+  if (original.method.toUpperCase() !== replacement.method.toUpperCase()) return false;
+  const originalBody = original.body && typeof original.body === "object" && !Array.isArray(original.body) ? original.body : {};
+  const replacementBody = replacement.body && typeof replacement.body === "object" && !Array.isArray(replacement.body) ? replacement.body : {};
+  const originalScene = typeof originalBody.scene === "string";
+  const replacementScene = typeof replacementBody.scene === "string";
+  if (originalScene !== replacementScene) return false;
+  if (!originalScene) return jsonValuesEqual(originalBody, replacementBody);
+  const { scene: _originalScene, ...originalRest } = originalBody;
+  const { scene: _replacementScene, ...replacementRest } = replacementBody;
+  return jsonValuesEqual(originalRest, replacementRest);
+}
+
+/** Object member order is not semantic in Hue JSON action bodies. */
+function jsonValuesEqual(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) return true;
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return Array.isArray(left) && Array.isArray(right)
+      && left.length === right.length
+      && left.every((value, index) => jsonValuesEqual(value, right[index]));
+  }
+  if (!left || !right || typeof left !== "object" || typeof right !== "object") return false;
+  const leftRecord = left as Record<string, unknown>;
+  const rightRecord = right as Record<string, unknown>;
+  const leftKeys = Object.keys(leftRecord).sort();
+  const rightKeys = Object.keys(rightRecord).sort();
+  return leftKeys.length === rightKeys.length
+    && leftKeys.every((key, index) => key === rightKeys[index] && jsonValuesEqual(leftRecord[key], rightRecord[key]));
 }
 
 function structuralOperationsFromEdit(edit: StructuralDimmerEdit): readonly DimmerChangeOperation[] {

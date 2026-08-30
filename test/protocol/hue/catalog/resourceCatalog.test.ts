@@ -49,8 +49,11 @@ describe("Hue V1 resource catalog", () => {
     expect(validateHueCatalogPayload("schedule", "create", {}).allowed).toBe(false);
     expect(validateHueCatalogPayload("resourcelink", "create", {}).allowed).toBe(false);
     expect(validateHueCatalogPayload("group", "create", { name: "Empty", lights: [] }).allowed).toBe(false);
+    expect(validateHueCatalogPayload("group", "create", { name: "Room", lights: ["1"], class: "Guest room" }).allowed).toBe(false);
+    expect(validateHueCatalogPayload("group", "create", { name: "Room", lights: ["1"], type: "Room" }).allowed).toBe(false);
     expect(validateHueCatalogPayload("scene", "create", { name: "Empty", type: "LightScene", lights: [] }).allowed).toBe(false);
     expect(validateHueCatalogPayload("group", "create", { name: "Room", lights: ["1"] }).allowed).toBe(true);
+    expect(validateHueCatalogPayload("group", "create", { name: "Room", lights: ["1"], type: "Room", class: "Guest room" }).allowed).toBe(true);
     expect(validateHueCatalogPayload("scene", "create", { name: "Evening", type: "LightScene", lights: ["1"] }).allowed).toBe(true);
     expect(validateHueCatalogPayload("sensor", "create", { name: "Dimmer", type: "ZLLSwitch", manufacturername: "Signify", modelid: "RWL", config: { on: true } }).allowed).toBe(true);
     expect(validateHueCatalogPayload("rule", "create", { name: "Rule", conditions: [{ address: "/sensors/1/state/buttonevent", operator: "eq", value: "100" }], actions: [{ address: "/lights/1/state", method: "PUT", body: { on: true } }] }).allowed).toBe(true);
@@ -107,6 +110,26 @@ describe("Hue V1 resource catalog", () => {
     }).allowed).toBe(true);
     expect(validateHueCatalogPayload("rule", "update", {
       actions: [{ address: "/lights/1/state", method: "PUT", body: { bri_inc: 255 } }],
+    }).allowed).toBe(false);
+  });
+
+  test("accepts only the characterized RWL020 helper-state Rule shapes", () => {
+    expect(validateHueCatalogPayload("rule", "update", {
+      conditions: [
+        { address: "/sensors/12/state/buttonevent", operator: "eq", value: "1000" },
+        { address: "/sensors/12/state/lastupdated", operator: "dx" },
+        { address: "/sensors/13/state/status", operator: "lt", value: "1" },
+      ],
+      actions: [{ address: "/sensors/13/state", method: "PUT", body: { status: 1 } }],
+    }).allowed).toBe(true);
+    expect(validateHueCatalogPayload("rule", "update", {
+      actions: [{ address: "/sensors/13/state", method: "PUT", body: { status: 5 } }],
+    }).allowed).toBe(false);
+    expect(validateHueCatalogPayload("rule", "update", {
+      actions: [{ address: "/sensors/13/state", method: "PUT", body: { status: 1, on: true } }],
+    }).allowed).toBe(false);
+    expect(validateHueCatalogPayload("rule", "update", {
+      actions: [{ address: "/sensors/13/config", method: "PUT", body: { on: true } }],
     }).allowed).toBe(false);
   });
 

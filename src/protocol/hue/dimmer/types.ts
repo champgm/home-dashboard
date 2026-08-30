@@ -14,7 +14,7 @@ export type DimmerBindingClassification =
   | "ambiguous"
   | "unsupported";
 
-export type DimmerActionKind = "on" | "off" | "set" | "brighten" | "dim" | "activate" | "cycle";
+export type DimmerActionKind = "on" | "off" | "set" | "brighten" | "dim" | "stop" | "activate" | "cycle";
 
 export type DimmerSimpleActionKind = Exclude<DimmerActionKind, "cycle">;
 export type DimmerActionTargetKind = "light" | "group" | "scene";

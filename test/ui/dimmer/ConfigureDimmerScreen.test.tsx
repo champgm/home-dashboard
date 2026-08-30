@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, waitFor, within } from "@testing-library/react-native";
+import { act, fireEvent, render, waitFor, within } from "@testing-library/react-native";
 import { HueSnapshot } from "../../../src/app/types";
 import { DimmerBindingRecognitionInput, StructuralDimmerEdit } from "../../../src/protocol/hue/dimmer";
 import { buildRuleActionFromTarget } from "../../../src/protocol/hue/catalog/resourceCatalog";
@@ -51,7 +51,7 @@ const stateStore = {
     return new Map(entries);
   }),
   get: jest.fn(),
-  subscribe: jest.fn(() => jest.fn()),
+  subscribe: jest.fn((_listener?: () => void) => jest.fn()),
 };
 const saveSimpleBinding = jest.fn(async () => ({ kind: "success" as const }));
 const commitStructuralEdit = jest.fn(async () => ({ kind: "success" as const }));
@@ -103,8 +103,22 @@ describe("Configure Dimmer screen", () => {
     expect(view.getByLabelText(/Resource Link IDs:.*30/)).toBeTruthy();
   });
 
+  test("subscribes with the state-store instance bound", () => {
+    const unsubscribe = jest.fn();
+    const subscribe = jest.fn(function (this: unknown, _listener?: () => void) {
+      if (this !== stateStore) throw new Error("stateStore subscription lost its instance");
+      return unsubscribe;
+    });
+    stateStore.subscribe.mockImplementationOnce(subscribe);
+    const view = render(<ConfigureDimmerScreen route={{ params: { sensorId: "4" } }} navigation={{ navigate: jest.fn() }} />);
+    expect(subscribe).toHaveBeenCalledTimes(1);
+    view.unmount();
+    expect(unsubscribe).toHaveBeenCalledTimes(1);
+  });
+
   test("saves a simple binding directly without a preview or provenance confirmation", async () => {
     const view = render(<ConfigureDimmerScreen route={{ params: { sensorId: "4" } }} navigation={{ navigate: jest.fn() }} />);
+    fireEvent.changeText(view.getByTestId("dimmer-target-filter-binding:0"), "Living Room");
     fireEvent.press(within(view.getByTestId("dimmer-target-binding:0")).getByText("Group: Living Room"));
     fireEvent.press(view.getByTestId("dimmer-save-binding:0"));
     await waitFor(() => expect(saveSimpleBinding).toHaveBeenCalledWith(expect.objectContaining({
@@ -167,6 +181,7 @@ describe("Configure Dimmer screen", () => {
     view.unmount();
     saveSimpleBinding.mockClear();
     const secondView = render(<ConfigureDimmerScreen route={{ params: { sensorId: "4" } }} navigation={{ navigate: jest.fn() }} />);
+    fireEvent.changeText(secondView.getByTestId("dimmer-target-filter-binding:1"), "Reading Lamp");
     fireEvent.press(within(secondView.getByTestId("dimmer-target-binding:1")).getByText("Light: Reading Lamp"));
     fireEvent.press(secondView.getByTestId("dimmer-save-binding:1"));
     await waitFor(() => expect(saveSimpleBinding).toHaveBeenCalledWith(expect.objectContaining({
@@ -174,6 +189,81 @@ describe("Configure Dimmer screen", () => {
     })));
     const secondEdit = (saveSimpleBinding.mock.calls[0] as unknown as [{ action: { body: Record<string, unknown> } }])[0];
     expect(secondEdit.action.body).toEqual({ on: false, bri: 120 });
+  });
+
+  test("keeps target collections compact until the user filters them", () => {
+    const view = render(<ConfigureDimmerScreen route={{ params: { sensorId: "4" } }} navigation={{ navigate: jest.fn() }} />);
+    const target = view.getByTestId("dimmer-target-binding:0");
+    expect(within(target).getByText("Light: Reading Lamp")).toBeTruthy();
+    expect(within(target).queryByText("Group: Living Room")).toBeNull();
+    fireEvent.changeText(view.getByTestId("dimmer-target-filter-binding:0"), "Living Room");
+    expect(within(target).getByText("Group: Living Room")).toBeTruthy();
+    fireEvent.press(within(target).getByText("Group: Living Room"));
+    expect(view.getByTestId("dimmer-target-filter-binding:0").props.value).toBe("");
+    expect(within(target).getByText("Group: Living Room")).toBeTruthy();
+    expect(within(target).queryByText("Light: Reading Lamp")).toBeNull();
+  });
+
+  test("repairs one characterized missing target while locking the existing action", async () => {
+    screenSnapshot = { ...fixture, lights: {} };
+    const view = render(<ConfigureDimmerScreen route={{ params: { sensorId: "4" } }} navigation={{ navigate: jest.fn() }} />);
+    const binding = view.getByTestId("dimmer-edit-binding:0");
+    expect(within(binding).getByText(/original target was deleted/i)).toBeTruthy();
+    expect(within(binding).getByLabelText(/Action to preserve: Turn on/i)).toBeTruthy();
+    expect(within(binding).queryByText("Turn off")).toBeNull();
+    expect(within(binding).getByText("Repair target")).toBeTruthy();
+    expect(within(binding).getByText("Replacement target")).toBeTruthy();
+    expect(within(binding).getByText("Group: Living Room")).toBeTruthy();
+    expect(within(binding).queryByTestId("dimmer-target-filter-binding:0")).toBeNull();
+    expect(view.getByTestId("dimmer-save-binding:0").props.accessibilityState).toEqual({ disabled: true });
+
+    fireEvent.press(within(view.getByTestId("dimmer-target-binding:0")).getByText("Group: Living Room"));
+    expect(view.getByTestId("dimmer-save-binding:0").props.accessibilityState).toEqual({ disabled: false });
+    fireEvent.press(view.getByTestId("dimmer-save-binding:0"));
+
+    await waitFor(() => expect(saveSimpleBinding).toHaveBeenCalledWith(expect.objectContaining({
+      ruleId: "10",
+      action: { address: "/groups/2/action", method: "PUT", body: { on: true } },
+    })));
+    expect(view.getByTestId("dimmer-message-binding:0")).toHaveTextContent("Target repaired and refreshed.");
+  });
+
+  test("does not offer repair for a missing target in a non-characterized Rule shape", () => {
+    screenSnapshot = {
+      ...fixture,
+      lights: {},
+      rules: {
+        ...fixture.rules,
+        "10": {
+          ...(fixture.rules["10"] as Record<string, unknown>),
+          actions: [
+            { address: "/lights/1/state", method: "PUT", body: { on: true } },
+            { address: "/sensors/5/state", method: "PUT", body: { status: 0 } },
+          ],
+        },
+      },
+    };
+    const view = render(<ConfigureDimmerScreen route={{ params: { sensorId: "4" } }} navigation={{ navigate: jest.fn() }} />);
+    expect(view.queryByTestId("dimmer-edit-binding:0")).toBeNull();
+    expect(view.queryByText("Repair target")).toBeNull();
+  });
+
+  test("preserves an in-progress binding draft across foreground refreshes", async () => {
+    let refresh: (() => void) | undefined;
+    stateStore.subscribe.mockImplementationOnce((listener?: () => void) => {
+      refresh = listener;
+      return jest.fn();
+    });
+    const view = render(<ConfigureDimmerScreen route={{ params: { sensorId: "4" } }} navigation={{ navigate: jest.fn() }} />);
+    const binding = view.getByTestId("dimmer-edit-binding:0");
+    fireEvent.press(within(binding).getByText("Turn off"));
+
+    act(() => refresh?.());
+
+    fireEvent.press(view.getByTestId("dimmer-save-binding:0"));
+    await waitFor(() => expect(saveSimpleBinding).toHaveBeenCalledWith(expect.objectContaining({
+      action: expect.objectContaining({ body: { on: false } }),
+    })));
   });
 
   test("offers a configurable relative brightness action", async () => {

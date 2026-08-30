@@ -512,15 +512,23 @@ hue_v1_design:
       ordinary Rule update path directly through ApplicationService. No separate preview, resource fingerprinting, ownership
       takeover confirmation, or generalized graph transaction is created. Refresh after the mutation supplies authoritative
       state.
+    missing_target_repair: Treat a missing Light, Group, or Scene as repairable only when the physical identity, event,
+      Rule shape, selected action index, action kind/body, and every companion action remain catalog-recognized and no other
+      action target is missing. The UI labels the old target unavailable, enumerates compatible current resources by human-readable
+      label while retaining exact IDs, requires an explicit replacement selection, locks the action semantics, and submits the
+      same one-Rule changed-field path. Locked action bodies are compared structurally because JSON object member order is not
+      semantic. ApplicationService independently reprojects and
+      verifies this boundary immediately before mutation. No name matching, inferred replacement, background repair, or
+      multi-Rule batch is permitted.
     structural_edit: When an edit requires multiple resource operations or create/delete/replace semantics, derive a lightweight
       DimmerChangeSet containing only those concrete operations, present the concise list once, and require confirmation.
       Delete operations also use existing destructive confirmation. Execute sequentially through existing Hue validation/pacing/classification.
     failure_behavior: For a structural change, stop on first definite or ambiguous failure, issue one authoritative refresh,
       and report succeeded, failed-or-ambiguous, and unattempted operations. Do not auto-retry or rollback. For a simple edit,
       use ordinary single-mutation error handling and refresh.
-    custom_behavior: Custom/unrecognized bindings and unrelated automations are shown in Advanced and are not rewritten through
-      Configure Dimmer. The user may leave the dimmer workflow and use the ordinary Rule/resource editor when full management
-      is desired.
+    custom_behavior: Custom/unrecognized bindings, non-characterized missing-target Rules, and unrelated automations are shown
+      in Advanced and are not rewritten through Configure Dimmer. The user may leave the dimmer workflow and use the ordinary
+      Rule/resource editor when full management is desired.
     household_characterization: The actual household dimmer is captured read-only during implementation/acceptance to populate
       or verify the model/event catalog. Lack of a pre-existing household-dimmer fixture in the repository is not a reason to
       design a generalized automation transaction engine.
@@ -528,7 +536,11 @@ supported_resource_semantics:
   favorites: Heterogeneous ResourceRef list. Hue identity is kind+id on the permanent bridge. Missing target -> Missing/Unknown
     and removable. Same-id reuse is accepted risk DG-002.
   light: Primary tap toggles known on/off; editor exposes documented V1 writable state/metadata; Unknown tile cannot toggle.
-  group: Primary tap uses aggregate state; indeterminate -> absolute On. Group mutation and action followed by full Hue refresh.
+  group: Primary tap uses aggregate state; indeterminate -> absolute On. Group create/edit projects current known Lights into
+    a named multi-choice control while using exact Light IDs as values. Existing member IDs absent from the current snapshot remain
+    visible and selected as unavailable until explicitly removed, preventing an unrelated edit from silently changing membership.
+    Creation with a room class sends the Hue V1 coupled type `Room` and class fields. Group mutation and action are followed by
+    full Hue refresh.
   scene: Primary tap activates. Editors support GroupScene/LightScene and documented per-light Scene state.
   sensor: Read state/config; writable enabled state can toggle; supported create/config/search/delete. A catalog-recognized
     physical dimmer opens Configure Dimmer as the primary device workflow, with low-level Sensor details available under Advanced;

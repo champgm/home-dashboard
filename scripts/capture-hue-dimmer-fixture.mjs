@@ -105,7 +105,30 @@ export function selectDimmerCapture(snapshot, sensorId) {
 /** Sanitize after selection so credentials cannot survive in any retained field. */
 export function sanitizeHueSnapshot(snapshot, sensorId) {
   const selected = selectDimmerCapture(snapshot, sensorId);
-  return sanitizeValue(selected, "snapshot");
+  return sanitizeValue(minimizeDimmerCapture(selected), "snapshot");
+}
+
+/** Replace household-facing labels/identifiers while preserving exact graph semantics. */
+export function anonymizeDimmerCapture(snapshot) {
+  const result = structuredClone(snapshot);
+  const uniqueIds = new Map();
+  let uniqueSequence = 0;
+  for (const [collection, values] of Object.entries(result)) {
+    if (!values || typeof values !== "object" || Array.isArray(values)) continue;
+    let sequence = 0;
+    for (const value of Object.values(values)) {
+      if (!value || typeof value !== "object" || Array.isArray(value)) continue;
+      sequence += 1;
+      const singular = RESOURCE_SEGMENTS[collection] || collection.replace(/s$/, "");
+      if (typeof value.name === "string") value.name = `Fixture ${singular} ${sequence}`;
+      if (typeof value.description === "string") value.description = `Fixture ${singular} resources`;
+      if (collection === "sensors" && typeof value.uniqueid === "string") {
+        if (!uniqueIds.has(value.uniqueid)) uniqueIds.set(value.uniqueid, `fixture-device-${++uniqueSequence}`);
+        value.uniqueid = uniqueIds.get(value.uniqueid);
+      }
+    }
+  }
+  return result;
 }
 
 function emptySnapshot() {
@@ -114,6 +137,27 @@ function emptySnapshot() {
 
 function copySelected(target, source, ids) {
   for (const id of ids) if (source?.[id] !== undefined) target[id] = source[id];
+}
+
+function minimizeDimmerCapture(snapshot) {
+  const result = emptySnapshot();
+  for (const [id, value] of Object.entries(snapshot.lights || {})) result.lights[id] = pick(value, ["name", "type", "manufacturername", "modelid", "productname"]);
+  for (const [id, value] of Object.entries(snapshot.groups || {})) result.groups[id] = pick(value, ["name", "type", "lights", "sensors"]);
+  for (const [id, value] of Object.entries(snapshot.scenes || {})) result.scenes[id] = pick(value, ["name", "type", "group", "lights", "recycle"]);
+  for (const [id, value] of Object.entries(snapshot.sensors || {})) result.sensors[id] = pick(value, [
+    "name", "type", "manufacturername", "modelid", "productname", "uniqueid", "swversion", "config", "state", "capabilities",
+  ]);
+  for (const [id, value] of Object.entries(snapshot.rules || {})) result.rules[id] = pick(value, ["name", "owner", "status", "recycle", "conditions", "actions"]);
+  for (const [id, value] of Object.entries(snapshot.schedules || {})) result.schedules[id] = pick(value, [
+    "name", "description", "owner", "status", "localtime", "time", "starttime", "recurring", "autodelete", "command",
+  ]);
+  for (const [id, value] of Object.entries(snapshot.resourcelinks || {})) result.resourcelinks[id] = pick(value, ["name", "description", "owner", "classid", "links"]);
+  return result;
+}
+
+function pick(value, keys) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(keys.filter((key) => value[key] !== undefined).map((key) => [key, value[key]]));
 }
 
 function ruleTouchesSensors(value, sensorIds) {
@@ -158,7 +202,7 @@ function ruleReferences(value) {
   for (const action of Array.isArray(value?.actions) ? value.actions : []) {
     const reference = rootReference(action?.address);
     if (reference) result.push(reference);
-    if (reference?.kind === "group" && reference.id === "0" && action?.body?.scene !== undefined) {
+    if (reference?.kind === "group" && action?.body?.scene !== undefined) {
       result.push({ kind: "scene", id: String(action.body.scene) });
     }
   }
@@ -172,7 +216,7 @@ function scheduleReferences(value) {
   if (direct) result.push(direct);
   if (typeof command?.resourceKind === "string" && command.resourceId !== undefined) {
     result.push({ kind: command.resourceKind === "resourcelinks" ? "resourcelink" : command.resourceKind, id: String(command.resourceId) });
-    if (command.resourceKind === "scene" && command.body?.scene !== undefined) result.push({ kind: "scene", id: String(command.body.scene) });
+    if ((command.resourceKind === "scene" || command.resourceKind === "group") && command.body?.scene !== undefined) result.push({ kind: "scene", id: String(command.body.scene) });
   }
   return result.filter((reference) => RESOURCE_SEGMENTS[`${reference.kind}s`] || reference.kind === "resourcelink");
 }
@@ -214,13 +258,13 @@ async function readSnapshotFromBridge(baseUrl, credential) {
 }
 
 function parseArguments(argv) {
-  const result = {};
+  const result = { anonymize: false };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
     if (argument === "--input" || argument === "--output" || argument === "--sensor" || argument === "--bridge") {
       result[argument.slice(2)] = argv[index + 1];
       index += 1;
-    }
+    } else if (argument === "--anonymize") result.anonymize = true;
   }
   return result;
 }
@@ -238,7 +282,8 @@ async function main() {
     if (!baseUrl || !credential) throw new Error("Provide --input <snapshot.json>, or HUE_BRIDGE_URL and HUE_CREDENTIAL for a read-only capture.");
     snapshot = await readSnapshotFromBridge(baseUrl, credential);
   }
-  const output = JSON.stringify(sanitizeHueSnapshot(snapshot, String(sensorId)), null, 2) + "\n";
+  const sanitized = sanitizeHueSnapshot(snapshot, String(sensorId));
+  const output = JSON.stringify(args.anonymize ? anonymizeDimmerCapture(sanitized) : sanitized, null, 2) + "\n";
   if (args.output) await writeFile(args.output, output, "utf8");
   else process.stdout.write(output);
 }

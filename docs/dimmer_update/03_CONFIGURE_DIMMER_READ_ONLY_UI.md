@@ -88,7 +88,7 @@ This phase proves the user-facing mental model before adding write controls. It 
 
 - Render recognized four-control synthetic dimmer and verify control/gesture/action/target labels.
 - Assert raw IDs/event numbers are absent from the normal section and present after expanding Advanced.
-- Assert custom/malformed/missing-target rows remain visible and non-editable.
+- Assert custom/malformed rows remain visible and non-editable; a missing-target row is editable only when its complete simple Rule form is otherwise characterized for explicit target repair.
 - Navigation tests: recognized member Sensor → Configure Dimmer; ordinary Sensor → SensorEditor; Advanced Rule/Sensor links reach the existing editors.
 - Layout test on the existing Pixel portrait test dimensions to ensure Advanced and control rows remain reachable.
 

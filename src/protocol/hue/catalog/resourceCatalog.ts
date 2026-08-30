@@ -107,7 +107,7 @@ const RESOURCE_CATALOG: Readonly<Record<HueCatalogResourceKind, HueCatalogResour
       "Top floor", "Attic", "Guest room", "Staircase", "Lounge", "Man cave", "Computer", "Studio", "Music", "TV", "Reading",
       "Closet", "Storage", "Laundry room", "Balcony", "Porch", "Barbecue", "Pool",
     ]),
-    field("type", "string", "root", false, false, false, "Group type"),
+    field("type", "enum", "root", true, true, false, "Group type selected at creation", ["Room"]),
     field("recycle", "boolean", "root", false, false, false, "Recycle flag"),
     field("sensors", "string[]", "root", false, false, false, "Associated sensors"),
     field("state", "object", "root", false, false, false, "Aggregate state"),
@@ -341,6 +341,14 @@ export function validateHueCatalogPayload(
   if (kind === "scene" && record.type !== undefined && record.type !== "GroupScene" && record.type !== "LightScene") {
     return { allowed: false, path: "type", reason: "Scene type must be GroupScene or LightScene." };
   }
+  if (kind === "group" && operation === "create") {
+    if (record.class !== undefined && record.type !== "Room") {
+      return { allowed: false, path: "type", reason: "Creating a Group with a room class requires type 'Room'." };
+    }
+    if (record.type === "Room" && record.class === undefined) {
+      return { allowed: false, path: "class", reason: "Creating a Room Group requires a room class." };
+    }
+  }
   if (kind === "sensor" && operation === "create" && typeof record.type === "string" && record.config && typeof record.config === "object" && !Array.isArray(record.config)) {
     const supported = HUE_SENSOR_CONFIG_FIELDS_BY_TYPE[record.type];
     if (supported) {
@@ -523,7 +531,7 @@ function normalizedHuePath(value: string): string {
 }
 
 function isSupportedRuleConditionAddress(value: string): boolean {
-  return /^\/sensors\/\d+\/(?:state\/(?:buttonevent|presence|temperature|lightlevel)|config\/on)$/i.test(normalizedHuePath(value));
+  return /^\/sensors\/\d+\/(?:state\/(?:buttonevent|presence|temperature|lightlevel|lastupdated|status)|config\/on)$/i.test(normalizedHuePath(value));
 }
 
 function isSupportedRuleActionAddress(value: string, body: unknown): boolean {
@@ -538,6 +546,13 @@ function isSupportedRuleActionAddress(value: string, body: unknown): boolean {
   }
   if (/^\/lights\/\d+\/state$/i.test(path)) return body === undefined || Boolean(body && typeof body === "object" && !Array.isArray(body) && validateActionFields("light", body as Record<string, unknown>).allowed);
   if (/^\/groups\/\d+\/action$/i.test(path)) return body === undefined || Boolean(body && typeof body === "object" && !Array.isArray(body) && validateActionFields("group", body as Record<string, unknown>).allowed);
+  if (/^\/sensors\/\d+\/state$/i.test(path) && body && typeof body === "object" && !Array.isArray(body)) {
+    const fields = body as Record<string, unknown>;
+    return Object.keys(fields).length === 1
+      && Number.isInteger(fields.status)
+      && (fields.status as number) >= 0
+      && (fields.status as number) <= 4;
+  }
   return false;
 }
 
@@ -654,7 +669,7 @@ export function buildRuleConditionFromSensor(sensorId: string, event: string, op
 export function buildRuleActionFromTarget(
   kind: "light" | "group" | "scene",
   id: string,
-  operation: "on" | "off" | "set" | "brighten" | "dim" | "activate",
+  operation: "on" | "off" | "set" | "brighten" | "dim" | "stop" | "activate",
   body?: Record<string, unknown>,
   sceneDetails?: DimmerSceneTargetDetails,
 ): HueRuleAction {
@@ -671,6 +686,8 @@ export function buildRuleActionFromTarget(
   if (!/^\d+$/.test(id)) throw new Error("Hue resource IDs must be numeric.");
   const actionBody = operation === "brighten" || operation === "dim"
     ? relativeActionBody(operation, body)
+    : operation === "stop"
+      ? { bri_inc: 0 }
     : operation === "on" || operation === "off"
       ? { on: operation === "on" }
       : { ...(body || {}) };

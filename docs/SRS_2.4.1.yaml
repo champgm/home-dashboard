@@ -254,7 +254,9 @@ requirements:
       operations for Hue Lights supported by the deployed Hue V1 API, with destructive actions subject to UX-DEL-001..003.
   - id: HUE-005
     statement: The application shall provide applicable create/read/update/delete and group-action operations for Hue Groups
-      supported by the deployed Hue V1 API, with destructive actions subject to UX-DEL-001..003.
+      supported by the deployed Hue V1 API. Group create and update shall offer the current Lights as human-readable membership
+      choices while retaining exact Light IDs; an unavailable existing member shall remain explicit and selected until the user
+      removes it. Destructive actions are subject to UX-DEL-001..003.
   - id: HUE-006
     statement: The application shall provide applicable create/read/update/delete and activation operations for Hue Scenes
       supported by the deployed Hue V1 API, including GroupScene and LightScene forms and per-light scene state where the
@@ -326,7 +328,11 @@ requirements:
       to understand Hue Sensor, Rule, Schedule, Resource Link, helper-resource, or raw event identifiers. Low-level resource
       IDs, raw button-event values, exact referenced resources, and credential-safe creator provenance shall remain available
       in an Advanced section. Association shall use exact parsed resource references and characterized identity metadata rather
-      than names or serialized-substring matching. Ambiguous identities, unsupported models/events, malformed references,
+      than names or serialized-substring matching. When an otherwise catalog-recognized simple binding references a missing
+      Light, Group, or Scene, Configure Dimmer shall identify the unavailable target and may offer an explicit replacement-target
+      repair that presents compatible current resources as human-readable enumerated choices while retaining exact IDs, preserves
+      the existing action kind/body, conditions, and companion actions, and issues one changed-field Rule update. Ambiguous
+      identities, unsupported models/events, malformed references, non-characterized Rule shapes,
       and custom/unrecognized bindings shall remain visible and shall not be silently guessed, merged, or rewritten. Individual
       Sensor and Rule details shall remain accessible for advanced inspection.
   - id: HUE-022
@@ -769,8 +775,8 @@ acceptance_criteria:
   requirement_ids:
   - HUE-005
   type: integration
-  criterion: Create a disposable Group, read it, update membership/name, issue group action, delete it, and verify bridge
-    responses.
+  criterion: Select current Lights by human-readable name to create a disposable Group, read it, update membership/name without
+    silently dropping an unavailable existing member, issue group action, delete it, and verify exact Light IDs and bridge responses.
 - id: AC-HUE-006
   requirement_ids:
   - HUE-006
@@ -874,8 +880,11 @@ acceptance_criteria:
     organized by physical controls and gestures with human-readable actions and targets. Verify the normal view does not require
     Rule/Sensor/Schedule/Resource-Link IDs or raw event values; verify those exact IDs, raw values, referenced resources,
     and credential-safe creator provenance are available under Advanced. Verify exact parsed references are used and same-name
-    devices, malformed paths, unsupported models/events, ambiguous identities, missing targets, and custom rules remain separate,
-    visible, and non-editable through the dimmer workflow.
+    devices, malformed paths, unsupported models/events, ambiguous identities, and custom rules remain separate, visible,
+    and non-editable through the dimmer workflow. For an otherwise characterized simple binding whose exact target is missing,
+    verify the unavailable target remains visible and an explicit replacement-target repair changes only that action target,
+    preserving its action body, conditions, and companion actions; verify no repair is offered when the Rule shape itself is
+    not characterized or another action target is also missing.
 - id: AC-HUE-022
   requirement_ids:
   - HUE-022

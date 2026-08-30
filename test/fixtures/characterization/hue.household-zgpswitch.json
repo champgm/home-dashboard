@@ -1,0 +1,225 @@
+{
+  "lights": {},
+  "groups": {
+    "5": {
+      "name": "Fixture group 1",
+      "type": "Room",
+      "lights": [
+        "11",
+        "27",
+        "2",
+        "3",
+        "10"
+      ],
+      "sensors": []
+    }
+  },
+  "scenes": {
+    "c4nu7mgZ66Qj800": {
+      "name": "Fixture scene 1",
+      "type": "GroupScene",
+      "group": "5",
+      "lights": [
+        "2",
+        "3",
+        "10",
+        "11",
+        "27"
+      ],
+      "recycle": false
+    },
+    "mCzNqbN6r5eWEwZ": {
+      "name": "Fixture scene 2",
+      "type": "GroupScene",
+      "group": "5",
+      "lights": [
+        "2",
+        "3",
+        "10",
+        "11",
+        "27"
+      ],
+      "recycle": false
+    },
+    "NZOlln0deGP-qno": {
+      "name": "Fixture scene 3",
+      "type": "GroupScene",
+      "group": "5",
+      "lights": [
+        "2",
+        "3",
+        "10",
+        "11",
+        "27"
+      ],
+      "recycle": false
+    }
+  },
+  "sensors": {
+    "20": {
+      "name": "Fixture sensor 1",
+      "type": "ZGPSwitch",
+      "manufacturername": "Signify Netherlands B.V.",
+      "modelid": "ZGPSWITCH",
+      "productname": "Hue tap switch",
+      "uniqueid": "fixture-device-1",
+      "config": {
+        "on": true
+      },
+      "state": {
+        "buttonevent": 17,
+        "lastupdated": "1980-01-18T02:57:57"
+      },
+      "capabilities": {
+        "certified": true,
+        "primary": true,
+        "inputs": [
+          {
+            "repeatintervals": [],
+            "events": [
+              {
+                "buttonevent": 34,
+                "eventtype": "initial_press"
+              }
+            ]
+          },
+          {
+            "repeatintervals": [],
+            "events": [
+              {
+                "buttonevent": 16,
+                "eventtype": "initial_press"
+              }
+            ]
+          },
+          {
+            "repeatintervals": [],
+            "events": [
+              {
+                "buttonevent": 17,
+                "eventtype": "initial_press"
+              }
+            ]
+          },
+          {
+            "repeatintervals": [],
+            "events": [
+              {
+                "buttonevent": 18,
+                "eventtype": "initial_press"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "rules": {
+    "1": {
+      "name": "Fixture rule 1",
+      "owner": "<redacted>",
+      "status": "enabled",
+      "recycle": false,
+      "conditions": [
+        {
+          "address": "/sensors/20/state/buttonevent",
+          "operator": "eq",
+          "value": "34"
+        },
+        {
+          "address": "/sensors/20/state/lastupdated",
+          "operator": "dx"
+        }
+      ],
+      "actions": [
+        {
+          "address": "/groups/5/action",
+          "method": "PUT",
+          "body": {
+            "on": false
+          }
+        }
+      ]
+    },
+    "2": {
+      "name": "Fixture rule 2",
+      "owner": "<redacted>",
+      "status": "enabled",
+      "recycle": false,
+      "conditions": [
+        {
+          "address": "/sensors/20/state/buttonevent",
+          "operator": "eq",
+          "value": "18"
+        },
+        {
+          "address": "/sensors/20/state/lastupdated",
+          "operator": "dx"
+        }
+      ],
+      "actions": [
+        {
+          "address": "/groups/5/action",
+          "method": "PUT",
+          "body": {
+            "scene": "c4nu7mgZ66Qj800"
+          }
+        }
+      ]
+    },
+    "3": {
+      "name": "Fixture rule 3",
+      "owner": "<redacted>",
+      "status": "enabled",
+      "recycle": false,
+      "conditions": [
+        {
+          "address": "/sensors/20/state/buttonevent",
+          "operator": "eq",
+          "value": "16"
+        },
+        {
+          "address": "/sensors/20/state/lastupdated",
+          "operator": "dx"
+        }
+      ],
+      "actions": [
+        {
+          "address": "/groups/5/action",
+          "method": "PUT",
+          "body": {
+            "scene": "mCzNqbN6r5eWEwZ"
+          }
+        }
+      ]
+    },
+    "4": {
+      "name": "Fixture rule 4",
+      "owner": "<redacted>",
+      "status": "enabled",
+      "recycle": false,
+      "conditions": [
+        {
+          "address": "/sensors/20/state/buttonevent",
+          "operator": "eq",
+          "value": "17"
+        },
+        {
+          "address": "/sensors/20/state/lastupdated",
+          "operator": "dx"
+        }
+      ],
+      "actions": [
+        {
+          "address": "/groups/5/action",
+          "method": "PUT",
+          "body": {
+            "scene": "NZOlln0deGP-qno"
+          }
+        }
+      ]
+    }
+  },
+  "schedules": {},
+  "resourcelinks": {}
+}

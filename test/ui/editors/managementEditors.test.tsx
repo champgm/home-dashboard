@@ -3,6 +3,7 @@ import { fireEvent, render, waitFor } from "@testing-library/react-native";
 
 const states: Record<string, unknown> = {
   "light:1": { name: "Lamp", type: "Extended color light", modelid: "LCT", state: { on: true, bri: 100, hue: 20, sat: 80, xy: [0.4, 0.5], ct: 300, reachable: true }, capabilities: { control: { bri: true, hue: true, sat: true, xy: true, ct: { min: 153, max: 500 }, alert: true, effect: true } } },
+  "light:2": { name: "Guest Lamp", type: "Dimmable light", modelid: "LWB", state: { on: false, bri: 80, reachable: true }, capabilities: { control: { bri: true } } },
   "group:2": { name: "Room", lights: ["1", "3"], class: "Living room", type: "Room", action: { on: true, bri: 120, xy: [0.4, 0.5] } },
   "scene:3": { name: "Evening", type: "LightScene", lights: ["1"], lightstates: { "1": { on: true, bri: 90 } }, appdata: { version: 1 }, owner: "owner", locked: false, version: 2 },
   "sensor:4": { name: "Dimmer", type: "ZLLSwitch", manufacturername: "Signify", modelid: "RWL", uniqueid: "00:11", config: { on: true, battery: 80 }, state: { buttonevent: 1002 }, capabilities: { inputs: ["buttonevent"] } },
@@ -69,6 +70,9 @@ describe("typed management editors", () => {
 
     const group = render(<GroupEditor route={{ params: { id: "2" } }} />);
     expect(group.getByTestId("group-lights")).toBeTruthy();
+    expect(group.getByLabelText("Lights: Lamp").props.accessibilityState.selected).toBe(true);
+    expect(group.getByLabelText("Lights: Guest Lamp").props.accessibilityState.selected).toBe(false);
+    expect(group.getByLabelText("Lights: Unavailable light (ID 3)").props.accessibilityState.selected).toBe(true);
     expect(group.getByTestId("group-action-bri")).toBeTruthy();
     expect(group.getByTestId("group-action-xy")).toBeTruthy();
     expect(group.getByText("Aggregate state")).toBeTruthy();
@@ -106,6 +110,35 @@ describe("typed management editors", () => {
     expect(plug.getByLabelText("MAC: 00:11:22:33:44:66")).toBeTruthy();
     expect(plug.getByLabelText("Energy: Not reported by this plug")).toBeTruthy();
     plug.unmount();
+  });
+
+  test("creates a Group with selected current lights and class", async () => {
+    const view = render(<GroupEditor route={{ params: {} }} />);
+    fireEvent.changeText(view.getByPlaceholderText("Resource name"), "Guest Room");
+    fireEvent.press(view.getByLabelText("Lights: Lamp"));
+    fireEvent.press(view.getByLabelText("Lights: Guest Lamp"));
+    fireEvent.press(view.getByText("Guest room"));
+    fireEvent.press(view.getByTestId("editor-save"));
+
+    await waitFor(() => expect(mockRuntime.service.createHue).toHaveBeenCalledWith("group", {
+      name: "Guest Room",
+      lights: ["1", "2"],
+      type: "Room",
+      class: "Guest room",
+    }));
+  });
+
+  test("updates Group membership without silently dropping an unavailable selected light", async () => {
+    const view = render(<GroupEditor route={{ params: { id: "2" } }} />);
+    fireEvent.press(view.getByLabelText("Lights: Guest Lamp"));
+    fireEvent.press(view.getByTestId("editor-save"));
+
+    await waitFor(() => expect(mockRuntime.service.mutateHue).toHaveBeenCalledWith(
+      "group",
+      "2",
+      "update",
+      expect.objectContaining({ lights: ["1", "3", "2"] }),
+    ));
   });
 
   test("lists editable item fields before inspection-only details", () => {

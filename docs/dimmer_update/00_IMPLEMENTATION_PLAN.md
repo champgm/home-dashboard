@@ -39,7 +39,7 @@ The repository already contains the source/test paths called out as prerequisite
 4. Write focused tests together with the implementation. Do not postpone locally testable correctness to Phase 08.
 5. Preserve current protocol/resource behavior unless the phase explicitly requires a change.
 6. No phase may invent model/event mappings for the household dimmer. Phases 01–06 use injected synthetic catalogs/fixtures for deterministic tests. Phase 07 adds the production catalog entry only from captured household evidence.
-7. No raw Hue JSON write editor, fuzzy name matching, serialized-substring association, automatic repair, automatic retry of ambiguous writes, or generalized transaction engine may be introduced.
+7. No raw Hue JSON write editor, fuzzy name matching, serialized-substring association, automatic repair, automatic retry of ambiguous writes, or generalized transaction engine may be introduced. An explicit catalog-revalidated target replacement for one otherwise recognized missing-target Rule is not automatic repair.
 8. A simple recognized one-binding edit must remain the short path: control/gesture → action/target → Save → one ordinary changed-field Rule update → authoritative refresh.
 9. Structural behavior is implemented only for an edit that truly requires multiple resource operations or create/delete/replace semantics. It uses the lightweight `DimmerChangeSet`; no durable state is added.
 

@@ -52,12 +52,18 @@ export function EditorForm({ title, kind, id, initialName, navigation, note, onS
                 ? { kind: "success" as const }
                 : await runtime.service.mutateHue(kind, id, "update", { name })
               : await runtime.service.createHue(kind, { name });
-          setMessage(result.kind === "success" ? "Saved and refreshed." : result.diagnostic?.message || "Not saved.");
+          setMessage(result.kind === "success" ? "Saved and refreshed." : editorFailureMessage(result));
         }} style={styles.button} testID="editor-save"><Text style={styles.buttonText}>{saveLabel || (id ? "Save changed fields" : "Create resource")}</Text></Pressable>}
       {!existingResourceUnavailable && id && <HueDeleteAction kind={kind} id={id} objectName={`${kind} ${id}`} navigation={navigation} />}
       {message && <Text style={styles.message}>{message}</Text>}
     </Screen>
   );
+}
+
+function editorFailureMessage(result: CommandResult): string {
+  const message = result.diagnostic?.message || "Not saved.";
+  const detail = result.diagnostic?.detail;
+  return detail && detail !== message ? `${message} ${detail}` : message;
 }
 
 const styles = StyleSheet.create({

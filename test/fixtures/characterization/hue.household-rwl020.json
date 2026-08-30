@@ -1,0 +1,642 @@
+{
+  "lights": {},
+  "groups": {
+    "3": {
+      "name": "Fixture group 1",
+      "type": "Room",
+      "lights": [
+        "12"
+      ],
+      "sensors": []
+    }
+  },
+  "scenes": {
+    "bdATgVKQdaELH9I": {
+      "name": "Fixture scene 1",
+      "type": "GroupScene",
+      "group": "3",
+      "lights": [
+        "12"
+      ],
+      "recycle": false
+    },
+    "U3S3Vi0bU6RVbt8": {
+      "name": "Fixture scene 2",
+      "type": "GroupScene",
+      "group": "3",
+      "lights": [
+        "12"
+      ],
+      "recycle": false
+    },
+    "svRMHzSU5Fvv1SR": {
+      "name": "Fixture scene 3",
+      "type": "GroupScene",
+      "group": "3",
+      "lights": [
+        "12"
+      ],
+      "recycle": false
+    },
+    "4fVu7OBcJ5c2wPL": {
+      "name": "Fixture scene 4",
+      "type": "GroupScene",
+      "group": "3",
+      "lights": [
+        "12"
+      ],
+      "recycle": false
+    }
+  },
+  "sensors": {
+    "12": {
+      "name": "Fixture sensor 1",
+      "type": "ZLLSwitch",
+      "manufacturername": "Signify Netherlands B.V.",
+      "modelid": "RWL020",
+      "productname": "Hue dimmer switch",
+      "uniqueid": "fixture-device-1",
+      "swversion": "5.45.1.17846",
+      "config": {
+        "on": true,
+        "battery": 100,
+        "reachable": true,
+        "pending": []
+      },
+      "state": {
+        "buttonevent": 4002,
+        "lastupdated": "1980-01-03T17:09:46"
+      },
+      "capabilities": {
+        "certified": true,
+        "primary": true,
+        "inputs": [
+          {
+            "repeatintervals": [
+              800
+            ],
+            "events": [
+              {
+                "buttonevent": 1000,
+                "eventtype": "initial_press"
+              },
+              {
+                "buttonevent": 1001,
+                "eventtype": "repeat"
+              },
+              {
+                "buttonevent": 1002,
+                "eventtype": "short_release"
+              },
+              {
+                "buttonevent": 1003,
+                "eventtype": "long_release"
+              }
+            ]
+          },
+          {
+            "repeatintervals": [
+              800
+            ],
+            "events": [
+              {
+                "buttonevent": 2000,
+                "eventtype": "initial_press"
+              },
+              {
+                "buttonevent": 2001,
+                "eventtype": "repeat"
+              },
+              {
+                "buttonevent": 2002,
+                "eventtype": "short_release"
+              },
+              {
+                "buttonevent": 2003,
+                "eventtype": "long_release"
+              }
+            ]
+          },
+          {
+            "repeatintervals": [
+              800
+            ],
+            "events": [
+              {
+                "buttonevent": 3000,
+                "eventtype": "initial_press"
+              },
+              {
+                "buttonevent": 3001,
+                "eventtype": "repeat"
+              },
+              {
+                "buttonevent": 3002,
+                "eventtype": "short_release"
+              },
+              {
+                "buttonevent": 3003,
+                "eventtype": "long_release"
+              }
+            ]
+          },
+          {
+            "repeatintervals": [
+              800
+            ],
+            "events": [
+              {
+                "buttonevent": 4000,
+                "eventtype": "initial_press"
+              },
+              {
+                "buttonevent": 4001,
+                "eventtype": "repeat"
+              },
+              {
+                "buttonevent": 4002,
+                "eventtype": "short_release"
+              },
+              {
+                "buttonevent": 4003,
+                "eventtype": "long_release"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "13": {
+      "name": "Fixture sensor 2",
+      "type": "CLIPGenericStatus",
+      "manufacturername": "Philips",
+      "modelid": "PHWA01",
+      "uniqueid": "fixture-device-2",
+      "swversion": "1.0",
+      "config": {
+        "on": true,
+        "reachable": true
+      },
+      "state": {
+        "status": 0,
+        "lastupdated": "1980-01-03T17:09:56"
+      }
+    }
+  },
+  "rules": {
+    "21": {
+      "name": "Fixture rule 1",
+      "owner": "<redacted>",
+      "status": "enabled",
+      "recycle": true,
+      "conditions": [
+        {
+          "address": "/sensors/12/state/buttonevent",
+          "operator": "eq",
+          "value": "1000"
+        },
+        {
+          "address": "/sensors/12/state/lastupdated",
+          "operator": "dx"
+        },
+        {
+          "address": "/sensors/13/state/status",
+          "operator": "lt",
+          "value": "1"
+        }
+      ],
+      "actions": [
+        {
+          "address": "/groups/3/action",
+          "method": "PUT",
+          "body": {
+            "on": true
+          }
+        },
+        {
+          "address": "/sensors/13/state",
+          "method": "PUT",
+          "body": {
+            "status": 1
+          }
+        }
+      ]
+    },
+    "22": {
+      "name": "Fixture rule 2",
+      "owner": "<redacted>",
+      "status": "enabled",
+      "recycle": true,
+      "conditions": [
+        {
+          "address": "/sensors/12/state/buttonevent",
+          "operator": "eq",
+          "value": "1000"
+        },
+        {
+          "address": "/sensors/12/state/lastupdated",
+          "operator": "dx"
+        },
+        {
+          "address": "/sensors/13/state/status",
+          "operator": "eq",
+          "value": "1"
+        }
+      ],
+      "actions": [
+        {
+          "address": "/groups/3/action",
+          "method": "PUT",
+          "body": {
+            "scene": "bdATgVKQdaELH9I"
+          }
+        },
+        {
+          "address": "/sensors/13/state",
+          "method": "PUT",
+          "body": {
+            "status": 2
+          }
+        }
+      ]
+    },
+    "23": {
+      "name": "Fixture rule 3",
+      "owner": "<redacted>",
+      "status": "enabled",
+      "recycle": true,
+      "conditions": [
+        {
+          "address": "/sensors/12/state/buttonevent",
+          "operator": "eq",
+          "value": "1000"
+        },
+        {
+          "address": "/sensors/12/state/lastupdated",
+          "operator": "dx"
+        },
+        {
+          "address": "/sensors/13/state/status",
+          "operator": "eq",
+          "value": "2"
+        }
+      ],
+      "actions": [
+        {
+          "address": "/groups/3/action",
+          "method": "PUT",
+          "body": {
+            "scene": "U3S3Vi0bU6RVbt8"
+          }
+        },
+        {
+          "address": "/sensors/13/state",
+          "method": "PUT",
+          "body": {
+            "status": 3
+          }
+        }
+      ]
+    },
+    "24": {
+      "name": "Fixture rule 4",
+      "owner": "<redacted>",
+      "status": "enabled",
+      "recycle": true,
+      "conditions": [
+        {
+          "address": "/sensors/12/state/buttonevent",
+          "operator": "eq",
+          "value": "1000"
+        },
+        {
+          "address": "/sensors/12/state/lastupdated",
+          "operator": "dx"
+        },
+        {
+          "address": "/sensors/13/state/status",
+          "operator": "eq",
+          "value": "3"
+        }
+      ],
+      "actions": [
+        {
+          "address": "/groups/3/action",
+          "method": "PUT",
+          "body": {
+            "scene": "svRMHzSU5Fvv1SR"
+          }
+        },
+        {
+          "address": "/sensors/13/state",
+          "method": "PUT",
+          "body": {
+            "status": 4
+          }
+        }
+      ]
+    },
+    "25": {
+      "name": "Fixture rule 5",
+      "owner": "<redacted>",
+      "status": "enabled",
+      "recycle": true,
+      "conditions": [
+        {
+          "address": "/sensors/12/state/buttonevent",
+          "operator": "eq",
+          "value": "1000"
+        },
+        {
+          "address": "/sensors/12/state/lastupdated",
+          "operator": "dx"
+        },
+        {
+          "address": "/sensors/13/state/status",
+          "operator": "gt",
+          "value": "3"
+        }
+      ],
+      "actions": [
+        {
+          "address": "/groups/3/action",
+          "method": "PUT",
+          "body": {
+            "scene": "4fVu7OBcJ5c2wPL"
+          }
+        },
+        {
+          "address": "/sensors/13/state",
+          "method": "PUT",
+          "body": {
+            "status": 0
+          }
+        }
+      ]
+    },
+    "26": {
+      "name": "Fixture rule 6",
+      "owner": "<redacted>",
+      "status": "enabled",
+      "recycle": true,
+      "conditions": [
+        {
+          "address": "/sensors/12/state/buttonevent",
+          "operator": "eq",
+          "value": "4000"
+        },
+        {
+          "address": "/sensors/12/state/lastupdated",
+          "operator": "dx"
+        }
+      ],
+      "actions": [
+        {
+          "address": "/groups/3/action",
+          "method": "PUT",
+          "body": {
+            "on": false
+          }
+        },
+        {
+          "address": "/sensors/13/state",
+          "method": "PUT",
+          "body": {
+            "status": 0
+          }
+        }
+      ]
+    },
+    "27": {
+      "name": "Fixture rule 7",
+      "owner": "<redacted>",
+      "status": "enabled",
+      "recycle": true,
+      "conditions": [
+        {
+          "address": "/sensors/12/state/buttonevent",
+          "operator": "eq",
+          "value": "2000"
+        },
+        {
+          "address": "/sensors/12/state/lastupdated",
+          "operator": "dx"
+        }
+      ],
+      "actions": [
+        {
+          "address": "/groups/3/action",
+          "method": "PUT",
+          "body": {
+            "transitiontime": 9,
+            "bri_inc": 30
+          }
+        }
+      ]
+    },
+    "28": {
+      "name": "Fixture rule 8",
+      "owner": "<redacted>",
+      "status": "enabled",
+      "recycle": true,
+      "conditions": [
+        {
+          "address": "/sensors/12/state/buttonevent",
+          "operator": "eq",
+          "value": "2001"
+        },
+        {
+          "address": "/sensors/12/state/lastupdated",
+          "operator": "dx"
+        }
+      ],
+      "actions": [
+        {
+          "address": "/groups/3/action",
+          "method": "PUT",
+          "body": {
+            "transitiontime": 9,
+            "bri_inc": 56
+          }
+        }
+      ]
+    },
+    "29": {
+      "name": "Fixture rule 9",
+      "owner": "<redacted>",
+      "status": "enabled",
+      "recycle": true,
+      "conditions": [
+        {
+          "address": "/sensors/12/state/buttonevent",
+          "operator": "eq",
+          "value": "2003"
+        },
+        {
+          "address": "/sensors/12/state/lastupdated",
+          "operator": "dx"
+        }
+      ],
+      "actions": [
+        {
+          "address": "/groups/3/action",
+          "method": "PUT",
+          "body": {
+            "bri_inc": 0
+          }
+        }
+      ]
+    },
+    "30": {
+      "name": "Fixture rule 10",
+      "owner": "<redacted>",
+      "status": "enabled",
+      "recycle": true,
+      "conditions": [
+        {
+          "address": "/sensors/12/state/buttonevent",
+          "operator": "eq",
+          "value": "3000"
+        },
+        {
+          "address": "/sensors/12/state/lastupdated",
+          "operator": "dx"
+        }
+      ],
+      "actions": [
+        {
+          "address": "/groups/3/action",
+          "method": "PUT",
+          "body": {
+            "transitiontime": 9,
+            "bri_inc": -30
+          }
+        }
+      ]
+    },
+    "31": {
+      "name": "Fixture rule 11",
+      "owner": "<redacted>",
+      "status": "enabled",
+      "recycle": true,
+      "conditions": [
+        {
+          "address": "/sensors/12/state/buttonevent",
+          "operator": "eq",
+          "value": "3001"
+        },
+        {
+          "address": "/sensors/12/state/lastupdated",
+          "operator": "dx"
+        }
+      ],
+      "actions": [
+        {
+          "address": "/groups/3/action",
+          "method": "PUT",
+          "body": {
+            "transitiontime": 9,
+            "bri_inc": -56
+          }
+        }
+      ]
+    },
+    "32": {
+      "name": "Fixture rule 12",
+      "owner": "<redacted>",
+      "status": "enabled",
+      "recycle": true,
+      "conditions": [
+        {
+          "address": "/sensors/12/state/buttonevent",
+          "operator": "eq",
+          "value": "3003"
+        },
+        {
+          "address": "/sensors/12/state/lastupdated",
+          "operator": "dx"
+        }
+      ],
+      "actions": [
+        {
+          "address": "/groups/3/action",
+          "method": "PUT",
+          "body": {
+            "bri_inc": 0
+          }
+        }
+      ]
+    },
+    "33": {
+      "name": "Fixture rule 13",
+      "owner": "<redacted>",
+      "status": "enabled",
+      "recycle": true,
+      "conditions": [
+        {
+          "address": "/sensors/12/state/lastupdated",
+          "operator": "dx"
+        }
+      ],
+      "actions": [
+        {
+          "address": "/schedules/3",
+          "method": "PUT",
+          "body": {
+            "localtime": "PT00:00:10",
+            "status": "enabled"
+          }
+        }
+      ]
+    }
+  },
+  "schedules": {
+    "3": {
+      "name": "Fixture schedule 1",
+      "description": "Fixture schedule resources",
+      "status": "disabled",
+      "localtime": "PT00:00:10",
+      "time": "PT00:00:10",
+      "starttime": "1980-01-03T17:09:46",
+      "autodelete": false,
+      "command": {
+        "address": "/api/<redacted>/sensors/13/state",
+        "body": {
+          "status": 0
+        },
+        "method": "PUT"
+      }
+    }
+  },
+  "resourcelinks": {
+    "57067": {
+      "name": "Fixture resourcelink 1",
+      "description": "Fixture resourcelink resources",
+      "owner": "<redacted>",
+      "classid": 10011,
+      "links": [
+        "/sensors/12",
+        "/sensors/13",
+        "/schedules/3",
+        "/groups/3",
+        "/rules/21",
+        "/rules/22",
+        "/rules/23",
+        "/rules/24",
+        "/rules/25",
+        "/rules/26",
+        "/rules/27",
+        "/rules/28",
+        "/rules/29",
+        "/rules/30",
+        "/rules/31",
+        "/rules/32",
+        "/rules/33",
+        "/scenes/bdATgVKQdaELH9I",
+        "/scenes/U3S3Vi0bU6RVbt8",
+        "/scenes/svRMHzSU5Fvv1SR",
+        "/scenes/4fVu7OBcJ5c2wPL"
+      ]
+    }
+  }
+}

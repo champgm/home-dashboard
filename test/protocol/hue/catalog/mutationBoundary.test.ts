@@ -30,6 +30,24 @@ describe("Hue catalog mutation boundary", () => {
     expect(url).toBe("http://192.168.1.2/api/safe-user/scenes/3/lightstates/7");
   });
 
+  test("creates a Room Group with its required type and class pair", async () => {
+    let request: { url: string; body: Record<string, unknown> } | undefined;
+    const client: HueHttpClient = { request: async (url, init) => {
+      request = { url, body: JSON.parse(String(init.body)) as Record<string, unknown> };
+      return response([{ success: { id: "6" } }]);
+    } };
+    await new HueV1Adapter({ bridgeIpv4: "192.168.1.2", credential: "safe-user", httpClient: client }).create("group", {
+      name: "Guest Room",
+      lights: ["18", "19", "31"],
+      type: "Room",
+      class: "Guest room",
+    });
+    expect(request).toEqual({
+      url: "http://192.168.1.2/api/safe-user/groups",
+      body: { name: "Guest Room", lights: ["18", "19", "31"], type: "Room", class: "Guest room" },
+    });
+  });
+
   test("splits Light state and Group action updates onto their V1 subpaths", async () => {
     const requests: Array<{ url: string; body: unknown }> = [];
     const client: HueHttpClient = { request: async (url, init) => {
@@ -49,13 +67,13 @@ describe("Hue catalog mutation boundary", () => {
     expect(requests[3].body).toEqual({ on: true });
   });
 
-  test("binds changed Rule actions to the current credential without exposing it to editors", async () => {
+  test("serializes changed Rule actions as bridge-local paths without a phone credential", async () => {
     let body: Record<string, unknown> | undefined;
     const client: HueHttpClient = { request: async (_url, init) => { body = JSON.parse(String(init.body)); return response([{ success: { updated: true } }]); } };
     await new HueV1Adapter({ bridgeIpv4: "192.168.1.2", credential: "current-user", httpClient: client }).mutate("rule", "8", "update", {
       actions: [{ address: "/api/old-user/lights/1/state", method: "PUT", body: { on: true } }],
     });
-    expect(body).toEqual({ actions: [{ address: "/api/current-user/lights/1/state", method: "PUT", body: { on: true } }] });
+    expect(body).toEqual({ actions: [{ address: "/lights/1/state", method: "PUT", body: { on: true } }] });
   });
 
   test("preserves catalog-approved brightness and transition fields in a repaired Rule action", async () => {
@@ -64,7 +82,7 @@ describe("Hue catalog mutation boundary", () => {
     await new HueV1Adapter({ bridgeIpv4: "192.168.1.2", credential: "current-user", httpClient: client }).mutate("rule", "8", "update", {
       actions: [{ address: "/lights/1/state", method: "PUT", body: { bri: 180, transitiontime: 4 } }],
     });
-    expect(body).toEqual({ actions: [{ address: "/api/current-user/lights/1/state", method: "PUT", body: { bri: 180, transitiontime: 4 } }] });
+    expect(body).toEqual({ actions: [{ address: "/lights/1/state", method: "PUT", body: { bri: 180, transitiontime: 4 } }] });
   });
 
   test("serializes a new Schedule time pattern before POST", async () => {

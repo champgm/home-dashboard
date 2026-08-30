@@ -62,6 +62,7 @@ export function dimmerActionKindFromRuleAction(action: HueRuleAction): DimmerAct
   if (reference.kind !== "light" && reference.kind !== "group") return undefined;
   if (typeof body.on === "boolean" && Object.keys(body).filter((key) => key !== "transitiontime").length === 1) return body.on ? "on" : "off";
   const relativeKeys = Object.keys(body).filter((key) => key !== "transitiontime");
+  if (body.bri_inc === 0 && relativeKeys.length === 1) return "stop";
   if (typeof body.bri_inc === "number" && Number.isFinite(body.bri_inc) && body.bri_inc !== 0 && relativeKeys.length === 1) {
     return body.bri_inc > 0 ? "brighten" : "dim";
   }
@@ -91,6 +92,7 @@ export function isDimmerActionPermittedByForm(action: HueRuleAction, form: Dimme
     && Number.isFinite(body.bri_inc)
     && body.bri_inc !== 0
     && (kind === "brighten" ? body.bri_inc > 0 : body.bri_inc < 0);
+  if (kind === "stop") return body.bri_inc === 0;
   return keys.some((key) => key !== "transitiontime");
 }
 

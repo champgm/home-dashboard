@@ -211,6 +211,46 @@ export function EditorChoice({
   </View>;
 }
 
+export interface EditorChoiceOption {
+  readonly value: string;
+  readonly label: string;
+}
+
+export function EditorMultiChoice({
+  label,
+  values,
+  options,
+  onChange,
+  testID,
+}: {
+  readonly label: string;
+  readonly values: readonly string[];
+  readonly options: readonly EditorChoiceOption[];
+  readonly onChange: (values: readonly string[]) => void;
+  readonly testID?: string;
+}): JSX.Element {
+  const selected = new Set(values);
+  return <View style={styles.field} testID={testID}>
+    <Text style={styles.label}>{label}</Text>
+    {options.length === 0
+      ? <Text style={styles.emptyChoice}>No current lights are available.</Text>
+      : <View style={styles.choiceRow}>
+        {options.map((option) => {
+          const isSelected = selected.has(option.value);
+          return <Pressable
+            accessibilityLabel={`${label}: ${option.label}`}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isSelected }}
+            key={option.value}
+            onPress={() => onChange(isSelected ? values.filter((value) => value !== option.value) : [...values, option.value])}
+            style={[styles.choice, isSelected && styles.choiceSelected]}
+            testID={testID ? `${testID}-${option.value}` : undefined}
+          ><Text style={styles.choiceText}>{option.label}</Text></Pressable>;
+        })}
+      </View>}
+  </View>;
+}
+
 export function EditorAction({ label, onPress, testID }: { readonly label: string; readonly onPress: () => void; readonly testID?: string }): JSX.Element {
   return <Pressable accessibilityRole="button" onPress={onPress} style={styles.action} testID={testID}><Text style={styles.actionText}>{label}</Text></Pressable>;
 }
@@ -231,6 +271,7 @@ const styles = StyleSheet.create({
   choice: { backgroundColor: "#073642", borderColor: "#586e75", borderRadius: 7, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 8 },
   choiceSelected: { backgroundColor: "#268bd2", borderColor: "#268bd2" },
   choiceText: { color: "#fdf6e3", fontSize: 12 },
+  emptyChoice: { color: "#93a1a1", fontSize: 12 },
   action: { alignSelf: "flex-start", backgroundColor: "#268bd2", borderRadius: 8, marginTop: 8, padding: 12 },
   actionText: { color: "#fff", fontWeight: "700" },
   swatchRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 8 },

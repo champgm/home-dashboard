@@ -329,13 +329,16 @@ export class HueV1Adapter {
   private normalizeAutomationPayload(kind: Exclude<ResourceKind, "plug">, payload: Record<string, unknown>): Record<string, unknown> {
     if (kind !== "rule" && kind !== "schedule") return payload;
     const clone = JSON.parse(JSON.stringify(payload)) as Record<string, unknown>;
-    if (kind === "rule" && this.transport.credential && Array.isArray(clone.actions)) {
+    if (kind === "rule" && Array.isArray(clone.actions)) {
       clone.actions = clone.actions.map((entry) => {
         if (!entry || typeof entry !== "object") return entry;
         const action = entry as Record<string, unknown>;
         if (typeof action.address !== "string") return action;
+        // Rule actions are bridge-local resource paths. Unlike Schedule
+        // commands, they must not carry an API username; Hue rejects those
+        // credential-prefixed action addresses with error 608.
         const relative = action.address.replace(/^\/api\/[^/]+/i, "") || action.address;
-        return { ...action, address: `/api/${this.transport.credential}${relative.startsWith("/") ? relative : `/${relative}`}` };
+        return { ...action, address: relative.startsWith("/") ? relative : `/${relative}` };
       });
     }
     if (kind === "schedule" && clone.timePattern && typeof clone.timePattern === "object") {

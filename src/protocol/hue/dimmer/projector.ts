@@ -263,10 +263,14 @@ function projectRuleBinding(
     targetLabel: mappedAction.targetLabel,
     fields: mappedAction.fields,
   } : undefined);
-  const missingActionTarget = actionReferences.some((reference) => {
+  const missingActionTargetAt = (reference: DimmerReference, index: number): boolean => {
     const target = reference.status === "recognized" ? reference.ref : reference.ref;
-    return Boolean(target && ["light", "group", "scene"].includes(target.kind) && !targetExists(snapshot, target));
-  });
+    return Boolean(target && ["light", "group", "scene"].includes(target.kind) && !targetExists(snapshot, target) && index >= 0);
+  };
+  const missingActionTarget = actionReferences.some(missingActionTargetAt);
+  const selectedActionTargetMissing = actionIndex !== undefined
+    && Boolean(actionReferences[actionIndex] && missingActionTargetAt(actionReferences[actionIndex], actionIndex));
+  const companionActionTargetMissing = actionReferences.some((reference, index) => index !== actionIndex && missingActionTargetAt(reference, index));
 
   const references = [...parsed.all];
   const resourceRefs = uniqueResourceRefs(references);
@@ -310,7 +314,14 @@ function projectRuleBinding(
       : "The Rule action is not a recognized structured dimmer action.";
   } else if (!targetExists(snapshot, mappedAction?.target)) {
     classification = "missing_target";
-    reason = "The referenced target is not present in the current Hue snapshot.";
+    editable = selectedActionTargetMissing
+      && !companionActionTargetMissing
+      && Boolean(simpleForm && simpleActionAllowed && simpleRecognized);
+    reason = editable
+      ? "The original target is unavailable. Choose an explicit replacement target; the action and companion automation will be preserved."
+      : companionActionTargetMissing
+        ? "More than one Rule action target is missing; inspect the Rule before repairing it."
+        : "The referenced target is not present and the Rule is not an otherwise characterized simple binding.";
   } else if (!simpleForm) {
     classification = "custom";
     reason = "This gesture has no characterized simple action form.";
@@ -613,6 +624,7 @@ function actionKindFromBody(body: Record<string, unknown>): DimmerActionKind | u
     if (keys.length === 1) return body.on ? "on" : "off";
   }
   const relativeKeys = Object.keys(body).filter((key) => key !== "transitiontime");
+  if (body.bri_inc === 0 && relativeKeys.length === 1) return "stop";
   if (typeof body.bri_inc === "number" && Number.isFinite(body.bri_inc) && body.bri_inc !== 0 && relativeKeys.length === 1) {
     return body.bri_inc > 0 ? "brighten" : "dim";
   }
@@ -629,6 +641,7 @@ function actionLabel(kind: DimmerActionKind): string {
     case "set": return "Set light/group values";
     case "brighten": return "Brighten while held";
     case "dim": return "Dim while held";
+    case "stop": return "Stop brightness change";
     case "cycle": return "Cycle scenes";
   }
 }

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { EditorCatalogNumberField, EditorChoice, EditorHueField, EditorSection, EditorTextField, EditorToggle, EditorXyColorField, ReadOnlyField } from "./editorControls";
+import { EditorCatalogNumberField, EditorChoice, EditorChoiceOption, EditorHueField, EditorMultiChoice, EditorSection, EditorToggle, EditorXyColorField, ReadOnlyField } from "./editorControls";
 import { EditorForm } from "./EditorForm";
 import { useAppRuntime } from "../AppContext";
 import { definiteFailure } from "../../app/commandResults";
@@ -25,7 +25,7 @@ export function GroupEditor({ route, navigation }: { route?: any; navigation?: a
   const stored = id ? runtime.service.stateStore.get({ kind: "group", id }) : undefined;
   const value = stored?.state.status === "known" ? stored.state.value as GroupValue : undefined;
   const initialAction = value?.action || {};
-  const [lights, setLights] = useState((value?.lights || []).join(", "));
+  const [lights, setLights] = useState<readonly string[]>(value?.lights || []);
   const [groupClass, setGroupClass] = useState(value?.class || "Other");
   const [on, setOn] = useState(booleanValue(initialAction.on, false));
   const [bri, setBri] = useState(numberValue(initialAction.bri));
@@ -41,8 +41,8 @@ export function GroupEditor({ route, navigation }: { route?: any; navigation?: a
     return Object.prototype.hasOwnProperty.call(initialAction, key) && (!descriptor?.capability || descriptor.capability(value as unknown as Record<string, unknown>));
   };
   const save = async (name: string) => {
-    const membership = lights.split(/[\s,]+/).map((item) => item.trim()).filter(Boolean);
-    if (!id) return runtime.service.createHue("group", { name, lights: membership, class: groupClass });
+    const membership = [...lights];
+    if (!id) return runtime.service.createHue("group", { name, lights: membership, type: "Room", class: groupClass });
     const xyValue = parsePair(xy);
     if (actionHas("xy") && xy.trim() && !xyValue) return definiteFailure(diagnostic("ProtocolRejected", "Group XY color must contain two numbers between 0 and 1."));
     return runtime.service.mutateHue("group", id, "update", {
@@ -63,6 +63,7 @@ export function GroupEditor({ route, navigation }: { route?: any; navigation?: a
     });
   };
   const classOptions = GROUP_CLASSES.includes(groupClass as typeof GROUP_CLASSES[number]) ? GROUP_CLASSES : [groupClass, ...GROUP_CLASSES];
+  const lightOptions = availableLightOptions(runtime.service.stateStore.getAll(), lights);
   return <EditorForm
     id={id}
     kind="group"
@@ -72,7 +73,7 @@ export function GroupEditor({ route, navigation }: { route?: any; navigation?: a
     title="Group Editor"
   >
     <EditorSection title="Editable group membership">
-      <EditorTextField label="Light IDs (comma or space separated)" onChangeText={setLights} placeholder="1, 2, 3" testID="group-lights" value={lights} />
+      <EditorMultiChoice label="Lights" onChange={setLights} options={lightOptions} testID="group-lights" values={lights} />
       <EditorChoice label="Group class" onChange={setGroupClass} options={classOptions} testID="group-class" value={groupClass} />
     </EditorSection>
     {id && <EditorSection title="Supported group action">
@@ -93,6 +94,29 @@ export function GroupEditor({ route, navigation }: { route?: any; navigation?: a
       <ReadOnlyField label="Aggregate state" value={aggregateLabel(value?.state)} />
     </EditorSection>
   </EditorForm>;
+}
+
+function availableLightOptions(
+  storedResources: ReadonlyMap<string, { readonly state: { readonly status: string; readonly value?: unknown } }>,
+  selectedIds: readonly string[],
+): readonly EditorChoiceOption[] {
+  const lights: Array<{ id: string; name: string }> = [];
+  storedResources.forEach((stored, key) => {
+    if (!key.startsWith("light:") || stored.state.status !== "known") return;
+    const id = key.slice("light:".length);
+    const rawName = (stored.state.value as { readonly name?: unknown } | undefined)?.name;
+    lights.push({ id, name: typeof rawName === "string" && rawName.trim() ? rawName.trim() : `Light ${id}` });
+  });
+  const duplicateNames = new Set(lights.filter((light, index) => lights.some((other, otherIndex) => otherIndex !== index && other.name === light.name)).map((light) => light.name));
+  const options: EditorChoiceOption[] = lights.map((light) => ({
+    value: light.id,
+    label: duplicateNames.has(light.name) ? `${light.name} (Light ${light.id})` : light.name,
+  }));
+  const knownIds = new Set(lights.map((light) => light.id));
+  selectedIds.forEach((id) => {
+    if (!knownIds.has(id)) options.push({ value: id, label: `Unavailable light (ID ${id})` });
+  });
+  return options.sort((left, right) => left.label.localeCompare(right.label, undefined, { numeric: true }));
 }
 
 function aggregateLabel(state: GroupValue["state"]): string {

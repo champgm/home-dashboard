@@ -200,3 +200,44 @@ test("simple save rejects a newly selected target that disappeared from the curr
   expect(result.diagnostic?.message).toMatch(/target.*present/i);
   expect(mutate).not.toHaveBeenCalled();
 });
+
+test("missing-target repair changes only the selected Rule action address", async () => {
+  const missingTargetSnapshot: HueSnapshot = { ...snapshot, lights: { "2": snapshot.lights["2"] } };
+  const mutate = jest.fn(async () => undefined);
+  const service = new ApplicationService({ hue: { snapshot: async () => missingTargetSnapshot, mutate }, stateStore: new DeviceStateStore(), dimmerCatalog: catalog });
+  seedSnapshot(service, missingTargetSnapshot);
+
+  const result = await service.saveSimpleBinding({
+    ...simpleIdentity,
+    ruleId: "10",
+    conditionIndex: 0,
+    actionIndex: 0,
+    action: buildDimmerRuleAction({ kind: "on", target: { kind: "light", id: "2" } }),
+    characterization,
+  });
+
+  expect(result.kind).toBe("success");
+  expect(mutate).toHaveBeenCalledWith("rule", "10", "update", {
+    actions: [{ address: "/lights/2/state", method: "PUT", body: { on: true } }],
+  });
+});
+
+test("missing-target repair rejects an action-body change", async () => {
+  const missingTargetSnapshot: HueSnapshot = { ...snapshot, lights: { "2": snapshot.lights["2"] } };
+  const mutate = jest.fn(async () => undefined);
+  const service = new ApplicationService({ hue: { snapshot: async () => missingTargetSnapshot, mutate }, stateStore: new DeviceStateStore(), dimmerCatalog: catalog });
+  seedSnapshot(service, missingTargetSnapshot);
+
+  const result = await service.saveSimpleBinding({
+    ...simpleIdentity,
+    ruleId: "10",
+    conditionIndex: 0,
+    actionIndex: 0,
+    action: buildDimmerRuleAction({ kind: "off", target: { kind: "light", id: "2" } }),
+    characterization,
+  });
+
+  expect(result.kind).toBe("definite_failure");
+  expect(result.diagnostic?.message).toMatch(/replace only the target/i);
+  expect(mutate).not.toHaveBeenCalled();
+});

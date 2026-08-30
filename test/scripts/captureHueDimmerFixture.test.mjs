@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { sanitizeHueSnapshot, selectDimmerCapture } from "../../scripts/capture-hue-dimmer-fixture.mjs";
+import { anonymizeDimmerCapture, sanitizeHueSnapshot, selectDimmerCapture } from "../../scripts/capture-hue-dimmer-fixture.mjs";
 
 const snapshot = {
   lights: { "1": { name: "Lamp" }, "2": { name: "Linked lamp" }, "3": { name: "Scheduled lamp" }, "99": { name: "Unrelated" } },
@@ -50,4 +50,41 @@ test("traverses nested Resource Links and retains every exact linked helper/reso
   assert.deepEqual(Object.keys(selected.resourcelinks), ["30", "31"]);
   assert.equal(selected.sensors["6"].name, "Linked helper");
   assert.equal(selected.lights["2"].name, "Linked lamp");
+});
+
+test("retains Scene targets activated through a nonzero Group action", () => {
+  const withGroupScene = {
+    ...snapshot,
+    scenes: { "scene-a": { name: "Household scene", type: "GroupScene", group: "1" } },
+    rules: {
+      ...snapshot.rules,
+      "10": {
+        ...snapshot.rules["10"],
+        actions: [{ address: "/groups/1/action", method: "PUT", body: { scene: "scene-a" } }],
+      },
+    },
+  };
+  assert.equal(selectDimmerCapture(withGroupScene, "4").scenes["scene-a"].name, "Household scene");
+});
+
+test("minimizes and anonymizes household metadata without changing exact references", () => {
+  const source = {
+    ...snapshot,
+    sensors: {
+      ...snapshot.sensors,
+      "4": { ...snapshot.sensors["4"], name: "Private room switch", uniqueid: "00:11:22:33:44:55:66:77-02-fc00", lastannounced: "private" },
+    },
+    rules: {
+      ...snapshot.rules,
+      "10": { ...snapshot.rules["10"], name: "Private room rule", created: "private timestamp" },
+    },
+  };
+  const sanitized = sanitizeHueSnapshot(source, "4");
+  const anonymized = anonymizeDimmerCapture(sanitized);
+  assert.equal(anonymized.sensors["4"].name, "Fixture sensor 1");
+  assert.equal(anonymized.sensors["4"].uniqueid, "fixture-device-1");
+  assert.equal(anonymized.sensors["4"].lastannounced, undefined);
+  assert.equal(anonymized.rules["10"].name, "Fixture rule 1");
+  assert.equal(anonymized.rules["10"].created, undefined);
+  assert.equal(anonymized.rules["10"].conditions[0].address, "/api/<redacted>/sensors/4/state/buttonevent");
 });

@@ -39,16 +39,29 @@ export function ResourceCollectionScreen({ kind, title, navigation, canCreate, o
   const editorRoute = `${title.slice(0, -1)}Editor`;
   const favorites = runtime.configStore.getCommitted()?.favorites || [];
   const navigateAdvanced = () => navigation?.getParent?.()?.navigate("Advanced") || navigation?.navigate?.("Advanced");
-  const navigateEditor = (id: string): void => {
+  const recognizedDimmer = (id: string) => {
     if (kind === "sensor") {
       const snapshot = snapshotFromStateStore(runtime.service.stateStore);
       const model = buildEditorModel({ kind: "sensor", id }, snapshot, runtime.service.dimmerCatalog);
-      if (model.recognized) {
-        navigateFromCollection(navigation, "ConfigureDimmer", { sensorId: id, deviceKey: model.deviceKey });
-        return;
-      }
+      if (model.recognized) return model;
+    }
+    return undefined;
+  };
+  const navigateEditor = (id: string): void => {
+    const model = recognizedDimmer(id);
+    if (model) {
+      navigateFromCollection(navigation, "ConfigureDimmer", { sensorId: id, deviceKey: model.deviceKey });
+      return;
     }
     navigateFromCollection(navigation, editorRoute, { id });
+  };
+  const performPrimary = (id: string, ref: ResourceRef): void => {
+    const model = recognizedDimmer(id);
+    if (model) {
+      navigateFromCollection(navigation, "ConfigureDimmer", { sensorId: id, deviceKey: model.deviceKey });
+      return;
+    }
+    void runtime.service.performPrimary(ref);
   };
   const startSearch = async () => {
     if (!onSearch) return;
@@ -87,7 +100,7 @@ export function ResourceCollectionScreen({ kind, title, navigation, canCreate, o
               ref={ref}
               title={value?.name || `${title.slice(0, -1)} ${id}`}
               stored={stored}
-              onPress={() => void runtime.service.performPrimary(ref)}
+              onPress={() => performPrimary(id, ref)}
               favorite={favorites.some((favorite) => sameResourceRef(favorite, ref))}
               onFavorite={() => void (favorites.some((favorite) => sameResourceRef(favorite, ref)) ? runtime.service.removeFavorite(ref) : runtime.service.addFavorite(ref))}
               onEdit={stored?.state.status === "known" ? () => navigateEditor(id) : undefined}

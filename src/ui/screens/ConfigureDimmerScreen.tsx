@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { CommandResult, ResourceRef } from "../../app/types";
 import { definiteFailure } from "../../app/commandResults";
 import { diagnostic } from "../../app/diagnostics";
@@ -48,10 +48,16 @@ export function ConfigureDimmerScreen({ route, navigation }: { route?: any; navi
   const runtime = useAppRuntime();
   const [version, setVersion] = useState(0);
   const [message, setMessage] = useState<string>();
+  const [bindingMessages, setBindingMessages] = useState<Record<string, string>>({});
   const [drafts, setDrafts] = useState<Record<string, ActionDraft>>({});
+  const [targetFilters, setTargetFilters] = useState<Record<string, string>>({});
   const [structuralValues, setStructuralValues] = useState<Record<string, Record<string, unknown>>>({});
   const [structuralPreview, setStructuralPreview] = useState<{ readonly edit: StructuralDimmerEdit; readonly changeSet: DimmerChangeSet }>();
   const structuralCommitInFlight = useRef(false);
+  const draftSensorId = useRef<string | undefined>(undefined);
+  const dirtyDraftIds = useRef(new Set<string>());
+  const structuralDraftSensorId = useRef<string | undefined>(undefined);
+  const dirtyStructuralDraftIds = useRef(new Set<string>());
   const params = route?.params || {};
   // The ApplicationService owns the one catalog used for both projection and
   // mutation revalidation. It is deliberately not passed through navigation.
@@ -64,25 +70,30 @@ export function ConfigureDimmerScreen({ route, navigation }: { route?: any; navi
   const fullBindings = model.advanced.bindings;
 
   useEffect(() => {
-    const subscribe = runtime.service.stateStore?.subscribe;
-    if (typeof subscribe !== "function") return undefined;
-    return subscribe(() => setVersion((value) => value + 1));
+    if (typeof runtime.service.stateStore?.subscribe !== "function") return undefined;
+    return runtime.service.stateStore.subscribe(() => setVersion((value) => value + 1));
   }, [runtime]);
 
   useEffect(() => {
+    const sameSensor = draftSensorId.current === sensorId;
+    if (!sameSensor) dirtyDraftIds.current.clear();
+    draftSensorId.current = sensorId;
     const initial: Record<string, ActionDraft> = {};
     fullBindings.forEach((binding) => {
-      if (!binding.editable || binding.classification !== "editable_simple" || !binding.action || !binding.advanced.actionTarget) return;
-      initial[binding.id] = {
+      if (!binding.editable || !["editable_simple", "missing_target"].includes(binding.classification) || !binding.action || !binding.advanced.actionTarget) return;
+      initial[binding.id] = sameSensor && dirtyDraftIds.current.has(binding.id) && drafts[binding.id] ? drafts[binding.id] : {
         kind: binding.action.kind,
         targetKey: resourceKey(binding.advanced.actionTarget),
         fields: { ...binding.action.fields },
       };
     });
     setDrafts(initial);
-  }, [model.deviceKey, version]); // A refresh establishes a new authoritative draft.
+  }, [model.deviceKey, version]); // Refresh clean fields, but never erase edits in progress.
 
   useEffect(() => {
+    const sameSensor = structuralDraftSensorId.current === sensorId;
+    if (!sameSensor) dirtyStructuralDraftIds.current.clear();
+    structuralDraftSensorId.current = sensorId;
     const initial: Record<string, Record<string, unknown>> = {};
     fullBindings.forEach((binding) => {
       if (binding.classification !== "recognized_structural" || !binding.structuralFormId || !model.catalogId) return;
@@ -92,13 +103,16 @@ export function ConfigureDimmerScreen({ route, navigation }: { route?: any; navi
       if (form.editor?.kind === "scene_cycle" && values.sceneIds === undefined) {
         values.sceneIds = initialSceneIds(binding, form.editor.sceneCount, targetOptions);
       }
-      initial[binding.id] = { ...values };
+      initial[binding.id] = sameSensor && dirtyStructuralDraftIds.current.has(binding.id) && structuralValues[binding.id]
+        ? structuralValues[binding.id]
+        : { ...values };
     });
     setStructuralValues(initial);
     if (!structuralCommitInFlight.current) setStructuralPreview(undefined);
   }, [catalog, fullBindings, model, targetOptions, version]);
 
   const saveSimple = async (binding: DimmerBindingModel): Promise<void> => {
+    const setBindingMessage = (value: string): void => setBindingMessages((current) => ({ ...current, [binding.id]: value }));
     const full = fullBindings.find((candidate) => candidate.id === binding.id);
     const draft = drafts[binding.id];
     const ruleId = binding.advanced.ruleId;
@@ -106,18 +120,18 @@ export function ConfigureDimmerScreen({ route, navigation }: { route?: any; navi
     const targetOption = draft && targetOptions.find((option) => resourceKey(option.ref) === draft.targetKey);
     const target = targetOption?.ref;
     if (!full || !draft || !ruleId || actionIndex === undefined || !target) {
-      setMessage("This binding is no longer available for editing. Refresh the bridge and try again.");
+      setBindingMessage("This binding is no longer available for editing. Refresh the bridge and try again.");
       return;
     }
     try {
       if (!full.simpleForm) {
-        setMessage("This binding has no complete catalog characterization for simple editing.");
+        setBindingMessage("This binding has no complete catalog characterization for simple editing.");
         return;
       }
       const actionForm = full.simpleForm.actions.find((candidate) => candidate.kind === draft.kind && candidate.targetKinds.includes(target.kind as "light" | "group" | "scene"));
       const action = buildDimmerRuleAction({ kind: draft.kind, target, targetDetails: targetOption?.scene, fields: draft.fields, form: full.simpleForm });
       if (!actionForm) {
-        setMessage("The selected action/target combination is not characterized for this gesture.");
+        setBindingMessage("The selected action/target combination is not characterized for this gesture.");
         return;
       }
       const edit: SimpleDimmerBindingEdit = {
@@ -137,17 +151,21 @@ export function ConfigureDimmerScreen({ route, navigation }: { route?: any; navi
         saveSimpleBinding?: (value: SimpleDimmerBindingEdit) => Promise<CommandResult>;
       }).saveSimpleBinding;
       if (!saveMethod) {
-        setMessage("Simple dimmer editing is unavailable; refresh the bridge and try again.");
+        setBindingMessage("Simple dimmer editing is unavailable; refresh the bridge and try again.");
         return;
       }
       const result = await saveMethod.call(runtime.service, edit);
-      setMessage(result.kind === "success" ? "Binding saved and refreshed." : result.diagnostic?.message || "Binding was not saved.");
+      if (result.kind === "success") dirtyDraftIds.current.delete(binding.id);
+      setBindingMessage(result.kind === "success"
+        ? binding.classification === "missing_target" ? "Target repaired and refreshed." : "Binding saved and refreshed."
+        : diagnosticMessage(result) || "Binding was not saved.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Binding was not saved.");
+      setBindingMessage(error instanceof Error ? error.message : "Binding was not saved.");
     }
   };
 
   const updateDraft = (bindingId: string, update: Partial<ActionDraft>, replaceFields = false): void => {
+    dirtyDraftIds.current.add(bindingId);
     setDrafts((current) => {
       const existing = current[bindingId];
       const fields = Object.prototype.hasOwnProperty.call(update, "fields")
@@ -159,16 +177,24 @@ export function ConfigureDimmerScreen({ route, navigation }: { route?: any; navi
   };
 
   const renderEditable = (binding: DimmerBindingView): JSX.Element | null => {
-    if (!binding.editable || binding.classification !== "editable_simple") return null;
+    if (!binding.editable || !["editable_simple", "missing_target"].includes(binding.classification)) return null;
     const full = fullBindings.find((candidate) => candidate.id === binding.id);
     const draft = drafts[binding.id];
     if (!full || !draft) return null;
     const simpleForm = full.simpleForm;
     if (!simpleForm) return <ReadOnlyField label="Simple action" value="This binding has no complete catalog characterization." />;
-    const permittedTargetOptions = targetOptions.filter((option) => simpleForm.actions.some((candidate) => candidate.targetKinds.includes(option.ref.kind as "light" | "group" | "scene")));
+    const repairingMissingTarget = binding.classification === "missing_target";
+    const permittedTargetOptions = targetOptions.filter((option) => simpleForm.actions.some((candidate) => candidate.targetKinds.includes(option.ref.kind as "light" | "group" | "scene")
+      && (!repairingMissingTarget || candidate.kind === draft.kind)));
     const selectedTarget = permittedTargetOptions.find((option) => resourceKey(option.ref) === draft.targetKey);
     const targetLabels = uniqueOptionLabels(permittedTargetOptions);
-    const selectedTargetLabel = targetLabels.find((option) => option.key === draft.targetKey)?.label || selectedTarget?.label || "Choose a target";
+    const selectedTargetLabel = targetLabels.find((option) => option.key === draft.targetKey)?.label || selectedTarget?.label || (repairingMissingTarget ? "Choose replacement target" : "Choose a target");
+    const targetFilter = targetFilters[binding.id] || "";
+    const visibleTargets = repairingMissingTarget
+      ? targetLabels
+      : targetFilter.trim()
+        ? targetLabels.filter((option) => option.label.toLocaleLowerCase().includes(targetFilter.trim().toLocaleLowerCase())).slice(0, 20)
+        : targetLabels.filter((option) => option.key === draft.targetKey);
     const actionOptions = simpleForm.actions
       .filter((candidate) => !selectedTarget || candidate.targetKinds.includes(selectedTarget.ref.kind as "light" | "group" | "scene"))
       .map((candidate) => ({ value: candidate.kind, label: actionLabel(candidate.kind), form: candidate }));
@@ -176,38 +202,63 @@ export function ConfigureDimmerScreen({ route, navigation }: { route?: any; navi
     const selectedAction = actionOptions.find((option) => option.value === draft.kind) || actionOptions[0];
     const selectedActionLabel = selectedAction.label;
     return <View style={styles.editPanel} testID={`dimmer-edit-${binding.id}`}>
+      {repairingMissingTarget
+        ? <><Text style={styles.repairHint}>The original target was deleted. Select a replacement; this repair preserves the action and every companion Rule action.</Text><ReadOnlyField label="Action to preserve" value={selectedActionLabel} /></>
+        : <EditorChoice
+          label="Action"
+          onChange={(next) => {
+            const option = actionOptions.find((candidate) => candidate.label === next);
+            const kind = option?.value || draft.kind;
+            updateDraft(binding.id, { kind, fields: fieldsForAction(kind, selectedTarget?.ref, snapshot, option?.form) }, true);
+          }}
+          options={actionOptions.map((option) => option.label)}
+          testID={`dimmer-action-${binding.id}`}
+          value={selectedActionLabel}
+        />}
       <EditorChoice
-        label="Action"
-        onChange={(next) => {
-          const option = actionOptions.find((candidate) => candidate.label === next);
-          const kind = option?.value || draft.kind;
-          updateDraft(binding.id, { kind, fields: fieldsForAction(kind, selectedTarget?.ref, snapshot, option?.form) }, true);
-        }}
-        options={actionOptions.map((option) => option.label)}
-        testID={`dimmer-action-${binding.id}`}
-        value={selectedActionLabel}
-      />
-      <EditorChoice
-        label="Target"
+        label={repairingMissingTarget ? "Replacement target" : "Target"}
         onChange={(next) => {
           const target = targetLabels.find((option) => option.label === next);
           if (!target) return;
           const targetRef = targetOptions.find((option) => resourceKey(option.ref) === target.key)?.ref;
           if (!targetRef) return;
-          const option = simpleForm.actions.find((candidate) => candidate.kind === draft.kind && candidate.targetKinds.includes(targetRef.kind as "light" | "group" | "scene"))
-            || simpleForm.actions.find((candidate) => candidate.targetKinds.includes(targetRef.kind as "light" | "group" | "scene"));
+          const sameActionOption = simpleForm.actions.find((candidate) => candidate.kind === draft.kind && candidate.targetKinds.includes(targetRef.kind as "light" | "group" | "scene"));
+          const option = sameActionOption || (!repairingMissingTarget
+            ? simpleForm.actions.find((candidate) => candidate.targetKinds.includes(targetRef.kind as "light" | "group" | "scene"))
+            : undefined);
           if (!option) return;
-          updateDraft(binding.id, { targetKey: target.key, kind: option.kind, fields: fieldsForAction(option.kind, targetRef, snapshot, option) }, true);
+          updateDraft(binding.id, repairingMissingTarget
+            ? { targetKey: target.key }
+            : { targetKey: target.key, kind: option.kind, fields: fieldsForAction(option.kind, targetRef, snapshot, option) }, !repairingMissingTarget);
+          setTargetFilters((current) => ({ ...current, [binding.id]: "" }));
         }}
-        options={targetLabels.map((option) => option.label)}
+        options={visibleTargets.map((option) => option.label)}
         testID={`dimmer-target-${binding.id}`}
         value={selectedTargetLabel}
       />
-      {(draft.kind === "set" || draft.kind === "brighten" || draft.kind === "dim")
+      {!repairingMissingTarget && <TextInput
+        accessibilityLabel="Filter targets"
+        onChangeText={(value) => setTargetFilters((current) => ({ ...current, [binding.id]: value }))}
+        placeholder="Filter lights, groups, or scenes"
+        placeholderTextColor="#93a1a1"
+        style={styles.targetFilter}
+        testID={`dimmer-target-filter-${binding.id}`}
+        value={targetFilter}
+      />}
+      {!repairingMissingTarget && targetFilter.trim() && visibleTargets.length === 0 && <Text style={styles.hint}>No matching characterized target.</Text>}
+      {!repairingMissingTarget && (draft.kind === "set" || draft.kind === "brighten" || draft.kind === "dim")
         && selectedTarget
         && (selectedTarget.ref.kind === "light" || selectedTarget.ref.kind === "group")
         && renderActionFields(binding.id, selectedTarget.ref.kind, draft.fields, selectedAction.form.fields, (key, value) => updateDraft(binding.id, { fields: { [key]: value } }))}
-      <Pressable accessibilityRole="button" onPress={() => void saveSimple(full)} style={styles.save} testID={`dimmer-save-${binding.id}`}><Text style={styles.saveText}>Save</Text></Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ disabled: repairingMissingTarget && !selectedTarget }}
+        disabled={repairingMissingTarget && !selectedTarget}
+        onPress={() => void saveSimple(full)}
+        style={[styles.save, repairingMissingTarget && !selectedTarget && styles.saveDisabled]}
+        testID={`dimmer-save-${binding.id}`}
+      ><Text style={styles.saveText}>{repairingMissingTarget ? "Repair target" : "Save"}</Text></Pressable>
+      {bindingMessages[binding.id] && <Text accessibilityRole="alert" style={styles.message} testID={`dimmer-message-${binding.id}`}>{bindingMessages[binding.id]}</Text>}
     </View>;
   };
 
@@ -223,6 +274,7 @@ export function ConfigureDimmerScreen({ route, navigation }: { route?: any; navi
     const values = structuralValues[binding.id] || {};
     return <View style={styles.editPanel} testID={`dimmer-structural-editor-${binding.id}`}>
       {renderStructuralEditor(binding.id, form.editor, values, targetOptions, (key, value) => {
+        dirtyStructuralDraftIds.current.add(binding.id);
         setStructuralValues((current) => ({
           ...current,
           [binding.id]: { ...(current[binding.id] || {}), [key]: value },
@@ -300,6 +352,7 @@ export function ConfigureDimmerScreen({ route, navigation }: { route?: any; navi
         structuralCommitInFlight.current = true;
         try {
           const result = await service.commitStructuralEdit(structuralEdit.edit);
+          if (result.kind === "success" && structuralEdit.edit.bindingId) dirtyStructuralDraftIds.current.delete(structuralEdit.edit.bindingId);
           setMessage(result.kind === "success" ? "Structural change applied and refreshed." : result.diagnostic?.message || "Structural change stopped; state was refreshed.");
           return result;
         } finally {
@@ -404,6 +457,11 @@ function uniqueOptionLabels(options: readonly { readonly ref: ResourceRef; reado
 
 function resourceKey(ref: ResourceRef): string { return `${ref.kind}:${ref.id || ""}`; }
 function capitalize(value: string): string { return value.charAt(0).toUpperCase() + value.slice(1); }
+function diagnosticMessage(result: CommandResult): string | undefined {
+  const message = result.diagnostic?.message;
+  const detail = result.diagnostic?.detail;
+  return message && detail && detail !== message ? `${message} ${detail}` : message || detail;
+}
 function actionLabel(kind: DimmerActionKind): string {
   switch (kind) {
     case "on": return "Turn on";
@@ -411,6 +469,7 @@ function actionLabel(kind: DimmerActionKind): string {
     case "set": return "Set light/group values";
     case "brighten": return "Brighten while held";
     case "dim": return "Dim while held";
+    case "stop": return "Stop brightness change";
     case "activate": return "Activate Scene";
     case "cycle": return "Cycle scenes";
   }
@@ -449,6 +508,7 @@ function fieldsForAction(
   if (kind === "on") return allowedFields.includes("on") ? { on: true } : {};
   if (kind === "off") return allowedFields.includes("on") ? { on: false } : {};
   if (kind === "brighten" || kind === "dim") return allowedFields.includes("bri_inc") ? { bri_inc: 25 } : {};
+  if (kind === "stop") return allowedFields.includes("bri_inc") ? { bri_inc: 0 } : {};
   if (kind === "set") return seedSetFields(target, snapshot, allowedFields);
   return {};
 }
@@ -495,7 +555,10 @@ const styles = StyleSheet.create({
   controlTitle: { color: "#fdf6e3", fontSize: 16, fontWeight: "700", marginBottom: 6 },
   editPanel: { backgroundColor: "#073642", borderColor: "#586e75", borderRadius: 8, borderWidth: 1, marginBottom: 12, padding: 10 },
   save: { alignSelf: "flex-start", backgroundColor: "#268bd2", borderRadius: 8, marginTop: 4, padding: 10 },
+  saveDisabled: { opacity: 0.45 },
   saveText: { color: "#fff", fontWeight: "700" },
+  targetFilter: { backgroundColor: "#073642", borderColor: "#586e75", borderRadius: 8, borderWidth: 1, color: "#fdf6e3", marginBottom: 10, padding: 11 },
+  repairHint: { color: "#b58900", marginBottom: 10 },
   hint: { color: "#93a1a1", marginBottom: 8 },
   message: { color: "#b58900", marginTop: 10 },
   advancedBinding: { borderTopColor: "#586e75", borderTopWidth: StyleSheet.hairlineWidth, marginTop: 8, paddingTop: 8 },

@@ -71,8 +71,8 @@ Status meanings:
 | `HUE-018` | BLOCKED — TARGET | bridge identity mismatch target run unavailable |
 | `HUE-019` | BLOCKED — TARGET | same-bridge reauthorization target run unavailable |
 | `HUE-020` | PASS — LOCAL; TARGET PENDING | changed-field/catalog tests; live request inspection unavailable |
-| `HUE-021` | BLOCKED — TARGET | Local exact projection/UI/capture prerequisites pass; actual household capture/catalog/event observation is absent |
-| `HUE-022` | BLOCKED — TARGET | Local catalog-constrained action/field forms, independent simple-save identity revalidation, simple/structural Rule-shape recognition, auxiliary Rule preservation, genuinely multi-resource two-Rule Scene-cycle updates with alphanumeric Scene IDs, per-operation reporting, and refresh behavior pass; deployed forms/live edit/restore are absent |
+| `HUE-021` | PASS — LIVE | Sanitized RWL020/ZGPSWITCH household fixtures, physical event observations, exact production mappings, device-oriented UI, and fail-closed projection tests pass |
+| `HUE-022` | PASS — LOCAL + LIVE | Catalog-constrained simple/structural paths pass locally; Rule 27 was edited through Configure Dimmer, physically verified, restored through the app, and independently recaptured; Rule 26 additionally preserved its helper action during a physical behavior check |
 | `TPL-001` | BLOCKED — TARGET | deployed HS100/HS103/HS110 run unavailable |
 | `TPL-002` | BLOCKED — TARGET | two-device endpoint/update run unavailable |
 | `TPL-003` | PASS — LOCAL | endpoint validation tests |
@@ -166,8 +166,8 @@ Status meanings:
 | `AC-HUE-018` | BLOCKED — TARGET | bridge mismatch target unavailable |
 | `AC-HUE-019` | BLOCKED — TARGET | reauthorization target unavailable |
 | `AC-HUE-020` | PASS — LOCAL; TARGET PENDING | changed-field tests; live request inspection unavailable |
-| `AC-HUE-021` | BLOCKED — TARGET | synthetic projector/UI tests pass; actual household fixture and event observation absent |
-| `AC-HUE-022` | BLOCKED — TARGET | local catalog-constrained forms, independent save revalidation, Rule-shape recognition/preservation, multi-resource two-Rule Scene-cycle updates with alphanumeric IDs, report/refresh/scope tests pass; live edit/restore and deployed forms are absent |
+| `AC-HUE-021` | PASS — LIVE | sanitized household fixtures, physical event observations, exact production mappings, normal/Advanced projection, and malformed/custom negative tests pass |
+| `AC-HUE-022` | PASS — LOCAL + LIVE | local action/structural/failure/reporting coverage passes; live Rule 27 edit, authoritative recapture, physical verification, and through-app restore pass, with Rule 26 auxiliary-action preservation also verified |
 | `AC-TPL-001` | BLOCKED — TARGET | deployed plug run unavailable |
 | `AC-TPL-002` | BLOCKED — TARGET | endpoint persistence target run unavailable |
 | `AC-TPL-003` | PASS — LOCAL | endpoint validation tests |
@@ -223,4 +223,4 @@ Status meanings:
 
 1. Run `node scripts/capture-hue-dimmer-fixture.mjs --input <local-read-only-snapshot> --sensor <id> --output test/fixtures/characterization/hue.household-dimmer.json` (or use configured local bridge inputs) without logging credentials.
 2. Derive the minimal production catalog entry only from the sanitized fixture; add its fixture-backed projector test and run the secret scan.
-3. Perform live simple-edit/physical-button/restore, structural synthetic, two-phone portrait, WAN-disabled, and release checks, then update this file and Phase 08 evidence with concrete results.
+3. Perform the remaining two-phone portrait/independent-credential, WAN-disabled, and release checks, then update this file and Phase 08 evidence with concrete results.

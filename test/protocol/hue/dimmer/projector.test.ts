@@ -87,8 +87,58 @@ test("does not recognize an unsupported model or infer a target by matching name
     { kind: "light", id: "1" },
   ]));
 
-  const noTarget = buildEditorModel({ kind: "sensor", id: "4" }, { ...fixture, lights: {}, groups: {}, scenes: {} }, catalog);
-  expect(noTarget.rows.some((row) => row.classification === "missing_target" && !row.editable)).toBe(true);
+  const noTargetSnapshot = { ...fixture, lights: {}, groups: {}, scenes: {} };
+  const noTarget = buildEditorModel({ kind: "sensor", id: "4" }, noTargetSnapshot, catalog);
+  expect(noTarget.rows.some((row) => row.classification === "missing_target" && row.editable)).toBe(true);
+
+  const customMissingTarget = buildEditorModel({ kind: "sensor", id: "4" }, {
+    ...noTargetSnapshot,
+    rules: {
+      ...noTargetSnapshot.rules,
+      "10": {
+        ...(noTargetSnapshot.rules["10"] as Record<string, unknown>),
+        actions: [
+          { address: "/lights/1/state", method: "PUT", body: { on: true } },
+          { address: "/sensors/5/state", method: "PUT", body: { status: 0 } },
+        ],
+      },
+    },
+  }, catalog);
+  expect(customMissingTarget.advanced.bindings.find((binding) => binding.advanced.ruleId === "10")).toMatchObject({
+    classification: "missing_target",
+    editable: false,
+  });
+
+  const twoActionForm = {
+    actionIndex: 0,
+    actions: simpleActions,
+    matchesRule: ({ rule, conditionIndex }: DimmerBindingRecognitionInput) => rule.conditions.length === 1
+      && rule.actions.length === 2
+      && conditionIndex === 0,
+  };
+  const twoActionCatalog = {
+    models: [{
+      ...catalog.models[0],
+      controls: [{ id: "one", label: "Top button", gestures: [{ id: "press", event: 1000, label: "Pressed", simpleForm: twoActionForm }] }],
+    }],
+  };
+  const multipleMissingTargets = buildEditorModel({ kind: "sensor", id: "4" }, {
+    ...noTargetSnapshot,
+    rules: {
+      "10": {
+        ...(noTargetSnapshot.rules["10"] as Record<string, unknown>),
+        actions: [
+          { address: "/lights/1/state", method: "PUT", body: { on: true } },
+          { address: "/groups/2/action", method: "PUT", body: { on: false } },
+        ],
+      },
+    },
+  }, twoActionCatalog);
+  expect(multipleMissingTargets.advanced.bindings.find((binding) => binding.advanced.ruleId === "10")).toMatchObject({
+    classification: "missing_target",
+    editable: false,
+    reason: expect.stringMatching(/more than one/i),
+  });
 });
 
 test("follows Resource-Link relationships to linked Rules, Schedules, and helper Sensors", () => {

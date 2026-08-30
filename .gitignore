@@ -39,3 +39,8 @@ logs/**
 *.tgz
 
 notes.md
+
+# Local Hue characterization inputs and full snapshots
+.local/
+hue_bridge_ip
+hue_bridge_token

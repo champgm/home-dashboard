@@ -47,4 +47,17 @@ describe("Sensor dimmer routing", () => {
     view.getAllByLabelText("Edit")[0].parent?.parent?.props.onPress?.();
     await waitFor(() => expect(navigate).toHaveBeenCalledWith("SensorEditor", { id: "9" }));
   });
+
+  test("a recognized dimmer primary tap opens Configure Dimmer without toggling Sensor config", async () => {
+    const navigate = jest.fn();
+    const view = render(<ResourceCollectionScreen kind="sensor" title="Sensors" navigation={{ navigate }} />);
+    view.getByLabelText("Wall switch").parent?.parent?.props.onPress?.();
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith("ConfigureDimmer", expect.objectContaining({ sensorId: "4", deviceKey: "recognized:physical-a" })));
+    expect(mockRuntime.service.performPrimary).not.toHaveBeenCalled();
+
+    navigate.mockClear();
+    view.getByLabelText("Temperature").parent?.parent?.props.onPress?.();
+    await waitFor(() => expect(mockRuntime.service.performPrimary).toHaveBeenCalledWith({ kind: "sensor", id: "9" }));
+    expect(navigate).not.toHaveBeenCalled();
+  });
 });

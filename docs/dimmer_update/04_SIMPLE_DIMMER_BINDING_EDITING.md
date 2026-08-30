@@ -38,6 +38,7 @@ This is the highest-frequency user operation and must stay separate from rare mu
 
 - Implement the SAD `saveSimpleBinding(edit)` behavior using the existing Rule changed-field, action-policy, mutation-classification, and authoritative-refresh path.
 - Add structured Configure Dimmer controls for action type and target selection from current Light/Group/Scene resources; expose brightness/color fields only when the recognized binding/catalog form permits them.
+- For an otherwise characterized simple binding with one missing action target, offer an explicit replacement-target repair that locks the existing action semantics and preserves all conditions and companion actions.
 - Update only the one recognized binding/Rule represented by the edited row. Preserve unrelated conditions/actions/fields by changed-field semantics.
 - Retain creator provenance as Advanced information only; do not ask for takeover confirmation solely because another Hue API user created the Rule.
 - Surface existing command diagnostics on definite/ambiguous failure without claiming success.
