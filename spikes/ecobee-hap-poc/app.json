@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Ecobee HAP POC",
+    "slug": "ecobee-hap-poc",
+    "version": "0.1.2",
+    "sdkVersion": "57.0.0",
+    "platforms": [
+      "android"
+    ],
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "android": {
+      "package": "com.zhna123.ecobeehappoc",
+      "versionCode": 3,
+      "allowBackup": false,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.ACCESS_WIFI_STATE"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": false
+        }
+      ]
+    ]
+  }
+}

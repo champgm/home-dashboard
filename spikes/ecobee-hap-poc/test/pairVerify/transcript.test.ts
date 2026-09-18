@@ -1,0 +1,64 @@
+import { Buffer } from 'buffer';
+import { SRP, SrpServer } from 'fast-srp-hap';
+import { SodiumCryptoProvider } from '../../src/hap/crypto/sodiumProvider';
+import { PairingProtocol, PairingTlv, concat } from '../../src/hap/core/pairSetup/pairingProtocol';
+import { encodeTlv, TlvDocument } from '../../src/hap/core/wire/tlv8';
+import { fromBase64 } from '../../src/hap/credentials/record';
+
+const text = (value: string): Uint8Array => new TextEncoder().encode(value);
+const nonce = (value: string): Uint8Array => concat(new Uint8Array(4), text(value));
+
+describe('retained IP-HAP Pair Setup and Pair Verify transcript', () => {
+  it('completes a deterministic local accessory exchange without logging transcript bytes', async () => {
+    const crypto = new SodiumCryptoProvider();
+    const pin = '246-80-135';
+    const server = new SrpServer(SRP.params.hap, Buffer.alloc(16, 9), Buffer.from('Pair-Setup'), Buffer.from(pin), Buffer.alloc(32, 7));
+    const setup = new PairingProtocol(crypto, () => 123);
+    const m1 = await setup.buildPairSetupM1();
+    const m2 = encodeTlv([{ type: PairingTlv.state, value: new Uint8Array([2]) }, { type: PairingTlv.salt, value: new Uint8Array(16).fill(9) }, { type: PairingTlv.publicKey, value: new Uint8Array(server.computeB()) }]);
+    const m3 = await setup.buildPairSetupM3(setup.parsePairSetupM2(m2), pin);
+    const m3Doc = TlvDocument.parse(m3);
+    server.setA(Buffer.from(m3Doc.get(PairingTlv.publicKey)!));
+    server.checkM1(Buffer.from(m3Doc.get(PairingTlv.proof)!));
+    setup.parsePairSetupM4(encodeTlv([{ type: PairingTlv.state, value: new Uint8Array([4]) }, { type: PairingTlv.proof, value: new Uint8Array(server.computeM2()) }]));
+    const m5 = await setup.buildPairSetupM5();
+    const m5Doc = TlvDocument.parse(m5);
+    const setupKey = await crypto.hkdfSha512(text('Pair-Setup-Encrypt-Salt'), text('Pair-Setup-Encrypt-Info'), new Uint8Array(server.computeK()), 32);
+    const m5Inner = TlvDocument.parse(await crypto.aeadOpen(m5Doc.get(PairingTlv.encryptedData)!, new Uint8Array(), nonce('PS-Msg05'), setupKey));
+    const controllerId = m5Inner.get(PairingTlv.identifier)!;
+    const controllerPublicKey = m5Inner.get(PairingTlv.publicKey)!;
+    const controllerSignature = m5Inner.get(PairingTlv.signature)!;
+    const controllerSignKey = await crypto.hkdfSha512(text('Pair-Setup-Controller-Sign-Salt'), text('Pair-Setup-Controller-Sign-Info'), new Uint8Array(server.computeK()), 32);
+    expect(await crypto.ed25519Verify(controllerSignature, concat(controllerSignKey, controllerId, controllerPublicKey), controllerPublicKey)).toBe(true);
+    const accessory = await crypto.ed25519KeyPair(new Uint8Array(32).fill(8));
+    const accessoryId = text('accessory-identity');
+    const accessorySignKey = await crypto.hkdfSha512(text('Pair-Setup-Accessory-Sign-Salt'), text('Pair-Setup-Accessory-Sign-Info'), new Uint8Array(server.computeK()), 32);
+    const accessorySignature = await crypto.ed25519Sign(concat(accessorySignKey, accessoryId, accessory.publicKey), accessory.privateKey);
+    const m6Inner = encodeTlv([{ type: PairingTlv.identifier, value: accessoryId }, { type: PairingTlv.publicKey, value: accessory.publicKey }, { type: PairingTlv.signature, value: accessorySignature }]);
+    const m6Key = await crypto.hkdfSha512(text('Pair-Setup-Encrypt-Salt'), text('Pair-Setup-Encrypt-Info'), new Uint8Array(server.computeK()), 32);
+    const m6 = encodeTlv([{ type: PairingTlv.state, value: new Uint8Array([6]) }, { type: PairingTlv.encryptedData, value: await crypto.aeadSeal(m6Inner, new Uint8Array(), nonce('PS-Msg06'), m6Key) }]);
+    await setup.parsePairSetupM6(m6);
+    const record = setup.getPairingRecord();
+
+    const verify = new PairingProtocol(crypto);
+    verify.loadStoredPairing(record);
+    const verifyM1 = await verify.buildPairVerifyM1();
+    const verifyClientPublic = TlvDocument.parse(verifyM1).get(PairingTlv.publicKey)!;
+    const accessoryEphemeral = await crypto.x25519KeyPair(new Uint8Array(32).fill(6));
+    const verifyShared = await crypto.x25519(accessoryEphemeral.privateKey, verifyClientPublic);
+    const verifyKey = await crypto.hkdfSha512(text('Pair-Verify-Encrypt-Salt'), text('Pair-Verify-Encrypt-Info'), verifyShared, 32);
+    const verifyAccessorySignature = await crypto.ed25519Sign(concat(accessoryEphemeral.publicKey, accessoryId, verifyClientPublic), accessory.privateKey);
+    const verifyM2Inner = encodeTlv([{ type: PairingTlv.identifier, value: accessoryId }, { type: PairingTlv.signature, value: verifyAccessorySignature }]);
+    const verifyM2 = encodeTlv([{ type: PairingTlv.state, value: new Uint8Array([2]) }, { type: PairingTlv.publicKey, value: accessoryEphemeral.publicKey }, { type: PairingTlv.encryptedData, value: await crypto.aeadSeal(verifyM2Inner, new Uint8Array(), nonce('PV-Msg02'), verifyKey) }]);
+    await verify.parsePairVerifyM2(verifyM2);
+    const verifyM3 = await verify.buildPairVerifyM3();
+    const verifyM3Inner = TlvDocument.parse(await crypto.aeadOpen(TlvDocument.parse(verifyM3).get(PairingTlv.encryptedData)!, new Uint8Array(), nonce('PV-Msg03'), verifyKey));
+    const controllerPrivateKey = fromBase64(record.controllerLongTermPrivateKey);
+    const controllerVerify = await crypto.ed25519KeyPair(controllerPrivateKey.subarray(0, 32));
+    expect(await crypto.ed25519Verify(verifyM3Inner.get(PairingTlv.signature)!, concat(verifyClientPublic, controllerId, accessoryEphemeral.publicKey), controllerVerify.publicKey)).toBe(true);
+    verify.parsePairVerifyM4(encodeTlv([{ type: PairingTlv.state, value: new Uint8Array([4]) }]));
+    const clientKeys = await verify.getSessionKeys();
+    expect(clientKeys.controllerToAccessoryKey).toHaveLength(32);
+    expect(m1).toBeInstanceOf(Uint8Array);
+  });
+});
