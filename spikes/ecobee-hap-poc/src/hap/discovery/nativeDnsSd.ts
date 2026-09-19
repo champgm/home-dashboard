@@ -16,6 +16,8 @@ export class NativeDnsSdAdapter implements DnsSdAdapter {
       events.lost(toRaw(service));
     });
     await ServiceDiscovery.startSearch('hap');
+    const diagnosticBridge = diagnosticBridgeFromEnvironment();
+    if (diagnosticBridge) events.found(diagnosticBridge);
   }
 
   async stop(_serviceType: '_hap._tcp'): Promise<void> {
@@ -25,6 +27,30 @@ export class NativeDnsSdAdapter implements DnsSdAdapter {
     this.lostSubscription = undefined;
     await ServiceDiscovery.stopSearch('hap');
   }
+}
+
+/** Build-time diagnostic hook. Normal builds omit all three variables and expose no synthetic target. */
+const EMBEDDED_DIAGNOSTIC_ENVIRONMENT = {
+  EXPO_PUBLIC_HAP_BRIDGE_HOST: process.env.EXPO_PUBLIC_HAP_BRIDGE_HOST,
+  EXPO_PUBLIC_HAP_BRIDGE_PORT: process.env.EXPO_PUBLIC_HAP_BRIDGE_PORT,
+  EXPO_PUBLIC_HAP_BRIDGE_ID: process.env.EXPO_PUBLIC_HAP_BRIDGE_ID
+};
+
+export function diagnosticBridgeFromEnvironment(environment: Readonly<Record<string, string | undefined>> = EMBEDDED_DIAGNOSTIC_ENVIRONMENT): RawDnsSdService | undefined {
+  const host = environment.EXPO_PUBLIC_HAP_BRIDGE_HOST;
+  const portText = environment.EXPO_PUBLIC_HAP_BRIDGE_PORT;
+  const identity = environment.EXPO_PUBLIC_HAP_BRIDGE_ID;
+  const port = Number(portText);
+  if (!host || !identity || !Number.isInteger(port) || port < 1 || port > 65535) return undefined;
+  return {
+    name: 'Emulator diagnostic bridge',
+    type: '_hap._tcp',
+    domain: 'local',
+    hostName: 'emulator-diagnostic-bridge.local',
+    addresses: [host],
+    port,
+    txt: { 'c#': '1', ff: '0', id: identity, md: 'Diagnostic bridge', pv: '1.1', 's#': '1', sf: '1', ci: '9' }
+  };
 }
 
 function normalizeType(type: string): string {

@@ -15,14 +15,14 @@ export const HapCharacteristicType = {
   coolingThresholdTemperature: `00000013${HAP_BASE_UUID}`.toLowerCase()
 } as const;
 
-export type CharacteristicFormat = 'bool' | 'uint8' | 'uint16' | 'uint32' | 'int' | 'float' | 'string' | 'tlv8' | 'data';
+export type CharacteristicFormat = 'bool' | 'uint8' | 'uint16' | 'uint32' | 'uint64' | 'int' | 'float' | 'string' | 'tlv8' | 'data';
 
 export interface CharacteristicMetadata {
   readonly aid: number;
   readonly iid: number;
   readonly type: string;
   readonly format: CharacteristicFormat;
-  readonly perms: readonly ('pr' | 'pw' | 'ev' | 'aa' | 'tw' | 'hd')[];
+  readonly perms: readonly ('pr' | 'pw' | 'ev' | 'aa' | 'tw' | 'hd' | 'wr')[];
   readonly unit?: string;
   readonly minValue?: number;
   readonly maxValue?: number;

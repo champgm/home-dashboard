@@ -2,7 +2,7 @@
   "expo": {
     "name": "Ecobee HAP POC",
     "slug": "ecobee-hap-poc",
-    "version": "0.1.2",
+    "version": "0.1.8",
     "sdkVersion": "57.0.0",
     "platforms": [
       "android"
@@ -11,7 +11,7 @@
     "userInterfaceStyle": "dark",
     "android": {
       "package": "com.zhna123.ecobeehappoc",
-      "versionCode": 3,
+      "versionCode": 9,
       "allowBackup": false,
       "permissions": [
         "android.permission.INTERNET",

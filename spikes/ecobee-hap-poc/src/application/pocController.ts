@@ -21,7 +21,7 @@ import { TcpSessionTransportFactory, postTlv } from '../hap/transport/sessionFac
 import { HapHttpSession } from '../hap/transport/httpSession';
 import { SessionCoordinator } from '../hap/session/sessionCoordinator';
 import { LifecycleCoordinator } from './lifecycleCoordinator';
-import { ThermostatReadService } from './thermostatService';
+import { ThermostatRefreshError, ThermostatReadService } from './thermostatService';
 import { HapSetpointWriter, SetpointCommandService, type OccupiedSafeTemperatureRange } from './setpointCommand';
 import { PairingCleanupService, type AccessoryPairingAdministration, type CleanupApproval } from './pairingCleanup';
 import { TargetRunEvidenceStore, summaryFor } from './targetRunEvidence';
@@ -59,6 +59,7 @@ export class PocController implements PocUiActions {
   private readonly listeners = new Set<(state: PocUiState) => void>();
   private readonly candidateAliases = new Map<string, string>();
   private readonly candidatesByAlias = new Map<string, HapCandidate>();
+  private pairedAccessoryKey?: string;
   private selectedCandidate?: HapCandidate;
   private projection?: ThermostatProjection;
   private observation?: ObservationCoordinator;
@@ -76,8 +77,8 @@ export class PocController implements PocUiActions {
       const candidates = snapshot.candidates.map((candidate) => {
         const alias = this.aliasFor(candidate);
         this.candidatesByAlias.set(alias, candidate);
-        return { key: alias, label: alias, pairing: candidate.pairing };
-      });
+        return this.sanitizeCandidate(alias, candidate);
+      }).sort((left, right) => Number(right.pairedToThisApp) - Number(left.pairedToThisApp) || left.label.localeCompare(right.label));
       const selected = this.selectedCandidate
         ? candidates.find((candidate) => this.candidatesByAlias.get(candidate.key)?.key === this.selectedCandidate?.key)
         : undefined;
@@ -132,7 +133,7 @@ export class PocController implements PocUiActions {
       if (!recovered.ok) this.publishFailure(recovered.error, recovered.error.repairRequired ? 'repair-required' : 'offline');
       return;
     }
-    this.startDiscovery();
+    this.startDiscovery(true);
     if (this.selectedCandidate) await this.connectPaired(this.selectedCandidate);
   }
 
@@ -146,12 +147,26 @@ export class PocController implements PocUiActions {
     this.options.networkClose?.();
   }
 
-  startDiscovery(): void {
+  startDiscovery(preserveSelection = false): void {
     if (this.state.discovery === 'discovering') return;
-    this.publish({ discovery: 'discovering', errorMessage: undefined });
-    void this.options.discovery.start().catch(() => {
+    const resetSelection = !preserveSelection && this.state.connection !== 'ready';
+    if (resetSelection) this.selectedCandidate = undefined;
+    this.publish({
+      discovery: 'discovering',
+      ...(resetSelection ? { selected: undefined, capabilities: [], setpoint: undefined } : {}),
+      errorMessage: undefined
+    });
+    void this.startDiscoveryWithStoredIdentity().catch(() => {
       this.publish({ discovery: 'error', errorMessage: 'Discovery could not be started.' });
     });
+  }
+
+  private async startDiscoveryWithStoredIdentity(): Promise<void> {
+    const pairing = await this.options.credentials.loadPairing();
+    this.pairedAccessoryKey = pairing.ok && pairing.value
+      ? new TextDecoder().decode(fromBase64(pairing.value.accessoryId))
+      : undefined;
+    await this.options.discovery.start();
   }
 
   stopDiscovery(): void {
@@ -177,13 +192,29 @@ export class PocController implements PocUiActions {
       return;
     }
     this.selectedCandidate = candidate;
-    this.publish({ selected: { key, label: key, pairing: candidate.pairing }, connection: 'idle', capabilities: [], setpoint: undefined, errorMessage: undefined });
+    this.publish({ selected: this.sanitizeCandidate(key, candidate), connection: 'idle', capabilities: [], setpoint: undefined, errorMessage: undefined });
+  }
+
+  async connectCandidate(key: string): Promise<void> {
+    const candidate = this.candidatesByAlias.get(key);
+    if (!candidate) {
+      this.publish({ errorMessage: 'That thermostat is no longer available.' });
+      return;
+    }
+    if (candidate.key !== this.pairedAccessoryKey) {
+      this.publish({ errorMessage: 'This thermostat is not the one paired to this app.' });
+      return;
+    }
+    this.selectedCandidate = candidate;
+    this.publish({ selected: this.sanitizeCandidate(key, candidate), capabilities: [], setpoint: undefined, errorMessage: undefined });
+    await this.connectPaired(candidate);
   }
 
   async resolvePairedEndpoint(): Promise<NetworkEndpoint | undefined> {
     const pairing = await this.options.credentials.loadPairing();
     if (!pairing.ok || !pairing.value) return undefined;
     const accessoryKey = new TextDecoder().decode(fromBase64(pairing.value.accessoryId));
+    this.pairedAccessoryKey = accessoryKey;
     await this.options.discovery.start();
     const immediate = this.options.discovery.resolvePaired(accessoryKey);
     const candidate = immediate ?? await this.waitForPairedCandidate(accessoryKey);
@@ -191,7 +222,7 @@ export class PocController implements PocUiActions {
     this.selectedCandidate = candidate;
     const alias = this.aliasFor(candidate);
     this.candidatesByAlias.set(alias, candidate);
-    this.publish({ selected: { key: alias, label: alias, pairing: candidate.pairing } });
+    this.publish({ selected: this.sanitizeCandidate(alias, candidate) });
     return candidate.endpoint;
   }
 
@@ -227,6 +258,13 @@ export class PocController implements PocUiActions {
         this.publish({ connection: result.value.status === 'indeterminate' ? 'repair-required' : 'offline', errorMessage: `Pairing ${result.value.status.replace('-', ' ')}; no automatic retry was started.` });
         return;
       }
+      this.pairedAccessoryKey = candidate.key;
+      const alias = this.aliasFor(candidate);
+      const pairedCandidate = this.sanitizeCandidate(alias, candidate);
+      this.publish({
+        selected: pairedCandidate,
+        candidates: [pairedCandidate, ...this.state.candidates.filter((item) => item.key !== alias)]
+      });
       await this.connectPaired(candidate);
     } catch {
       this.publish({ connection: 'offline', errorMessage: 'Pairing failed; inspect the sanitized error category.' });
@@ -246,10 +284,12 @@ export class PocController implements PocUiActions {
       return;
     }
     const safeRange = DEFAULT_SAFE_RANGES[isFahrenheit(setpoint.unit) ? 'fahrenheit' : 'celsius'];
-    const currentMode = this.projection.capabilities.find((capability) => capability.key === 'currentHeatingCoolingState')?.value?.value;
+    // Select heat/cool threshold fallbacks from the configured target mode.
+    // CurrentHeatingCoolingState is often 0 (idle) even while a mode is configured.
+    const targetMode = this.projection.capabilities.find((capability) => capability.key === 'targetHeatingCoolingState')?.value?.value;
     let result;
     try {
-      result = await this.options.setpoints.execute(session, this.projection, value, safeRange, true, typeof currentMode === 'number' ? currentMode : undefined);
+      result = await this.options.setpoints.execute(session, this.projection, value, safeRange, true, typeof targetMode === 'number' ? targetMode : undefined);
     } catch {
       this.publish({ connection: 'offline', errorMessage: 'Setpoint operation failed before its result could be classified.' });
       return;
@@ -315,9 +355,10 @@ export class PocController implements PocUiActions {
       const session = this.options.sessions.currentSession;
       if (!session) throw new Error('session was not retained');
       await this.restoreObservation();
-    } catch {
+    } catch (error) {
       await this.options.sessions.close();
-      this.publish({ connection: 'offline', errorMessage: 'Thermostat refresh failed after verification.' });
+      const category = error instanceof ThermostatRefreshError ? error.category : 'refresh-unclassified';
+      this.publish({ connection: 'offline', errorMessage: `Thermostat refresh failed after verification (${category}). Pairing credentials were retained.` });
     }
   }
 
@@ -404,9 +445,20 @@ export class PocController implements PocUiActions {
   private aliasFor(candidate: HapCandidate): string {
     const existing = this.candidateAliases.get(candidate.key);
     if (existing) return existing;
-    const alias = candidate.displayName || `Thermostat ${this.candidateAliases.size + 1}`;
+    const usedAliases = new Set(this.candidateAliases.values());
+    let ordinal = this.candidateAliases.size + 1;
+    let alias = `Thermostat ${ordinal}`;
+    while (usedAliases.has(alias)) {
+      ordinal += 1;
+      alias = `Thermostat ${ordinal}`;
+    }
     this.candidateAliases.set(candidate.key, alias);
     return alias;
+  }
+
+  private sanitizeCandidate(alias: string, candidate: HapCandidate) {
+    const pairedToThisApp = candidate.key === this.pairedAccessoryKey;
+    return { key: alias, label: pairedToThisApp ? 'Paired thermostat' : alias, pairing: candidate.pairing, pairedToThisApp } as const;
   }
 
   private publish(patch: Partial<PocUiState>): void {
@@ -463,7 +515,7 @@ function safeCategory(category: string): string {
 }
 
 export function createPocController(): PocController {
-  const logger = new StructuredLogger();
+  const logger = new StructuredLogger((entry) => console.log('HAP_DIAGNOSTIC', JSON.stringify(entry)));
   const crypto: CryptoProvider = reactNativeCrypto;
   const clock = systemClock;
   const credentials = new CredentialStoreService(new ExpoSecureValueStore(), crypto, logger);

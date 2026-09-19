@@ -40,17 +40,26 @@ export class PairSetupService {
     confirmed: boolean,
     token?: CancellationToken
   ): Promise<Result<PairSetupResult, ReturnType<typeof failure>>> {
-    if (this.active) return err(failure('unavailable', 'pair-setup-already-active'));
-    if (!confirmed) return err(failure('invalid_input', 'pair-setup-confirmation-required'));
+    if (this.active) {
+      await closeQuietly(transport);
+      return err(failure('unavailable', 'pair-setup-already-active'));
+    }
+    if (!confirmed) {
+      await closeQuietly(transport);
+      return err(failure('invalid_input', 'pair-setup-confirmation-required'));
+    }
     if (preflight.existingAssociation === 'unknown') {
+      await closeQuietly(transport);
       return err(failure('unavailable', 'pairing-ownership-state-unknown', { repairRequired: true }));
     }
     if (preflight.existingAssociation === 'confirmed' && (!preflight.removalApproved || !preflight.restorationProcedureRecorded)) {
+      await closeQuietly(transport);
       return err(failure('unavailable', 'pairing-ownership-approval-required', { repairRequired: true }));
     }
     try {
       PairingProtocol.validateSetupCode(setupCode);
     } catch {
+      await closeQuietly(transport);
       return err(failure('invalid_input', 'setup-code-rejected'));
     }
     this.active = true;
@@ -89,4 +98,8 @@ export class PairSetupService {
       await transport.close();
     }
   }
+}
+
+async function closeQuietly(transport: PairSetupTransport): Promise<void> {
+  await transport.close().catch(() => undefined);
 }

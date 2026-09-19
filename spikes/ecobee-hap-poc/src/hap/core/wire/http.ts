@@ -40,13 +40,28 @@ export class IncrementalHttpParser {
         if (!/^[a-z0-9-]+$/.test(key)) throw new Error('invalid HTTP header name');
         headers[key] = value;
       });
-      const contentLengthText = headers['content-length'] ?? '0';
-      if (!/^\d+$/.test(contentLengthText)) throw new Error('invalid HTTP content length');
-      const contentLength = Number(contentLengthText);
-      if (!Number.isSafeInteger(contentLength) || contentLength > this.maxBody) throw new Error('HTTP body exceeds bound');
-      const messageEnd = headerEnd + 4 + contentLength;
-      if (this.buffer.length < messageEnd) break;
-      const body = new Uint8Array(this.buffer.subarray(headerEnd + 4, messageEnd));
+      const bodyStart = headerEnd + 4;
+      const transferEncoding = headers['transfer-encoding'];
+      const contentLengthText = headers['content-length'];
+      let body: Bytes;
+      let messageEnd: number;
+      if (transferEncoding !== undefined) {
+        if (contentLengthText !== undefined) throw new Error('ambiguous HTTP body framing');
+        const codings = transferEncoding.split(',').map((value) => value.trim().toLowerCase()).filter(Boolean);
+        if (codings.length !== 1 || codings[0] !== 'chunked') throw new Error('unsupported HTTP transfer encoding');
+        const chunked = parseChunkedBody(this.buffer.subarray(bodyStart), this.maxBody);
+        if (!chunked) break;
+        body = chunked.body;
+        messageEnd = bodyStart + chunked.consumed;
+      } else {
+        const lengthText = contentLengthText ?? '0';
+        if (!/^\d+$/.test(lengthText)) throw new Error('invalid HTTP content length');
+        const contentLength = Number(lengthText);
+        if (!Number.isSafeInteger(contentLength) || contentLength > this.maxBody) throw new Error('HTTP body exceeds bound');
+        messageEnd = bodyStart + contentLength;
+        if (this.buffer.length < messageEnd) break;
+        body = new Uint8Array(this.buffer.subarray(bodyStart, messageEnd));
+      }
       this.buffer = this.buffer.subarray(messageEnd);
       messages.push(parseStartLine(start, headers, body));
     }
@@ -56,6 +71,61 @@ export class IncrementalHttpParser {
   finish(): void {
     if (this.buffer.length !== 0) throw new Error('truncated HTTP message');
   }
+}
+
+function parseChunkedBody(input: Bytes, maxBody: number): { readonly body: Bytes; readonly consumed: number } | undefined {
+  const chunks: Bytes[] = [];
+  let decodedLength = 0;
+  let offset = 0;
+  while (true) {
+    const lineEnd = indexOfFrom(input, CRLF, offset);
+    if (lineEnd < 0) {
+      if (input.length - offset > MAX_HEADERS) throw new Error('HTTP chunk header exceeds bound');
+      return undefined;
+    }
+    const sizeLine = new TextDecoder().decode(input.subarray(offset, lineEnd));
+    const sizeToken = sizeLine.split(';', 1)[0].trim();
+    if (!/^[0-9a-fA-F]+$/.test(sizeToken)) throw new Error('invalid HTTP chunk size');
+    const size = Number.parseInt(sizeToken, 16);
+    if (!Number.isSafeInteger(size) || decodedLength + size > maxBody) throw new Error('HTTP body exceeds bound');
+    offset = lineEnd + CRLF.length;
+    if (size === 0) {
+      if (input.length < offset + CRLF.length) return undefined;
+      if (input[offset] === 13 && input[offset + 1] === 10) {
+        return { body: join(chunks, decodedLength), consumed: offset + CRLF.length };
+      }
+      const trailerEnd = indexOfFrom(input, HEADER_END, offset);
+      if (trailerEnd < 0) {
+        if (input.length - offset > MAX_HEADERS) throw new Error('HTTP trailers exceed bound');
+        return undefined;
+      }
+      validateTrailers(new TextDecoder().decode(input.subarray(offset, trailerEnd)));
+      return { body: join(chunks, decodedLength), consumed: trailerEnd + HEADER_END.length };
+    }
+    const chunkEnd = offset + size;
+    if (input.length < chunkEnd + CRLF.length) return undefined;
+    if (input[chunkEnd] !== 13 || input[chunkEnd + 1] !== 10) throw new Error('invalid HTTP chunk terminator');
+    chunks.push(new Uint8Array(input.subarray(offset, chunkEnd)));
+    decodedLength += size;
+    offset = chunkEnd + CRLF.length;
+  }
+}
+
+function validateTrailers(value: string): void {
+  value.split('\r\n').forEach((line) => {
+    const separator = line.indexOf(':');
+    if (separator <= 0 || !/^[a-z0-9-]+$/i.test(line.slice(0, separator).trim())) throw new Error('malformed HTTP trailer');
+  });
+}
+
+function join(parts: readonly Bytes[], length: number): Bytes {
+  const result = new Uint8Array(length);
+  let offset = 0;
+  parts.forEach((part) => {
+    result.set(part, offset);
+    offset += part.length;
+  });
+  return result;
 }
 
 export function serializeRequest(method: 'GET' | 'PUT' | 'POST', path: string, body: Bytes = new Uint8Array(), contentType = 'application/hap+json'): Bytes {
@@ -71,7 +141,13 @@ export function toResponse(message: HapHttpMessage): HapResponse {
 
 function parseStartLine(start: string, headers: Readonly<Record<string, string>>, body: Bytes): HapHttpMessage {
   const parts = start.split(' ');
-  if (parts[0] === 'EVENT/1.0' && parts.length === 1) return { version: '1.0', headers, body, event: true };
+  if (parts[0] === 'EVENT/1.0') {
+    const statusCode = Number(parts[1]);
+    if (parts.length < 3 || !Number.isInteger(statusCode) || statusCode < 100 || statusCode > 599) {
+      throw new Error('invalid HAP event status line');
+    }
+    return { version: '1.0', statusCode, headers, body, event: true };
+  }
   if (parts[0] === 'HTTP/1.1' || parts[0] === 'HTTP/1.0') {
     const statusCode = Number(parts[1]);
     if (!Number.isInteger(statusCode) || statusCode < 100 || statusCode > 599) throw new Error('invalid HTTP status');
@@ -92,9 +168,17 @@ function concat(first: Bytes, second: Bytes): Bytes {
 }
 
 function indexOf(haystack: Bytes, needle: Bytes): number {
+  return indexOfFrom(haystack, needle, 0);
+}
+
+function indexOfFrom(haystack: Bytes, needle: Bytes, start: number): number {
   outer: for (let index = 0; index <= haystack.length - needle.length; index += 1) {
+    if (index < start) continue;
     for (let offset = 0; offset < needle.length; offset += 1) if (haystack[index + offset] !== needle[offset]) continue outer;
     return index;
   }
   return -1;
 }
+
+const CRLF = new Uint8Array([13, 10]);
+const HEADER_END = new Uint8Array([13, 10, 13, 10]);

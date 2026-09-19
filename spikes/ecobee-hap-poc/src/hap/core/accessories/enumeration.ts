@@ -1,8 +1,8 @@
 import type { AccessoryDatabase, AccessoryService, CharacteristicMetadata, CharacteristicReadResponse } from './models';
 import { normalizeHapUuid } from './models';
 
-const FORMATS = new Set(['bool', 'uint8', 'uint16', 'uint32', 'int', 'float', 'string', 'tlv8', 'data']);
-const PERMISSIONS = new Set(['pr', 'pw', 'ev', 'aa', 'tw', 'hd']);
+const FORMATS = new Set(['bool', 'uint8', 'uint16', 'uint32', 'uint64', 'int', 'float', 'string', 'tlv8', 'data']);
+const PERMISSIONS = new Set(['pr', 'pw', 'ev', 'aa', 'tw', 'hd', 'wr']);
 
 export function parseAccessoryDatabase(input: unknown): AccessoryDatabase {
   if (!isRecord(input) || !Array.isArray(input.accessories)) throw new Error('accessory database is malformed');
@@ -11,7 +11,10 @@ export function parseAccessoryDatabase(input: unknown): AccessoryDatabase {
     if (!isRecord(rawAccessory) || !isPositiveInteger(rawAccessory.aid) || !Array.isArray(rawAccessory.services)) throw new Error('accessory entry is malformed');
     for (const rawService of rawAccessory.services) {
       if (!isRecord(rawService) || !isPositiveInteger(rawService.iid) || typeof rawService.type !== 'string' || !Array.isArray(rawService.characteristics)) throw new Error('service entry is malformed');
-      const characteristics = rawService.characteristics.map((rawCharacteristic) => parseCharacteristic(rawAccessory.aid as number, rawCharacteristic));
+      const characteristics = rawService.characteristics.flatMap((rawCharacteristic) => {
+        const parsed = parseCharacteristic(rawAccessory.aid as number, rawCharacteristic);
+        return parsed ? [parsed] : [];
+      });
       accessories.push({ aid: rawAccessory.aid, iid: rawService.iid, type: normalizeHapUuid(rawService.type), characteristics });
     }
   }
@@ -28,10 +31,10 @@ export function parseCharacteristicReadResponse(input: unknown): CharacteristicR
   return { characteristics };
 }
 
-function parseCharacteristic(aid: number, raw: unknown): CharacteristicMetadata {
-  if (!isRecord(raw) || !isPositiveInteger(raw.iid) || typeof raw.type !== 'string' || typeof raw.format !== 'string' || !FORMATS.has(raw.format) || !Array.isArray(raw.perms)) throw new Error('characteristic metadata is malformed');
+function parseCharacteristic(aid: number, raw: unknown): CharacteristicMetadata | undefined {
+  if (!isRecord(raw) || !isPositiveInteger(raw.iid) || typeof raw.type !== 'string' || typeof raw.format !== 'string' || !Array.isArray(raw.perms)) throw new Error('characteristic metadata is malformed');
+  if (!FORMATS.has(raw.format)) return undefined;
   const perms = raw.perms.filter((permission): permission is CharacteristicMetadata['perms'][number] => typeof permission === 'string' && PERMISSIONS.has(permission));
-  if (perms.length !== raw.perms.length) throw new Error('unknown characteristic permission');
   const numericFields = ['minValue', 'maxValue', 'minStep', 'maxLen'] as const;
   for (const field of numericFields) if (raw[field] !== undefined && typeof raw[field] !== 'number') throw new Error(`invalid characteristic ${field}`);
   return {

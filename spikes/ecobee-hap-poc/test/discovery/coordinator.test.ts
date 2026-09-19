@@ -90,4 +90,28 @@ describe('discovery generation and deduplication', () => {
     expect(started).toBe(false);
     expect(coordinator.snapshot().networkAvailable).toBe(false);
   });
+
+  it('retains resolved candidates when the bounded browse window completes', async () => {
+    let found: ((service: any) => void) | undefined;
+    let stops = 0;
+    const adapter = {
+      async start(_type: '_hap._tcp', callbacks: any) { found = callbacks.found; },
+      async stop() { stops += 1; }
+    };
+    const clock = new FakeClock();
+    const coordinator = new DiscoveryCoordinator(
+      adapter,
+      () => ({ available: true, activeInterfaceIds: ['wifi0'], ipv4Cidrs: ['192.168.50.0/24'] }),
+      clock,
+      undefined,
+      15_000
+    );
+    await coordinator.start();
+    found?.({ name: 'target', type: '_hap._tcp', domain: 'local.', hostName: 'target.local.', addresses: ['192.168.50.40'], port: 12345, txt: { 'c#': '1', 's#': '1', sf: '1', id: 'target-id', pv: '1.1', ci: '9' }, interfaceId: 'wifi0' });
+
+    await clock.advance(15_000);
+
+    expect(stops).toBe(1);
+    expect(coordinator.snapshot()).toMatchObject({ running: false, candidates: [{ key: 'target-id' }] });
+  });
 });

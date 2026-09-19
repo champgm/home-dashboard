@@ -51,7 +51,7 @@ export class DiscoveryCoordinator {
     this.running = true;
     this.candidatesByIdentity.clear();
     this.stopTimer = this.clock.setTimeout(() => {
-      void this.stop();
+      void this.finishBrowse(currentGeneration);
     }, this.timeoutMs);
     await this.adapter.start('_hap._tcp', {
       found: (service) => this.accept(currentGeneration, service, 'found'),
@@ -149,6 +149,20 @@ export class DiscoveryCoordinator {
   private publish(): void {
     const snapshot = this.snapshot();
     this.listeners.forEach((listener) => listener(snapshot));
+  }
+
+  /** Ends the bounded native browse while retaining its resolved snapshot for operator action. */
+  private async finishBrowse(generation: number): Promise<void> {
+    if (!this.running || generation !== this.generation) return;
+    this.running = false;
+    this.stopTimer = undefined;
+    try {
+      await this.adapter.stop('_hap._tcp');
+      this.logger?.event('discovery.window-complete', { operation: 'hap-discovery', result: 'success', generation });
+    } catch {
+      this.logger?.error('discovery.stop-failed', { operation: 'hap-discovery', result: 'failure', errorCategory: 'native-stop-failed', generation });
+    }
+    this.publish();
   }
 
   private isNetworkAvailable(): boolean {

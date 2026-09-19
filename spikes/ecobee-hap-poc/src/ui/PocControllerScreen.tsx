@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Button, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export interface SanitizedCandidate {
   readonly key: string;
   readonly label: string;
   readonly pairing: 'available' | 'already-associated' | 'unknown';
+  readonly pairedToThisApp: boolean;
 }
 
 export type TargetRunResult = 'PENDING TARGET' | 'PASS' | 'FAIL' | 'BLOCKED';
@@ -67,6 +68,7 @@ export interface PocUiActions {
   startDiscovery(): void;
   stopDiscovery(): void;
   selectCandidate(key: string): void;
+  connectCandidate(key: string): Promise<void>;
   pair(setupCode: string): Promise<void>;
   unpairAccessory(): Promise<void>;
   deleteLocalCredentials(): Promise<void>;
@@ -80,6 +82,9 @@ export function PocControllerScreen({ state, actions }: { state: PocUiState; act
   const [setupCode, setSetupCode] = useState('');
   const [setpoint, setSetpoint] = useState('');
   const selected = state.selected;
+  useEffect(() => {
+    setSetupCode('');
+  }, [selected?.key, selected?.pairing]);
   const requestPair = () => Alert.alert('Pair selected thermostat?', 'The setup code is used only in memory. Pair Setup may change accessory ownership.', [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Pair', onPress: () => { const code = setupCode; setSetupCode(''); void actions.pair(code); } }
@@ -108,13 +113,30 @@ export function PocControllerScreen({ state, actions }: { state: PocUiState; act
         title={state.discovery === 'discovering' ? 'Stop discovery' : 'Discover thermostats'}
         onPress={() => state.discovery === 'discovering' ? actions.stopDiscovery() : actions.startDiscovery()}
       />
-      {state.candidates.map((candidate) => <View key={candidate.key} style={styles.candidateRow}>
-        <Text style={styles.candidate}>{candidate.label} · {candidate.pairing}</Text>
-        <Button title={state.selected?.key === candidate.key ? 'Selected' : 'Select'} onPress={() => actions.selectCandidate(candidate.key)} disabled={state.selected?.key === candidate.key} />
+      {state.candidates.map((candidate) => <View key={candidate.key} style={[styles.candidateRow, candidate.pairedToThisApp && styles.pairedCandidate]}>
+        <Text style={styles.candidate}>{candidate.label} · {candidateStatus(candidate)}</Text>
+        {candidate.pairedToThisApp
+          ? <Button
+              title={state.connection === 'ready' && state.selected?.key === candidate.key ? 'Connected' : state.connection === 'verifying' && state.selected?.key === candidate.key ? 'Connecting…' : 'Connect'}
+              onPress={() => void actions.connectCandidate(candidate.key)}
+              disabled={(state.connection === 'ready' || state.connection === 'verifying') && state.selected?.key === candidate.key}
+            />
+          : <Button
+              title={state.selected?.key === candidate.key ? 'Selected for pairing' : candidate.pairing === 'available' ? 'Select to pair' : 'Unavailable'}
+              onPress={() => actions.selectCandidate(candidate.key)}
+              disabled={candidate.pairing !== 'available' || state.selected?.key === candidate.key}
+            />}
       </View>)}
-      {selected && state.connection !== 'ready' ? <View style={styles.form}>
-        <TextInput accessibilityLabel="HAP setup code" value={setupCode} onChangeText={setSetupCode} placeholder="Setup code" placeholderTextColor="#93a1a1" secureTextEntry keyboardType="number-pad" style={styles.input} />
-        <Button title="Pair selected thermostat" onPress={requestPair} disabled={!setupCode} />
+      {selected && !selected.pairedToThisApp && state.connection !== 'ready' ? <View style={styles.form}>
+        <Text style={styles.selected}>Selected target: {selected.label}</Text>
+        {selected.pairing === 'available' ? <>
+          <Text style={styles.status}>This thermostat is advertising that it accepts Pair Setup.</Text>
+          <Text style={styles.status}>Enter the eight digits; separators are added automatically.</Text>
+          <TextInput accessibilityLabel="HAP setup code" value={setupCode} onChangeText={(value) => setSetupCode(formatSetupCodeInput(value))} placeholder="XXX-XX-XXX" placeholderTextColor="#93a1a1" keyboardType="number-pad" maxLength={10} style={styles.input} />
+          <Button title="Pair selected thermostat" onPress={requestPair} disabled={!/^\d{3}-\d{2}-\d{3}$/.test(setupCode)} />
+        </> : <Text style={styles.warning}>
+          Pairing unavailable: this thermostat is already associated. Do not enter a setup code.
+        </Text>}
       </View> : null}
       {state.connection === 'ready' ? <View style={styles.form}>
         {state.capabilities.map((capability) => <Text key={capability.key} style={styles.status}>
@@ -138,8 +160,25 @@ const styles = StyleSheet.create({
   heading: { color: '#fdf6e3', fontSize: 18, fontWeight: '700' },
   status: { color: '#b8d9c6', fontSize: 14 },
   candidateRow: { gap: 6 },
+  pairedCandidate: { borderColor: '#2aa198', borderWidth: 1, borderRadius: 6, padding: 10 },
   candidate: { color: '#eee8d5', fontSize: 15 },
+  selected: { color: '#fdf6e3', fontSize: 16, fontWeight: '700' },
+  warning: { color: '#b58900', fontSize: 14, lineHeight: 20 },
   form: { gap: 12 },
   input: { color: '#fdf6e3', borderColor: '#586e75', borderWidth: 1, borderRadius: 6, padding: 12 },
   error: { color: '#dc322f' }
 });
+
+function candidateStatus(candidate: SanitizedCandidate): string {
+  if (candidate.pairedToThisApp) return 'Paired to this app';
+  if (candidate.pairing === 'available') return 'Available to pair';
+  if (candidate.pairing === 'already-associated') return 'Not paired to this app';
+  return 'Pairing status unknown';
+}
+
+export function formatSetupCodeInput(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 5) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
+}

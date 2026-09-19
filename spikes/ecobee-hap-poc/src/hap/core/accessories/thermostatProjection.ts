@@ -31,12 +31,14 @@ export function applyCharacteristicReads(
   observedAtEpochMs: number
 ): ThermostatProjection {
   const reads = new Map(response.characteristics.map((read) => [`${read.aid}.${read.iid}`, read]));
+  const partialUpdate = source === 'event' || source === 'reconciliation-read';
   return {
     ...projection,
     capabilities: projection.capabilities.map((capability) => {
       if (capability.status === 'unsupported') return capability;
       const key = `${capability.characteristic.aid}.${capability.characteristic.iid}`;
       const read = reads.get(key);
+      if (!read && partialUpdate) return capability;
       if (!read) return { ...capability, status: 'read-failed', errorCategory: 'missing-read-result' };
       if (read.status !== undefined && read.status !== 0) return { ...capability, status: 'read-failed', errorCategory: `hap-status-${read.status}` };
       const value = validateCharacteristicValue(capability.characteristic, read.value);
